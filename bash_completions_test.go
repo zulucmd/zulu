@@ -131,6 +131,22 @@ func TestBashCompletions(t *testing.T) {
 		Run:        emptyRun,
 	}
 
+	hiddenCmd := &Command{
+		Use:    "hidden",
+		Short:  "A command which is hidden",
+		Long:   "an absolutely utterly useless command for testing for testing hiding.",
+		Hidden: true,
+		Run:    emptyRun,
+	}
+
+	hiddenSubCmd := &Command{
+		Use:    "subcommandForHidden",
+		Short:  "A command which is attached to a hidden one",
+		Long:   "an absolutely utterly useless command for testing for testing subcommand attached to hidden one.",
+		Hidden: true,
+		Run:    emptyRun,
+	}
+
 	colonCmd := &Command{
 		Use: "cmd:colon",
 		Run: emptyRun,
@@ -147,7 +163,8 @@ func TestBashCompletions(t *testing.T) {
 	}
 
 	echoCmd.AddCommand(timesCmd)
-	rootCmd.AddCommand(echoCmd, printCmd, deprecatedCmd, colonCmd)
+	hiddenCmd.AddCommand(hiddenSubCmd)
+	rootCmd.AddCommand(echoCmd, printCmd, deprecatedCmd, hiddenCmd, colonCmd)
 
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenBashCompletion(buf))
@@ -202,6 +219,13 @@ func TestBashCompletions(t *testing.T) {
 	check(t, output, `local_nonpersistent_flags+=("-T")`)
 
 	checkOmit(t, output, deprecatedCmd.Name())
+
+	// check that hidden command and its subcommand functions are available
+	check(t, output, "_root_hidden")
+	check(t, output, "_root_hidden_subcommandForHidden")
+	checkOmit(t, output, ` commands+=("hidden")`)
+	check(t, output, `hidden_commands+=("hidden")`)
+	check(t, output, `commands+=("subcommandForHidden")`)
 
 	// If available, run shellcheck against the script.
 	if err := exec.Command("which", "shellcheck").Run(); err != nil {

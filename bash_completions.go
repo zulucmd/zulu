@@ -293,6 +293,7 @@ __%[1]s_handle_flag()
     # if you set a flag which only applies to this command, don't show subcommands
     if __%[1]s_contains_word "${flagname}" "${local_nonpersistent_flags[@]}"; then
       commands=()
+      hidden_commands=()
     fi
 
     # keep flag value with flagname as flaghash
@@ -314,6 +315,7 @@ __%[1]s_handle_flag()
         # if we are looking for a flags value, don't show commands
         if [[ $c -eq $cword ]]; then
             commands=()
+            hidden_commands=()
         fi
     fi
 
@@ -364,6 +366,8 @@ __%[1]s_handle_word()
     if [[ "${words[c]}" == -* ]]; then
         __%[1]s_handle_flag
     elif __%[1]s_contains_word "${words[c]}" "${commands[@]}"; then
+        __%[1]s_handle_command
+    elif __%[1]s_contains_word "${words[c]}" "${hidden_commands[@]}"; then
         __%[1]s_handle_command
     elif [[ $c -eq 0 ]]; then
         __%[1]s_handle_command
@@ -432,10 +436,14 @@ fi
 func writeCommands(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "    commands=()\n")
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() && c != cmd.helpCommand {
+		if !c.IsAvailableCommand() && !c.Hidden && c != cmd.helpCommand {
 			continue
 		}
-		WriteStringAndCheck(buf, fmt.Sprintf("    commands+=(%q)\n", c.Name()))
+		commands := "commands"
+		if c.Hidden {
+			commands = "hidden_commands"
+		}
+		WriteStringAndCheck(buf, fmt.Sprintf("    %s+=(%q)\n", commands, c.Name()))
 		writeCmdAliases(buf, c)
 	}
 	WriteStringAndCheck(buf, "\n")
@@ -639,7 +647,7 @@ func writeArgAliases(buf io.StringWriter, cmd *Command) {
 
 func gen(buf io.StringWriter, cmd *Command) {
 	for _, c := range cmd.Commands() {
-		if !c.IsAvailableCommand() && c != cmd.helpCommand {
+		if !c.IsAvailableCommand() && !c.Hidden && c != cmd.helpCommand {
 			continue
 		}
 		gen(buf, c)
