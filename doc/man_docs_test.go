@@ -203,7 +203,7 @@ func TestGenManCommands(t *testing.T) {
 	output := buf.String()
 
 	checkStringContains(t, output, ".SH COMMANDS")
-	checkStringMatch(t, output, "\\\\fBecho\\\\fP\n[ \t]+Echo anything to the screen\n[ \t]+See \\\\fBroot\\\\-echo\\(2\\)\\\\fP\\\\&\\.")
+	checkStringMatch(t, output, "\\\\fBecho\\\\fP\n[ \t]+Echo anything to the screen\n[ \t]+See \\\\fBroot\\-echo\\(2\\)\\\\fP\\\\&\\.")
 	checkStringOmits(t, output, ".PP\n\\fBprint\\fP\n")
 
 	// Echo command
@@ -214,8 +214,8 @@ func TestGenManCommands(t *testing.T) {
 	output = buf.String()
 
 	checkStringContains(t, output, ".SH COMMANDS")
-	checkStringMatch(t, output, "\\\\fBtimes\\\\fP\n[ \t]+Echo anything to the screen more times\n[ \t]+See \\\\fBroot\\\\-echo\\\\-times\\(2\\)\\\\fP\\\\&\\.")
-	checkStringMatch(t, output, "\\\\fBechosub\\\\fP\n[ \t]+second sub command for echo\n[ \t]+See \\\\fBroot\\\\-echo\\\\-echosub\\(2\\)\\\\fP\\\\&\\.")
+	checkStringMatch(t, output, "\\\\fBtimes\\\\fP\n[ \t]+Echo anything to the screen more times\n[ \t]+See \\\\fBroot\\-echo\\-times\\(2\\)\\\\fP\\\\&\\.")
+	checkStringMatch(t, output, "\\\\fBechosub\\\\fP\n[ \t]+second sub command for echo\n[ \t]+See \\\\fBroot\\-echo\\-echosub\\(2\\)\\\\fP\\\\&\\.")
 	checkStringOmits(t, output, ".PP\n\\fBdeprecated\\fP\n")
 
 	// Time command as echo's subcommand
