@@ -3,6 +3,7 @@ package cobra
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -781,7 +782,6 @@ func TestRequiredFlags(t *testing.T) {
 	c.Flags().String("foo2", "", "")
 	assertNoErr(t, c.MarkFlagRequired("foo2"))
 	c.Flags().String("bar", "", "")
-
 	expected := fmt.Sprintf("required flag(s) %q, %q not set", "foo1", "foo2")
 
 	_, err := executeCommand(c)
@@ -790,6 +790,28 @@ func TestRequiredFlags(t *testing.T) {
 	if got != expected {
 		t.Errorf("Expected error: %q, got: %q", expected, got)
 	}
+}
+
+func TestRequiredFlagsWithCustomFlagErrorFunc(t *testing.T) {
+	c := &Command{Use: "c", Run: emptyRun}
+	c.Flags().String("foo1", "", "")
+	assertNoErr(t, c.MarkFlagRequired("foo1"))
+	silentError := "failed flag parsing"
+	c.SetFlagErrorFunc(func(c *Command, err error) error {
+		c.Println(err)
+		c.Println(c.UsageString())
+		return errors.New(silentError)
+	})
+	requiredFlagErrorMessage := fmt.Sprintf("required flag(s) %q not set", "foo1")
+
+	output, err := executeCommand(c)
+	got := err.Error()
+
+	if got != silentError {
+		t.Errorf("Expected error %s but got %s", silentError, got)
+	}
+	checkStringContains(t, output, requiredFlagErrorMessage)
+	checkStringContains(t, output, c.UsageString())
 }
 
 func TestPersistentRequiredFlags(t *testing.T) {
