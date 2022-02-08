@@ -1640,7 +1640,7 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 }
 
 func TestUsageWithGroup(t *testing.T) {
-	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+	var rootCmd = &Command{Use: "root", Short: "test", CompletionOptions: CompletionOptions{DisableDefaultCmd: true}, Run: emptyRun}
 
 	rootCmd.AddCommand(&Command{Use: "cmd1", Group: "group1", Run: emptyRun})
 	rootCmd.AddCommand(&Command{Use: "cmd2", Group: "group2", Run: emptyRun})
@@ -1657,7 +1657,7 @@ func TestUsageWithGroup(t *testing.T) {
 }
 
 func TestUsageHelpGroup(t *testing.T) {
-	var rootCmd = &Command{Use: "root", Short: "test", Run: emptyRun}
+	var rootCmd = &Command{Use: "root", Short: "test", CompletionOptions: CompletionOptions{DisableDefaultCmd: true}, Run: emptyRun}
 
 	rootCmd.AddCommand(&Command{Use: "xxx", Group: "group", Run: emptyRun})
 	rootCmd.SetHelpCommandGroup("group")
@@ -2128,7 +2128,7 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	checkStringContains(t, output, "unknown flag: --unknown")
 }
 
-func TestContext(t *testing.T){
+func TestContext(t *testing.T) {
 	root := &Command{}
 	if root.Context() == nil {
 		t.Error("expected root.Context() != nil")
