@@ -176,8 +176,8 @@ cmd := &cobra.Command{
 	Use:   "status RELEASE_NAME",
 	Short: "Display the status of the named release",
 	Long:  status_long,
-	RunE: func(cmd *cobra.Command, args []string) {
-		RunGet(args[0])
+	Run: func(cmd *cobra.Command, args []string) {
+		RunStatus(args[0])
 	},
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if len(args) != 0 {
@@ -187,13 +187,14 @@ cmd := &cobra.Command{
 	},
 }
 ```
-Where `getReleasesFromCluster()` is a Go function that obtains the list of current Helm releases running on the Kubernetes cluster.
-Notice we put the `ValidArgsFunction` on the `status` sub-command. Let's assume the Helm releases on the cluster are: `harbor`, `notary`, `rook` and `thanos` then this dynamic completion will give results like:
+Where `getReleasesFromCluster()` is a Go function that returns the list of current Helm release names running on the Kubernetes cluster.
+Similarly as for `Run`, the `args` parameter represents the arguments present on the command-line, while the `toComplete` parameter represents the final argument which the user is trying to complete (e.g., `helm status th<TAB>` will have `toComplete` be `"th"`); the `toComplete` parameter will be empty when the user has requested completions right after typing a space (e.g., `helm status <TAB>`). Notice we put the `ValidArgsFunction` on the `status` sub-command, as it provides completions for this sub-command specifically. Let's assume the Helm releases on the cluster are: `harbor`, `notary`, `rook` and `thanos` then this dynamic completion will give results like:
 
 ```bash
 $ helm status [tab][tab]
 harbor notary rook thanos
 ```
+
 You may have noticed the use of `cobra.ShellCompDirective`.  These directives are bit fields allowing to control some shell completion behaviors for your particular completion.  You can combine them with the bit-or operator such as `cobra.ShellCompDirectiveNoSpace | cobra.ShellCompDirectiveNoFileComp`
 ```go
 // Indicates that the shell will perform its default behavior after completions
