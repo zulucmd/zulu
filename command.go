@@ -31,7 +31,7 @@ import (
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
 
-// Structure to manage groups for commands
+// Group is a structure to manage groups for commands.
 type Group struct {
 	Group string
 	Title string
@@ -645,7 +645,7 @@ Loop:
 func argsMinusFirstX(args []string, x string) []string {
 	for i, y := range args {
 		if x == y {
-			ret := []string{}
+			var ret []string
 			ret = append(ret, args[:i]...)
 			ret = append(ret, args[i+1:]...)
 			return ret
@@ -655,8 +655,8 @@ func argsMinusFirstX(args []string, x string) []string {
 }
 
 func isFlagArg(arg string) bool {
-	return ((len(arg) >= 3 && arg[1] == '-') ||
-		(len(arg) >= 2 && arg[0] == '-' && arg[1] != '-'))
+	return (len(arg) >= 3 && arg[1] == '-') ||
+		(len(arg) >= 2 && arg[0] == '-' && arg[1] != '-')
 }
 
 // Find the target command given the args and command tree
