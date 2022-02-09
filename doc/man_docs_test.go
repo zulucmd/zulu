@@ -21,7 +21,7 @@ func assertNoErr(t *testing.T, e error) {
 }
 
 func translate(in string) string {
-	return strings.Replace(in, "-", "\\-", -1)
+	return strings.ReplaceAll(in, "-", "\\-")
 }
 
 func TestAferoFs(t *testing.T) {
@@ -76,7 +76,7 @@ func TestGenManDoc(t *testing.T) {
 
 	// Make sure parent has - in CommandPath() in SEE ALSO:
 	parentPath := echoCmd.Parent().CommandPath()
-	dashParentPath := strings.Replace(parentPath, " ", "-", -1)
+	dashParentPath := strings.ReplaceAll(parentPath, " ", "-")
 	expected := translate(dashParentPath)
 	expected = expected + "(" + header.Section + ")"
 	checkStringContains(t, output, expected)
@@ -111,7 +111,7 @@ func TestGenManNoHiddenParents(t *testing.T) {
 
 	// Make sure parent has - in CommandPath() in SEE ALSO:
 	parentPath := echoCmd.Parent().CommandPath()
-	dashParentPath := strings.Replace(parentPath, " ", "-", -1)
+	dashParentPath := strings.ReplaceAll(parentPath, " ", "-")
 	expected := translate(dashParentPath)
 	expected = expected + "(" + header.Section + ")"
 	checkStringContains(t, output, expected)
