@@ -51,7 +51,7 @@ var rootCmd = &cobra.Command{
   Short: "Hugo is a very fast static site generator",
   Long: `A Fast and Flexible Static Site Generator built with
                 love by spf13 and friends in Go.
-                Complete documentation is available at http://hugo.spf13.com`,
+                Complete documentation is available at https://hugo.spf13.com`,
   Run: func(cmd *cobra.Command, args []string) {
     // Do Stuff Here
   },
@@ -413,7 +413,7 @@ a count and a string.`,
 }
 ```
 
-For a more complete example of a larger application, please checkout [Hugo](http://gohugo.io/).
+For a more complete example of a larger application, please checkout [Hugo](https://gohugo.io/).
 
 ## Help Command
 
@@ -616,7 +616,7 @@ Did you mean this?
 Run 'hugo --help' for usage.
 ```
 
-Suggestions are automatic based on every subcommand registered and use an implementation of [Levenshtein distance](http://en.wikipedia.org/wiki/Levenshtein_distance). Every registered command that matches a minimum distance of 2 (ignoring case) will be displayed as a suggestion.
+Suggestions are automatic based on every subcommand registered and use an implementation of [Levenshtein distance](https://en.wikipedia.org/wiki/Levenshtein_distance). Every registered command that matches a minimum distance of 2 (ignoring case) will be displayed as a suggestion.
 
 If you need to disable suggestions or tweak the string distance in your command, use:
 

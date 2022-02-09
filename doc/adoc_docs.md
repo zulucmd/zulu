@@ -85,7 +85,7 @@ func GenAsciidocCustom(cmd *Command, out *bytes.Buffer, linkHandler func(string)
 }
 ```
 
-The `filePrepender` will prepend the return value given the full filepath to the rendered Asciidoc file. A common use case is to add front matter to use the generated documentation with [Hugo](http://gohugo.io/):
+The `filePrepender` will prepend the return value given the full filepath to the rendered Asciidoc file. A common use case is to add front matter to use the generated documentation with [Hugo](https://gohugo.io/):
 
 ```go
 const fmTemplate = `---
