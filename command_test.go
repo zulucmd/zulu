@@ -1496,72 +1496,42 @@ func TestPersistentHooks(t *testing.T) {
 	}
 
 	for _, v := range []struct {
-		name    string
-		got     string
-		doCheck bool
+		name     string
+		got      string
+		expected string
+		doCheck  bool
 	}{
-		{"parentPersPreArgs", parentPersPreArgs, EnablePersistentRunOverride},
-		{"parentPreArgs", parentPreArgs, true},
-		{"parentRunArgs", parentRunArgs, true},
-		{"parentPostArgs", parentPostArgs, true},
-		{"parentPersPostArgs", parentPersPostArgs, !EnablePersistentRunOverride},
+		{"parentPersPreArgs", parentPersPreArgs, "", EnablePersistentRunOverride},
+		{"parentPersPreArgs", parentPersPreArgs, onetwo, !EnablePersistentRunOverride},
+		{"parentPreArgs", parentPreArgs, "", true},
+		{"parentRunArgs", parentRunArgs, "", true},
+		{"parentPostArgs", parentPostArgs, "", true},
+		{"parentPersPostArgs", parentPersPostArgs, "", EnablePersistentRunOverride},
+		{"parentPersPostArgs", parentPersPostArgs, onetwo, !EnablePersistentRunOverride},
+
+		{"childPersPreArgs", childPersPreArgs, onetwo, EnablePersistentRunOverride},
+		{"childPreArgs", childPreArgs, onetwo, true},
+		{"childRunArgs", childRunArgs, onetwo, true},
+		{"childPostArgs", childPostArgs, onetwo, true},
+		{"childPersPostArgs", childPersPostArgs, onetwo, EnablePersistentRunOverride},
+
+		// Test On*Run hooks
+		{"persParentPersPreArgs", persParentPersPreArgs, onetwo, true},
+		{"persParentPreArgs", persParentPreArgs, "", true},
+		{"persParentRunArgs", persParentRunArgs, "", true},
+		{"persParentPostArgs", persParentPostArgs, "", true},
+		{"persParentPersPostArgs", persParentPersPostArgs, onetwo, true},
+
+		{"persChildPersPreArgs", persChildPersPreArgs, onetwo, true},
+		{"persChildPreArgs", persChildPreArgs, onetwo, true},
+		{"persChildPreArgs2", persChildPreArgs2, onetwo + " three", true},
+		{"persChildRunArgs", persChildRunArgs, onetwo, true},
+		{"persChildPostArgs", persChildPostArgs, onetwo, true},
+		{"persChildPersPostArgs", persChildPersPostArgs, onetwo, true},
 	} {
-		if v.doCheck && v.got != "" {
-			t.Errorf("Expected blank %s, got %q", v.name, v.got)
+		if v.doCheck && v.got != v.expected {
+			t.Errorf("Expected %q %s, got %q", v.expected, v.name, v.got)
 		}
-	}
-
-	for _, v := range []struct {
-		name    string
-		got     string
-		doCheck bool
-	}{
-		{"childPersPreArgs", childPersPreArgs, EnablePersistentRunOverride},
-		{"childPreArgs", childPreArgs, true},
-		{"childRunArgs", childRunArgs, true},
-		{"childPostArgs", childPostArgs, true},
-		{"childPersPostArgs", childPersPostArgs, EnablePersistentRunOverride},
-	} {
-		if v.got != onetwo {
-			t.Errorf("Expected %s %q, got %q", v.name, onetwo, v.got)
-		}
-	}
-
-	// Test On*Run hooks
-
-	if persParentPersPreArgs != "one two" {
-		t.Errorf("Expected persParentPersPreArgs %q, got %q", "one two", persParentPersPreArgs)
-	}
-	if persParentPreArgs != "" {
-		t.Errorf("Expected blank persParentPreArgs, got %q", persParentPreArgs)
-	}
-	if persParentRunArgs != "" {
-		t.Errorf("Expected blank persParentRunArgs, got %q", persParentRunArgs)
-	}
-	if persParentPostArgs != "" {
-		t.Errorf("Expected blank persParentPostArg, got %q", persParentPostArgs)
-	}
-	if persParentPersPostArgs != "one two" {
-		t.Errorf("Expected persParentPersPostArgs %q, got %q", "one two", persParentPersPostArgs)
-	}
-
-	if persChildPersPreArgs != "one two" {
-		t.Errorf("Expected persChildPersPreArgs %q, got %q", "one two", persChildPersPreArgs)
-	}
-	if persChildPreArgs != "one two" {
-		t.Errorf("Expected persChildPreArgs %q, got %q", "one two", persChildPreArgs)
-	}
-	if persChildPreArgs2 != "one two three" {
-		t.Errorf("Expected persChildPreArgs %q, got %q", "one two three", persChildPreArgs2)
-	}
-	if persChildRunArgs != "one two" {
-		t.Errorf("Expected persChildRunArgs %q, got %q", "one two", persChildRunArgs)
-	}
-	if persChildPostArgs != "one two" {
-		t.Errorf("Expected persChildPostArgs %q, got %q", "one two", persChildPostArgs)
-	}
-	if persChildPersPostArgs != "one two" {
-		t.Errorf("Expected persChildPersPostArgs %q, got %q", "one two", persChildPersPostArgs)
 	}
 }
 

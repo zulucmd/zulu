@@ -904,7 +904,7 @@ func (c *Command) execute(a []string) (err error) {
 	// to be executed before running the main Run hooks.
 	hooks = append(hooks, func(cmd *Command, args []string) error {
 		if err := cmd.validateRequiredFlags(); err != nil {
-			return err
+			return c.FlagErrorFunc()(c, err)
 		}
 		return nil
 	})
