@@ -1499,46 +1499,37 @@ func TestPersistentHooks(t *testing.T) {
 		name     string
 		got      string
 		expected string
-		doCheck  bool
 	}{
-		{"parentPersPreArgs", parentPersPreArgs, "", EnablePersistentRunOverride},
-		{"parentPersPreArgs", parentPersPreArgs, onetwo, !EnablePersistentRunOverride},
-		{"parentPreArgs", parentPreArgs, "", true},
-		{"parentRunArgs", parentRunArgs, "", true},
-		{"parentPostArgs", parentPostArgs, "", true},
-		{"parentPersPostArgs", parentPersPostArgs, "", EnablePersistentRunOverride},
-		{"parentPersPostArgs", parentPersPostArgs, onetwo, !EnablePersistentRunOverride},
+		{"parentPersPreArgs", parentPersPreArgs, onetwo},
+		{"parentPreArgs", parentPreArgs, ""},
+		{"parentRunArgs", parentRunArgs, ""},
+		{"parentPostArgs", parentPostArgs, ""},
+		{"parentPersPostArgs", parentPersPostArgs, onetwo},
 
-		{"childPersPreArgs", childPersPreArgs, onetwo, EnablePersistentRunOverride},
-		{"childPreArgs", childPreArgs, onetwo, true},
-		{"childRunArgs", childRunArgs, onetwo, true},
-		{"childPostArgs", childPostArgs, onetwo, true},
-		{"childPersPostArgs", childPersPostArgs, onetwo, EnablePersistentRunOverride},
+		{"childPersPreArgs", childPersPreArgs, onetwo},
+		{"childPreArgs", childPreArgs, onetwo},
+		{"childRunArgs", childRunArgs, onetwo},
+		{"childPostArgs", childPostArgs, onetwo},
+		{"childPersPostArgs", childPersPostArgs, onetwo},
 
 		// Test On*Run hooks
-		{"persParentPersPreArgs", persParentPersPreArgs, onetwo, true},
-		{"persParentPreArgs", persParentPreArgs, "", true},
-		{"persParentRunArgs", persParentRunArgs, "", true},
-		{"persParentPostArgs", persParentPostArgs, "", true},
-		{"persParentPersPostArgs", persParentPersPostArgs, onetwo, true},
+		{"persParentPersPreArgs", persParentPersPreArgs, onetwo},
+		{"persParentPreArgs", persParentPreArgs, ""},
+		{"persParentRunArgs", persParentRunArgs, ""},
+		{"persParentPostArgs", persParentPostArgs, ""},
+		{"persParentPersPostArgs", persParentPersPostArgs, onetwo},
 
-		{"persChildPersPreArgs", persChildPersPreArgs, onetwo, true},
-		{"persChildPreArgs", persChildPreArgs, onetwo, true},
-		{"persChildPreArgs2", persChildPreArgs2, onetwo + " three", true},
-		{"persChildRunArgs", persChildRunArgs, onetwo, true},
-		{"persChildPostArgs", persChildPostArgs, onetwo, true},
-		{"persChildPersPostArgs", persChildPersPostArgs, onetwo, true},
+		{"persChildPersPreArgs", persChildPersPreArgs, onetwo},
+		{"persChildPreArgs", persChildPreArgs, onetwo},
+		{"persChildPreArgs2", persChildPreArgs2, onetwo + " three"},
+		{"persChildRunArgs", persChildRunArgs, onetwo},
+		{"persChildPostArgs", persChildPostArgs, onetwo},
+		{"persChildPersPostArgs", persChildPersPostArgs, onetwo},
 	} {
-		if v.doCheck && v.got != v.expected {
+		if v.got != v.expected {
 			t.Errorf("Expected %q %s, got %q", v.expected, v.name, v.got)
 		}
 	}
-}
-
-func TestPersistentHooksWoOverride(t *testing.T) {
-	EnablePersistentRunOverride = false
-	TestPersistentHooks(t)
-	EnablePersistentRunOverride = true
 }
 
 // Related to https://github.com/spf13/cobra/issues/521.
