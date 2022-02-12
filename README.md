@@ -1,11 +1,8 @@
-![cobra logo](https://cloud.githubusercontent.com/assets/173412/10886352/ad566232-814f-11e5-9cd0-aa101788c117.png)
-
-Zulu is both a library for creating powerful modern CLI applications as well as a program to generate applications and command files.
+Zulu is a library for creating powerful modern CLI applications. It is forked from the original [Cobra](https://github.com/spf13/cobra) project due to little maintenance.
 
 [![](https://img.shields.io/github/workflow/status/gowarden/zulu/Test?longCache=tru&label=Test&logo=github%20actions&logoColor=fff)](https://github.com/gowarden/zulu/actions?query=workflow%3ATest)
 [![Go Reference](https://pkg.go.dev/badge/github.com/gowarden/zulu.svg)](https://pkg.go.dev/github.com/gowarden/zulu)
 [![Go Report Card](https://goreportcard.com/badge/github.com/gowarden/zulu)](https://goreportcard.com/report/github.com/gowarden/zulu)
-[![Slack](https://img.shields.io/badge/Slack-cobra-brightgreen)](https://gophers.slack.com/archives/CD3LP1199)
 
 # Overview
 
@@ -20,7 +17,6 @@ Zulu provides:
 * Fully POSIX-compliant flags (including short & long versions)
 * Nested subcommands
 * Global, local and cascading flags
-* Easy generation of applications & commands with `cobra init` & `cobra add cmdname`
 * Intelligent suggestions (`app srver`... did you mean `app server`?)
 * Automatic help generation for commands and flags
 * Automatic help flag recognition of `-h`, `--help`, etc.
@@ -79,8 +75,7 @@ which maintains the same interface while adding POSIX compliance.
 
 # Installing
 Using Zulu is easy. First, use `go get` to install the latest version
-of the library. This command will install the `cobra` generator executable
-along with the library and its dependencies:
+of the library. This command will the library and its dependencies:
 
     go get -u github.com/gowarden/zulu
 

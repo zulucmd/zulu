@@ -32,7 +32,6 @@ jobs:
         - ubuntu
         - macOS
         go:
-        - 14
         - 15
         - 16
         - 17
@@ -60,8 +59,6 @@ jobs:
         esac
         go install github.com/kyoh86/richgo"${_version}"
         go install github.com/mitchellh/gox"${_version}"
-
-    - run: PATH=$HOME/go/bin/:$PATH make test cobra_generator
 
   test-win:
     name: MINGW64
@@ -96,5 +93,3 @@ jobs:
         export GOBIN=$HOME/go/bin
         go install github.com/kyoh86/richgo@latest
         go install github.com/mitchellh/gox@latest
-
-    - run: PATH=$HOME/go/bin:$PATH make test cobra_generator
