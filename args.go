@@ -107,18 +107,3 @@ func MatchAll(pargs ...PositionalArgs) PositionalArgs {
 		return nil
 	}
 }
-
-// ExactValidArgs returns an error if there are not exactly N positional args OR
-// there are any positional args that are not in the `ValidArgs` field of `Command`
-//
-// Deprecated: now `ExactArgs` honors `ValidArgs`, when defined and not empty
-func ExactValidArgs(n int) PositionalArgs {
-	return ExactArgs(n)
-}
-
-// OnlyValidArgs returns an error if any args are not in the list of `ValidArgs`.
-//
-// Deprecated: now `ArbitraryArgs` honors `ValidArgs`, when defined and not empty
-func OnlyValidArgs(cmd *Command, args []string) error {
-	return ArbitraryArgs(cmd, args)
-}

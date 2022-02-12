@@ -29,30 +29,6 @@ func (c *Command) GenZshCompletionNoDesc(w io.Writer) error {
 	return c.genZshCompletion(w, false)
 }
 
-// MarkZshCompPositionalArgumentFile only worked for zsh and its behavior was
-// not consistent with Bash completion. It has therefore been disabled.
-// Instead, when no other completion is specified, file completion is done by
-// default for every argument. One can disable file completion on a per-argument
-// basis by using ValidArgsFunction and ShellCompDirectiveNoFileComp.
-// To achieve file extension filtering, one can use ValidArgsFunction and
-// ShellCompDirectiveFilterFileExt.
-//
-// Deprecated
-func (c *Command) MarkZshCompPositionalArgumentFile(argPosition int, patterns ...string) error {
-	return nil
-}
-
-// MarkZshCompPositionalArgumentWords only worked for zsh. It has therefore
-// been disabled.
-// To achieve the same behavior across all shells, one can use
-// ValidArgs (for the first argument only) or ValidArgsFunction for
-// any argument (can include the first one also).
-//
-// Deprecated
-func (c *Command) MarkZshCompPositionalArgumentWords(argPosition int, words ...string) error {
-	return nil
-}
-
 func (c *Command) genZshCompletionFile(filename string, includeDesc bool) error {
 	outFile, err := os.Create(filename)
 	if err != nil {

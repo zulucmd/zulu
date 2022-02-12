@@ -2145,7 +2145,7 @@ func TestValidArgsNotValidArgsFunc(t *testing.T) {
 func TestArgAliasesCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:        "root",
-		Args:       OnlyValidArgs,
+		Args:       ArbitraryArgs,
 		ValidArgs:  []string{"one", "two", "three"},
 		ArgAliases: []string{"un", "deux", "trois"},
 		Run:        emptyRun,

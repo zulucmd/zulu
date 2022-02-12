@@ -125,15 +125,6 @@ func TestArgs_Range(t *testing.T) {
 		"Valid | InvalidCountInvalid": {"invalid", RangeArgs(2, 4), true, []string{"a"}},
 	})
 }
-func TestArgs_DEPRECATED(t *testing.T) {
-	testArgs(t, map[string]argsTestcase{
-		"OnlyValid  | Valid | Valid":        {"", OnlyValidArgs, true, []string{"one", "two"}},
-		"OnlyValid  | Valid | Invalid":      {"invalid", OnlyValidArgs, true, []string{"a"}},
-		"ExactValid | Valid | Valid":        {"", ExactValidArgs(3), true, []string{"two", "three", "one"}},
-		"ExactValid | Valid | InvalidCount": {"notexact", ExactValidArgs(2), true, []string{"two", "three", "one"}},
-		"ExactValid | Valid | Invalid":      {"invalid", ExactValidArgs(2), true, []string{"two", "a"}},
-	})
-}
 
 // Takes(No)Args
 

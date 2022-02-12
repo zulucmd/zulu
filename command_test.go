@@ -1783,14 +1783,6 @@ func TestAddGroup(t *testing.T) {
 	checkStringContains(t, output, "\nTest group\n  cmd")
 }
 
-func TestSetOutput(t *testing.T) {
-	c := &Command{}
-	c.SetOutput(nil)
-	if out := c.OutOrStdout(); out != os.Stdout {
-		t.Errorf("Expected setting output to nil to revert back to stdout")
-	}
-}
-
 func TestSetOut(t *testing.T) {
 	c := &Command{}
 	c.SetOut(nil)

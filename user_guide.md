@@ -312,9 +312,6 @@ Field `ValidArgs` of type `[]string` can be defined in `Command`, in order to re
 positional args that are not in the list.
 This validation is executed implicitly before the validator defined in `Args`.
 
-> NOTE: `OnlyValidArgs` and `ExactValidArgs(int)` are now deprecated.
-> `ArbitraryArgs` and `ExactArgs(int)` provide the same functionality now.
-
 Moreover, it is possible to set any custom validator that satisfies `func(cmd *zulu.Command, args []string) error`.
 For example:
 
