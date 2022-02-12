@@ -31,6 +31,9 @@ import (
 // FParseErrWhitelist configures Flag parse errors to be ignored
 type FParseErrWhitelist flag.ParseErrorsWhitelist
 
+type HookFuncE func(cmd *Command, args []string) error
+type HookFunc func(cmd *Command, args []string)
+
 // Group is a structure to manage groups for commands.
 type Group struct {
 	Group string
@@ -105,44 +108,74 @@ type Command struct {
 	Version string
 
 	// The *Run functions are executed in the following order:
+	//   * PersistentInitialize()
+	//   * Initialize()
 	//   * PersistentPreRun()
 	//   * PreRun()
 	//   * Run()
 	//   * PostRun()
 	//   * PersistentPostRun()
+	//   * Finalize()
+	//   * PersistentFinalize()
 	// All functions get the same args, the arguments after the command name.
 	//
-	// PersistentPreRun: children of this command will inherit and execute.
-	PersistentPreRun func(cmd *Command, args []string)
-	// PersistentPreRunE: PersistentPreRun but returns an error.
-	PersistentPreRunE func(cmd *Command, args []string) error
-	// PreRun: children of this command will not inherit.
-	PreRun func(cmd *Command, args []string)
-	// PreRunE: PreRun but returns an error.
-	PreRunE func(cmd *Command, args []string) error
-	// Run: Typically the actual work function. Most commands will only implement this.
-	Run func(cmd *Command, args []string)
-	// RunE: Run but returns an error.
-	RunE func(cmd *Command, args []string) error
-	// PostRun: run after the Run command.
-	PostRun func(cmd *Command, args []string)
-	// PostRunE: PostRun but returns an error.
-	PostRunE func(cmd *Command, args []string) error
-	// PersistentPostRun: children of this command will inherit and execute after PostRun.
-	PersistentPostRun func(cmd *Command, args []string)
-	// PersistentPostRunE: PersistentPostRun but returns an error.
-	PersistentPostRunE func(cmd *Command, args []string) error
 
-	// persistentPreRunHooks are executed before the command or one of its children are executed
-	persistentPreRunHooks []func(cmd *Command, args []string) error
-	// preRunHooks are executed before the command is executed
-	preRunHooks []func(cmd *Command, args []string) error
-	// runHooks are executed when the command is executed
-	runHooks []func(cmd *Command, args []string) error
-	// postRunHooks are executed after the command has executed
-	postRunHooks []func(cmd *Command, args []string) error
-	// persistentPostRunHooks are executed after the command or one of its children have executed
-	persistentPostRunHooks []func(cmd *Command, args []string) error
+	// PersistentInitialize: First thing that is run before parsing arguments. children
+	// of this command will inherit and execute prior to parsing flags.
+	PersistentInitialize HookFunc
+	// PersistentInitializeE: PersistentInitialize but returns an error.
+	PersistentInitializeE HookFuncE
+	// Initialize: PersistentInitialize but children do not inherit.
+	Initialize HookFunc
+	// InitializeE: Initialize but returns an error.
+	InitializeE HookFuncE
+
+	// PersistentPreRun: children of this command will inherit and execute.
+	PersistentPreRun HookFunc
+	// PersistentPreRunE: func(cmd *Command, args []string) error but returns an error.
+	PersistentPreRunE HookFuncE
+	// PreRun: children of this command will not inherit.
+	PreRun HookFunc
+	// PreRunE: func(cmd *Command, args []string) error but returns an error.
+	PreRunE HookFuncE
+	// Run: Typically the actual work function. Most commands will only implement this.
+	Run HookFunc
+	// RunE: func(cmd *Command, args []string) error but returns an error.
+	RunE HookFuncE
+	// PostRun: run after the Run command.
+	PostRun HookFunc
+	// PostRunE: func(cmd *Command, args []string) error but returns an error.
+	PostRunE HookFuncE
+	// PersistentPostRun: children of this command will inherit and execute after PostRun.
+	PersistentPostRun HookFunc
+	// PersistentPostRunE: func(cmd *Command, args []string) error but returns an error.
+	PersistentPostRunE HookFuncE
+
+	// Finalize: execute at the end of the function. This always executes, even if
+	// there are errors. Will panic if it produces errors. Children of this command will
+	// not inherit.
+	Finalize HookFunc
+	// FinalizeE: Finalize but returns an error.
+	FinalizeE HookFuncE
+	// PersistentFinalize: Finalize but children inherit and execute this too.
+	PersistentFinalize HookFunc
+	// PersistentFinalizeE: PersistentFinalize but returns an error.
+	PersistentFinalizeE HookFuncE
+
+	// persistentPreRunHooks are executed before the flags of a command or one of its children are parsed.
+	persistentInitializeHooks []HookFuncE
+	// initializeHooks are executed before the flags are parsed.
+	initializeHooks []HookFuncE
+	// persistentPreRunHooks are executed before the command or one of its children are executed.
+	persistentPreRunHooks []HookFuncE
+	// preRunHooks are executed before the command is executed.
+	preRunHooks []HookFuncE
+	// runHooks are executed when the command is executed.
+	runHooks []HookFuncE
+	// postRunHooks are executed after the command has executed.
+	postRunHooks []HookFuncE
+	// persistentPostRunHooks are executed after the command or one of its children have executed.
+	persistentPostRunHooks []HookFuncE
 
 	// groups for commands
 	commandgroups []*Group
@@ -834,112 +867,124 @@ func (c *Command) execute(a []string) (err error) {
 		c.Printf("Command %q is deprecated, %s\n", c.Name(), c.Deprecated)
 	}
 
+	var argWoFlags []string
+
+	// Allocate the hooks execution chain for the current command
+	var hooks []HookFuncE
+
+	defer func() {
+		var hooks []HookFuncE
+		appendHooks(&hooks, c.FinalizeE, c.Finalize, nil)
+		for p := c; p != nil; p = p.Parent() {
+			appendHooks(&hooks, p.PersistentFinalizeE, p.PersistentFinalize, nil)
+		}
+
+		for _, x := range hooks {
+			if err := x(c, argWoFlags); err != nil {
+				panic(err)
+			}
+		}
+	}()
+
 	// initialize help and version flag at the last point possible to allow for user
 	// overriding
-	c.InitDefaultHelpFlag()
-	c.InitDefaultVersionFlag()
+	hooks = append(hooks, func(cmd *Command, args []string) error {
+		c.InitDefaultHelpFlag()
+		c.InitDefaultVersionFlag()
 
-	err = c.ParseFlags(a)
-	if err != nil {
-		return c.FlagErrorFunc()(c, err)
-	}
+		return nil
+	})
 
-	// If help is called, regardless of other flags, return we want help.
-	// Also say we need help if the command isn't runnable.
-	helpVal, err := c.Flags().GetBool("help")
-	if err != nil {
-		// should be impossible to get here as we always declare a help
-		// flag in InitDefaultHelpFlag()
-		c.Println("\"help\" flag declared as non-bool. Please correct your code")
-		return err
+	for p := c; p != nil; p = p.Parent() {
+		prependHooks(&hooks, p.persistentInitializeHooks, p.PersistentInitializeE, p.PersistentInitialize)
 	}
+	prependHooks(&hooks, c.initializeHooks, c.InitializeE, c.Initialize)
 
-	if helpVal {
-		return flag.ErrHelp
-	}
+	hooks = append(hooks, func(cmd *Command, args []string) error {
+		err := c.ParseFlags(a)
+		if err != nil {
+			return c.FlagErrorFunc()(c, err)
+		}
+
+		return nil
+	})
+
+	hooks = append(hooks, func(cmd *Command, args []string) error {
+		// If help is called, regardless of other flags, return we want help.
+		// Also say we need help if the command isn't runnable.
+		helpVal, err := c.Flags().GetBool("help")
+		if err != nil {
+			// should be impossible to get here as we always declare a help
+			// flag in InitDefaultHelpFlag()
+			c.Println(`"help" flag declared as non-bool. Please correct your code`)
+			return err
+		}
+
+		if helpVal {
+			return flag.ErrHelp
+		}
+
+		return nil
+	})
 
 	// for back-compat, only add version flag behavior if version is defined
 	if c.Version != "" {
-		versionVal, err := c.Flags().GetBool("version")
-		if err != nil {
-			c.Println("\"version\" flag declared as non-bool. Please correct your code")
-			return err
-		}
-		if versionVal {
-			err := tmpl(c.OutOrStdout(), c.VersionTemplate(), c)
+		hooks = append(hooks, func(cmd *Command, args []string) error {
+			versionVal, err := c.Flags().GetBool("version")
 			if err != nil {
-				c.Println(err)
+				c.Println(`"version" flag declared as non-bool. Please correct your code`)
+				return err
 			}
-			return err
+			if versionVal {
+				err := tmpl(c.OutOrStdout(), c.VersionTemplate(), c)
+				if err != nil {
+					c.Println(err)
+				}
+				return err
+			}
+
+			return nil
+		})
+	}
+
+	hooks = append(hooks, func(cmd *Command, args []string) error {
+		argWoFlags = c.Flags().Args()
+		if c.DisableFlagParsing {
+			argWoFlags = a
 		}
-	}
+		return nil
+	})
 
-	if !c.Runnable() {
-		return flag.ErrHelp
-	}
+	hooks = append(hooks, func(cmd *Command, args []string) error {
+		if !c.Runnable() {
+			return flag.ErrHelp
+		}
 
-	c.preRun()
-
-	argWoFlags := c.Flags().Args()
-	if c.DisableFlagParsing {
-		argWoFlags = a
-	}
-
-	if err := c.ValidateArgs(argWoFlags); err != nil {
-		return err
-	}
-
-	// Allocate the hooks execution chain for the current command
-	var hooks []func(cmd *Command, args []string) error
+		return c.ValidateArgs(argWoFlags)
+	})
 
 	for p := c; p != nil; p = p.Parent() {
-		hooks = append(hooks, p.persistentPreRunHooks...)
-
-		if p.PersistentPreRunE != nil {
-			hooks = append(hooks, p.PersistentPreRunE)
-		} else if p.PersistentPreRun != nil {
-			hooks = append(hooks, wrapVoidHook(p.PersistentPreRun))
-		}
+		prependHooks(&hooks, p.persistentPreRunHooks, p.PersistentPreRunE, p.PersistentPreRun)
 	}
 
-	// First append the PreRun* hooks
-	hooks = append(hooks, c.preRunHooks...)
-	if c.PreRunE != nil {
-		hooks = append(hooks, c.PreRunE)
-	} else if c.PreRun != nil {
-		hooks = append(hooks, wrapVoidHook(c.PreRun))
-	}
+	prependHooks(&hooks, c.preRunHooks, c.PreRunE, c.PreRun)
 
 	// Include the validateRequiredFlags() logic as a hook
 	// to be executed before running the main Run hooks.
 	hooks = append(hooks, func(cmd *Command, args []string) error {
-		return c.FlagErrorFunc()(c, cmd.validateRequiredFlags())
-	})
-
-	// Append the main Run* hooks
-	hooks = append(hooks, c.runHooks...)
-	if c.RunE != nil {
-		hooks = append(hooks, c.RunE)
-	} else if c.Run != nil {
-		hooks = append(hooks, wrapVoidHook(c.Run))
-	}
-
-	// Append the PostRun* hooks
-	hooks = append(hooks, c.postRunHooks...)
-	if c.PostRunE != nil {
-		hooks = append(hooks, c.PostRunE)
-	} else if c.PostRun != nil {
-		hooks = append(hooks, wrapVoidHook(c.PostRun))
-	}
-
-	for p := c; p != nil; p = p.Parent() {
-		if p.PersistentPostRunE != nil {
-			hooks = append(hooks, p.PersistentPostRunE)
-		} else if p.PersistentPostRun != nil {
-			hooks = append(hooks, wrapVoidHook(p.PersistentPostRun))
+		err := cmd.validateRequiredFlags()
+		if err != nil {
+			return c.FlagErrorFunc()(c, err)
 		}
 
-		hooks = append(hooks, p.persistentPostRunHooks...)
+		return nil
+	})
+
+	prependHooks(&hooks, c.runHooks, c.RunE, c.Run)
+	prependHooks(&hooks, c.postRunHooks, c.PostRunE, c.PostRun)
+
+	for p := c; p != nil; p = p.Parent() {
+		appendHooks(&hooks, p.PersistentPostRunE, p.PersistentPostRun, p.persistentPostRunHooks)
 	}
 
 	// Execute the hooks execution chain:
@@ -952,45 +997,81 @@ func (c *Command) execute(a []string) (err error) {
 	return nil
 }
 
+func prependHooks(hooks *[]HookFuncE, newHooks []HookFuncE, runE HookFuncE, run HookFunc) {
+	*hooks = append(*hooks, newHooks...)
+	if runE != nil {
+		*hooks = append(*hooks, runE)
+	} else if run != nil {
+		*hooks = append(*hooks, wrapVoidHook(run))
+	}
+}
+
+func appendHooks(hooks *[]HookFuncE, runE HookFuncE, run HookFunc, newHooks []HookFuncE) {
+	if runE != nil {
+		*hooks = append(*hooks, runE)
+	} else if run != nil {
+		*hooks = append(*hooks, wrapVoidHook(run))
+	}
+	*hooks = append(*hooks, newHooks...)
+}
+
 // wrapVoidHook wraps a void hook into a function having the return error signature
-func wrapVoidHook(hook func(cmd *Command, args []string)) func(cmd *Command, args []string) error {
+func wrapVoidHook(hook HookFunc) HookFuncE {
 	return func(cmd *Command, args []string) error {
 		hook(cmd, args)
 		return nil
 	}
 }
 
+// OnPersistentInitialize registers one or more hooks on the command to be executed
+// before the flags of the command or one of its children are parsed.
+func (c *Command) OnPersistentInitialize(f ...HookFuncE) {
+	c.persistentInitializeHooks = append(c.persistentInitializeHooks, f...)
+}
+
+// OnInitialize registers one or more hooks on the command to be executed
+// before the flags of the command are parsed.
+func (c *Command) OnInitialize(f ...HookFuncE) {
+	c.persistentInitializeHooks = append(c.persistentInitializeHooks, f...)
+}
+
 // OnPersistentPreRun registers one or more hooks on the command to be executed
-// before the command or one of its children are executed
-func (c *Command) OnPersistentPreRun(f ...func(cmd *Command, args []string) error) {
+// before the command or one of its children are executed.
+func (c *Command) OnPersistentPreRun(f ...HookFuncE) {
 	c.persistentPreRunHooks = append(c.persistentPreRunHooks, f...)
 }
 
-// OnPreRun registers one or more hooks on the command to be executed before the command is executed
-func (c *Command) OnPreRun(f ...func(cmd *Command, args []string) error) {
+// OnPreRun registers one or more hooks on the command to be executed before the command is executed.
+func (c *Command) OnPreRun(f ...HookFuncE) {
 	c.preRunHooks = append(c.preRunHooks, f...)
 }
 
-// OnRun registers one or more hooks on the command to be executed when the command is executed
-func (c *Command) OnRun(f ...func(cmd *Command, args []string) error) {
+// OnRun registers one or more hooks on the command to be executed when the command is executed.
+func (c *Command) OnRun(f ...HookFuncE) {
 	c.runHooks = append(c.runHooks, f...)
 }
 
-// OnPostRun registers one or more hooks on the command to be executed after the command has executed
-func (c *Command) OnPostRun(f ...func(cmd *Command, args []string) error) {
+// OnPostRun registers one or more hooks on the command to be executed after the command has executed.
+func (c *Command) OnPostRun(f ...HookFuncE) {
 	c.postRunHooks = append(c.postRunHooks, f...)
 }
 
 // OnPersistentPostRun register one or more hooks on the command to be executed
-// after the command or one of its children have executed
-func (c *Command) OnPersistentPostRun(f ...func(cmd *Command, args []string) error) {
+// after the command or one of its children have executed.
+func (c *Command) OnPersistentPostRun(f ...HookFuncE) {
 	c.persistentPostRunHooks = append(c.persistentPostRunHooks, f...)
 }
 
-func (c *Command) preRun() {
-	for _, x := range initializers {
-		x()
-	}
+// OnFinalize registers one or more hooks on the command to be executed after the
+// command has executed even if it errors.
+func (c *Command) OnFinalize(f ...HookFuncE) {
+	c.postRunHooks = append(c.postRunHooks, f...)
+}
+
+// OnPersistentFinalize register one or more hooks on the command to be executed
+// after the command or one of its children have executed even if it errors.
+func (c *Command) OnPersistentFinalize(f ...HookFuncE) {
+	c.persistentPostRunHooks = append(c.persistentPostRunHooks, f...)
 }
 
 // ExecuteContext is the same as Execute(), but sets the ctx on the command.

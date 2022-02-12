@@ -34,8 +34,6 @@ var templateFuncs = template.FuncMap{
 	"rpad":                    rpad,
 }
 
-var initializers []func()
-
 // EnablePrefixMatching allows to set automatic prefix matching. Automatic prefix matching can be a dangerous thing
 // to automatically enable in CLI tools.
 // Set this to true to enable it.
@@ -72,12 +70,6 @@ func AddTemplateFuncs(tmplFuncs template.FuncMap) {
 	for k, v := range tmplFuncs {
 		templateFuncs[k] = v
 	}
-}
-
-// OnInitialize sets the passed functions to be run when each command's
-// Execute method is called.
-func OnInitialize(y ...func()) {
-	initializers = append(initializers, y...)
 }
 
 func trimRightSpace(s string) string {

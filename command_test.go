@@ -1369,121 +1369,137 @@ func TestHooks(t *testing.T) {
 }
 
 func TestPersistentHooks(t *testing.T) {
-	var (
-		parentPersPreArgs  string
-		parentPreArgs      string
-		parentRunArgs      string
-		parentPostArgs     string
-		parentPersPostArgs string
-	)
-
-	var (
-		childPersPreArgs  string
-		childPreArgs      string
-		childRunArgs      string
-		childPostArgs     string
-		childPersPostArgs string
-	)
-
-	var (
-		persParentPersPreArgs  string
-		persParentPreArgs      string
-		persParentRunArgs      string
-		persParentPostArgs     string
-		persParentPersPostArgs string
-	)
-
-	var (
-		persChildPersPreArgs  string
-		persChildPreArgs      string
-		persChildPreArgs2     string
-		persChildRunArgs      string
-		persChildPostArgs     string
-		persChildPersPostArgs string
-	)
-
+	hooksArgs := map[string]string{}
 	parentCmd := &Command{
 		Use: "parent",
+		PersistentInitialize: func(cmd *Command, args []string) {
+			hooksArgs["parentPersInitArgs"] = strings.Join(args, " ")
+		},
+		Initialize: func(cmd *Command, args []string) {
+			hooksArgs["parentInitArgs"] = strings.Join(args, " ")
+		},
 		PersistentPreRun: func(_ *Command, args []string) {
-			parentPersPreArgs = strings.Join(args, " ")
+			hooksArgs["parentPersPreArgs"] = strings.Join(args, " ")
 		},
 		PreRun: func(_ *Command, args []string) {
-			parentPreArgs = strings.Join(args, " ")
+			hooksArgs["parentPreArgs"] = strings.Join(args, " ")
 		},
 		Run: func(_ *Command, args []string) {
-			parentRunArgs = strings.Join(args, " ")
+			hooksArgs["parentRunArgs"] = strings.Join(args, " ")
 		},
 		PostRun: func(_ *Command, args []string) {
-			parentPostArgs = strings.Join(args, " ")
+			hooksArgs["parentPostArgs"] = strings.Join(args, " ")
 		},
 		PersistentPostRun: func(_ *Command, args []string) {
-			parentPersPostArgs = strings.Join(args, " ")
+			hooksArgs["parentPersPostArgs"] = strings.Join(args, " ")
+		},
+		Finalize: func(cmd *Command, args []string) {
+			hooksArgs["parentFinArgs"] = strings.Join(args, " ")
+		},
+		PersistentFinalize: func(cmd *Command, args []string) {
+			hooksArgs["parentPersFinArgs"] = strings.Join(args, " ")
 		},
 	}
 
 	childCmd := &Command{
 		Use: "child",
+		PersistentInitialize: func(cmd *Command, args []string) {
+			hooksArgs["childPersInitArgs"] = strings.Join(args, " ")
+		},
+		Initialize: func(cmd *Command, args []string) {
+			hooksArgs["childInitArgs"] = strings.Join(args, " ")
+		},
 		PersistentPreRun: func(_ *Command, args []string) {
-			childPersPreArgs = strings.Join(args, " ")
+			hooksArgs["childPersPreArgs"] = strings.Join(args, " ")
 		},
 		PreRun: func(_ *Command, args []string) {
-			childPreArgs = strings.Join(args, " ")
+			hooksArgs["childPreArgs"] = strings.Join(args, " ")
 		},
 		Run: func(_ *Command, args []string) {
-			childRunArgs = strings.Join(args, " ")
+			hooksArgs["childRunArgs"] = strings.Join(args, " ")
 		},
 		PostRun: func(_ *Command, args []string) {
-			childPostArgs = strings.Join(args, " ")
+			hooksArgs["childPostArgs"] = strings.Join(args, " ")
 		},
 		PersistentPostRun: func(_ *Command, args []string) {
-			childPersPostArgs = strings.Join(args, " ")
+			hooksArgs["childPersPostArgs"] = strings.Join(args, " ")
+		},
+		Finalize: func(cmd *Command, args []string) {
+			hooksArgs["childFinArgs"] = strings.Join(args, " ")
+		},
+		PersistentFinalize: func(cmd *Command, args []string) {
+			hooksArgs["childPersFinArgs"] = strings.Join(args, " ")
 		},
 	}
 	parentCmd.AddCommand(childCmd)
 
+	parentCmd.OnPersistentInitialize(func(_ *Command, args []string) error {
+		hooksArgs["persParentPersInitArgs"] = strings.Join(args, " ")
+		return nil
+	})
+	parentCmd.OnPersistentInitialize(func(_ *Command, args []string) error {
+		hooksArgs["persParentInitArgs"] = strings.Join(args, " ")
+		return nil
+	})
 	parentCmd.OnPersistentPreRun(func(_ *Command, args []string) error {
-		persParentPersPreArgs = strings.Join(args, " ")
+		hooksArgs["persParentPersPreArgs"] = strings.Join(args, " ")
 		return nil
 	})
 	parentCmd.OnPreRun(func(_ *Command, args []string) error {
-		persParentPreArgs = strings.Join(args, " ")
+		hooksArgs["persParentPreArgs"] = strings.Join(args, " ")
 		return nil
 	})
 	parentCmd.OnRun(func(_ *Command, args []string) error {
-		persParentRunArgs = strings.Join(args, " ")
+		hooksArgs["persParentRunArgs"] = strings.Join(args, " ")
 		return nil
 	})
 	parentCmd.OnPostRun(func(_ *Command, args []string) error {
-		persParentPostArgs = strings.Join(args, " ")
+		hooksArgs["persParentPostArgs"] = strings.Join(args, " ")
 		return nil
 	})
 	parentCmd.OnPersistentPostRun(func(_ *Command, args []string) error {
-		persParentPersPostArgs = strings.Join(args, " ")
+		hooksArgs["persParentPersPostArgs"] = strings.Join(args, " ")
+		return nil
+	})
+	parentCmd.OnFinalize(func(_ *Command, args []string) error {
+		hooksArgs["persParentFinArgs"] = strings.Join(args, " ")
+		return nil
+	})
+	parentCmd.OnPersistentFinalize(func(_ *Command, args []string) error {
+		hooksArgs["persParentPersFinArgs"] = strings.Join(args, " ")
 		return nil
 	})
 
 	childCmd.OnPersistentPreRun(func(_ *Command, args []string) error {
-		persChildPersPreArgs = strings.Join(args, " ")
+		hooksArgs["persChildPersPreArgs"] = strings.Join(args, " ")
 		return nil
 	})
 	childCmd.OnPreRun(func(_ *Command, args []string) error {
-		persChildPreArgs = strings.Join(args, " ")
+		hooksArgs["persChildPreArgs"] = strings.Join(args, " ")
 		return nil
 	})
 	childCmd.OnPreRun(func(_ *Command, args []string) error {
-		persChildPreArgs2 = strings.Join(args, " ") + " three"
+		hooksArgs["persChildPreArgs2"] = strings.Join(args, " ") + " three"
 		return nil
 	})
 	childCmd.OnRun(func(_ *Command, args []string) error {
-		persChildRunArgs = strings.Join(args, " ")
+		hooksArgs["persChildRunArgs"] = strings.Join(args, " ")
 		return nil
 	})
 	childCmd.OnPostRun(func(_ *Command, args []string) error {
-		persChildPostArgs = strings.Join(args, " ")
+		hooksArgs["persChildPostArgs"] = strings.Join(args, " ")
 		return nil
 	})
 	childCmd.OnPersistentPostRun(func(_ *Command, args []string) error {
-		persChildPersPostArgs = strings.Join(args, " ")
+		hooksArgs["persChildPersPostArgs"] = strings.Join(args, " ")
+		return nil
+	})
+	childCmd.OnFinalize(func(_ *Command, args []string) error {
+		hooksArgs["persChildFinArgs"] = strings.Join(args, " ")
+		return nil
+	})
+	childCmd.OnPersistentFinalize(func(_ *Command, args []string) error {
+		hooksArgs["persChildPersFinArgs"] = strings.Join(args, " ")
 		return nil
 	})
 
@@ -1497,37 +1513,57 @@ func TestPersistentHooks(t *testing.T) {
 
 	for _, v := range []struct {
 		name     string
-		got      string
 		expected string
 	}{
-		{"parentPersPreArgs", parentPersPreArgs, onetwo},
-		{"parentPreArgs", parentPreArgs, ""},
-		{"parentRunArgs", parentRunArgs, ""},
-		{"parentPostArgs", parentPostArgs, ""},
-		{"parentPersPostArgs", parentPersPostArgs, onetwo},
+		{"parentPersInitArgs", ""},
+		{"parentInitArgs", ""},
+		{"parentPersPreArgs", onetwo},
+		{"parentPreArgs", ""},
+		{"parentRunArgs", ""},
+		{"parentPostArgs", ""},
+		{"parentPersPostArgs", onetwo},
+		{"parentFinArgs", ""},
+		{"parentPersFinArgs", onetwo},
 
-		{"childPersPreArgs", childPersPreArgs, onetwo},
-		{"childPreArgs", childPreArgs, onetwo},
-		{"childRunArgs", childRunArgs, onetwo},
-		{"childPostArgs", childPostArgs, onetwo},
-		{"childPersPostArgs", childPersPostArgs, onetwo},
+		{"childPersInitArgs", ""},
+		{"childInitArgs", ""},
+		{"childPersPreArgs", onetwo},
+		{"childPreArgs", onetwo},
+		{"childRunArgs", onetwo},
+		{"childPostArgs", onetwo},
+		{"childPersPostArgs", onetwo},
+		{"childFinArgs", onetwo},
+		{"childPersFinArgs", onetwo},
 
 		// Test On*Run hooks
-		{"persParentPersPreArgs", persParentPersPreArgs, onetwo},
-		{"persParentPreArgs", persParentPreArgs, ""},
-		{"persParentRunArgs", persParentRunArgs, ""},
-		{"persParentPostArgs", persParentPostArgs, ""},
-		{"persParentPersPostArgs", persParentPersPostArgs, onetwo},
+		{"persParentPersInitArgs", ""},
+		{"persParentInitArgs", ""},
+		{"persParentPersPreArgs", onetwo},
+		{"persParentPreArgs", ""},
+		{"persParentRunArgs", ""},
+		{"persParentPostArgs", ""},
+		{"persParentPersPostArgs", onetwo},
+		{"persParentFinArgs", ""},
+		{"persParentPersFinArgs", onetwo},
 
-		{"persChildPersPreArgs", persChildPersPreArgs, onetwo},
-		{"persChildPreArgs", persChildPreArgs, onetwo},
-		{"persChildPreArgs2", persChildPreArgs2, onetwo + " three"},
-		{"persChildRunArgs", persChildRunArgs, onetwo},
-		{"persChildPostArgs", persChildPostArgs, onetwo},
-		{"persChildPersPostArgs", persChildPersPostArgs, onetwo},
+		{"persChildPersInitArgs", ""},
+		{"persChildInitArgs", ""},
+		{"persChildPersPreArgs", onetwo},
+		{"persChildPreArgs", onetwo},
+		{"persChildPreArgs2", onetwo + " three"},
+		{"persChildRunArgs", onetwo},
+		{"persChildPostArgs", onetwo},
+		{"persChildPersPostArgs", onetwo},
+		{"persChildFinArgs", onetwo},
+		{"persChildPersFinArgs", onetwo},
 	} {
-		if v.got != v.expected {
-			t.Errorf("Expected %q %s, got %q", v.expected, v.name, v.got)
+		got, ok := hooksArgs[v.name]
+		if !ok && v.expected != "" {
+			t.Errorf("Expected %q to be called, but it wasn't", v.name)
+			continue
+		}
+		if got != v.expected {
+			t.Errorf("Expected %q %s, got %q", v.expected, v.name, got)
 		}
 	}
 }
