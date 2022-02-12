@@ -1,4 +1,4 @@
-## Generating Fish Completions For Your cobra.Command
+## Generating Fish Completions For Your zulu.Command
 
 Please refer to [Shell Completions](shell_completions.md) for details.
 

@@ -1,4 +1,4 @@
-package cobra
+package zulu
 
 import (
 	"bytes"
@@ -353,7 +353,7 @@ func TestAliasPrefixMatching(t *testing.T) {
 	EnablePrefixMatching = false
 }
 
-// TestChildSameName checks the correct behaviour of cobra in cases,
+// TestChildSameName checks the correct behaviour of zulu in cases,
 // when an application with name "foo" and with subcommand "foo"
 // is executed with args "foo foo".
 func TestChildSameName(t *testing.T) {
@@ -381,7 +381,7 @@ func TestChildSameName(t *testing.T) {
 	}
 }
 
-// TestGrandChildSameName checks the correct behaviour of cobra in cases,
+// TestGrandChildSameName checks the correct behaviour of zulu in cases,
 // when user has a root command and a grand child
 // with the same name.
 func TestGrandChildSameName(t *testing.T) {
@@ -1930,7 +1930,7 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 }
 
 // TestUseDeprecatedFlags checks,
-// if cobra.Execute() prints a message, if a deprecated flag is used.
+// if zulu.Execute() prints a message, if a deprecated flag is used.
 // Related to https://github.com/spf13/cobra/issues/463.
 func TestUseDeprecatedFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}

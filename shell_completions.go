@@ -1,4 +1,4 @@
-package cobra
+package zulu
 
 import (
 	"github.com/spf13/pflag"

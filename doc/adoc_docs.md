@@ -1,6 +1,6 @@
-# Generating AsciiDoc Docs For Your Own cobra.Command
+# Generating AsciiDoc Docs For Your Own zulu.Command
 
-Generating AsciiDoc pages from a cobra command is incredibly easy. An example is as follows:
+Generating AsciiDoc pages from a zulu command is incredibly easy. An example is as follows:
 
 ```go
 package main
@@ -8,12 +8,12 @@ package main
 import (
 	"log"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
+	"github.com/gowarden/zulu"
+	"github.com/gowarden/zulu/doc"
 )
 
 func main() {
-	cmd := &cobra.Command{
+	cmd := &zulu.Command{
 		Use:   "test",
 		Short: "my test program",
 	}
@@ -41,7 +41,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubectl/cmd"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 
-	"github.com/spf13/cobra/doc"
+	"github.com/gowarden/zulu/doc"
 )
 
 func main() {

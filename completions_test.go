@@ -1,4 +1,4 @@
-package cobra
+package zulu
 
 import (
 	"bytes"
@@ -2578,7 +2578,7 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 	childCmd.Flags().StringP("nonPersistent", "n", "", "non-persistent flag")
 
 	// Test that when DisableFlagParsing==true, ValidArgsFunction is called to complete flag names,
-	// after Cobra tried to complete the flags it knows about.
+	// after Zulu tried to complete the flags it knows about.
 	childCmd.DisableFlagParsing = true
 	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "-")
 	if err != nil {
@@ -2599,14 +2599,14 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	// Test that when DisableFlagParsing==false, Cobra completes the flags itself and ValidArgsFunction is not called
+	// Test that when DisableFlagParsing==false, Zulu completes the flags itself and ValidArgsFunction is not called
 	childCmd.DisableFlagParsing = false
 	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	// Cobra was not told of any flags, so it returns nothing
+	// Zulu was not told of any flags, so it returns nothing
 	expected = strings.Join([]string{
 		"--persistent",
 		"-p",

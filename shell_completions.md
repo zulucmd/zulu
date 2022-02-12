@@ -1,13 +1,13 @@
 # Generating shell completions
 
-Cobra can generate shell completions for multiple shells.
+Zulu can generate shell completions for multiple shells.
 The currently supported shells are:
 - Bash
 - Zsh
 - fish
 - PowerShell
 
-Cobra will automatically provide your program with a fully functional `completion` command,
+Zulu will automatically provide your program with a fully functional `completion` command,
 similarly to how it provides the `help` command.
 
 ## Creating your own completion command
@@ -19,13 +19,13 @@ backwards-compatibility with programs that already have their own `completion` c
 If you are using the generator, you can create a completion command by running
 
 ```bash
-cobra add completion
+zulu add completion
 ```
 and then modifying the generated `cmd/completion.go` file to look something like this
 (writing the shell script to stdout allows the most flexible use):
 
 ```go
-var completionCmd = &cobra.Command{
+var completionCmd = &zulu.Command{
 	Use:   "completion [bash|zsh|fish|powershell]",
 	Short: "Generate completion script",
 	Long: fmt.Sprintf(`To load completions:
@@ -69,8 +69,8 @@ PowerShell:
 `,cmd.Root().Name()),
 	DisableFlagsInUseLine: true,
 	ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
-	Args:                  cobra.ExactValidArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Args:                  zulu.ExactValidArgs(1),
+	Run: func(cmd *zulu.Command, args []string) {
 		switch args[0] {
 		case "bash":
 			cmd.Root().GenBashCompletion(os.Stdout)
@@ -89,20 +89,20 @@ PowerShell:
 
 ## Adapting the default completion command
 
-Cobra provides a few options for the default `completion` command.  To configure such options you must set
+Zulu provides a few options for the default `completion` command.  To configure such options you must set
 the `CompletionOptions` field on the *root* command.
 
-To tell Cobra *not* to provide the default `completion` command:
+To tell Zulu *not* to provide the default `completion` command:
 ```
 rootCmd.CompletionOptions.DisableDefaultCmd = true
 ```
 
-To tell Cobra *not* to provide the user with the `--no-descriptions` flag to the completion sub-commands:
+To tell Zulu *not* to provide the user with the `--no-descriptions` flag to the completion sub-commands:
 ```
 rootCmd.CompletionOptions.DisableNoDescFlag = true
 ```
 
-To tell Cobra to completely disable descriptions for completions:
+To tell Zulu to completely disable descriptions for completions:
 ```
 rootCmd.CompletionOptions.DisableDescriptions = true
 ```
@@ -115,20 +115,20 @@ The generated completion scripts will automatically handle completing commands a
 
 ### Static completion of nouns
 
-Cobra allows you to provide a pre-defined list of completion choices for your nouns using the `ValidArgs` field.
+Zulu allows you to provide a pre-defined list of completion choices for your nouns using the `ValidArgs` field.
 For example, if you want `kubectl get [tab][tab]` to show a list of valid "nouns" you have to set them.
 Some simplified code from `kubectl get` looks like:
 
 ```go
 validArgs []string = { "pod", "node", "service", "replicationcontroller" }
 
-cmd := &cobra.Command{
+cmd := &zulu.Command{
 	Use:     "get [(-o|--output=)json|yaml|template|...] (RESOURCE [NAME] | RESOURCE/NAME ...)",
 	Short:   "Display one or many resources",
 	Long:    get_long,
 	Example: get_example,
-	Run: func(cmd *cobra.Command, args []string) {
-		cobra.CheckErr(RunGet(f, out, cmd, args))
+	Run: func(cmd *zulu.Command, args []string) {
+		zulu.CheckErr(RunGet(f, out, cmd, args))
 	},
 	ValidArgs: validArgs,
 }
@@ -148,7 +148,7 @@ If your nouns have aliases, you can define them alongside `ValidArgs` using `Arg
 ```go
 argAliases []string = { "pods", "nodes", "services", "svc", "replicationcontrollers", "rc" }
 
-cmd := &cobra.Command{
+cmd := &zulu.Command{
     ...
 	ValidArgs:  validArgs,
 	ArgAliases: argAliases
@@ -168,22 +168,22 @@ replication controllers following `rc`.
 
 ### Dynamic completion of nouns
 
-In some cases it is not possible to provide a list of completions in advance.  Instead, the list of completions must be determined at execution-time. In a similar fashion as for static completions, you can use the `ValidArgsFunction` field to provide a Go function that Cobra will execute when it needs the list of completion choices for the nouns of a command.  Note that either `ValidArgs` or `ValidArgsFunction` can be used for a single cobra command, but not both.
+In some cases it is not possible to provide a list of completions in advance.  Instead, the list of completions must be determined at execution-time. In a similar fashion as for static completions, you can use the `ValidArgsFunction` field to provide a Go function that Zulu will execute when it needs the list of completion choices for the nouns of a command.  Note that either `ValidArgs` or `ValidArgsFunction` can be used for a single zulu command, but not both.
 Simplified code from `helm status` looks like:
 
 ```go
-cmd := &cobra.Command{
+cmd := &zulu.Command{
 	Use:   "status RELEASE_NAME",
 	Short: "Display the status of the named release",
 	Long:  status_long,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(cmd *zulu.Command, args []string) {
 		RunStatus(args[0])
 	},
-	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 		if len(args) != 0 {
-			return nil, cobra.ShellCompDirectiveNoFileComp
+			return nil, zulu.ShellCompDirectiveNoFileComp
 		}
-		return getReleasesFromCluster(toComplete), cobra.ShellCompDirectiveNoFileComp
+		return getReleasesFromCluster(toComplete), zulu.ShellCompDirectiveNoFileComp
 	},
 }
 ```
@@ -195,7 +195,7 @@ $ helm status [tab][tab]
 harbor notary rook thanos
 ```
 
-You may have noticed the use of `cobra.ShellCompDirective`.  These directives are bit fields allowing to control some shell completion behaviors for your particular completion.  You can combine them with the bit-or operator such as `cobra.ShellCompDirectiveNoSpace | cobra.ShellCompDirectiveNoFileComp`
+You may have noticed the use of `zulu.ShellCompDirective`.  These directives are bit fields allowing to control some shell completion behaviors for your particular completion.  You can combine them with the bit-or operator such as `zulu.ShellCompDirectiveNoSpace | zulu.ShellCompDirectiveNoFileComp`
 ```go
 // Indicates that the shell will perform its default behavior after completions
 // have been provided (this implies none of the other directives).
@@ -233,11 +233,11 @@ ShellCompDirectiveFilterFileExt
 ShellCompDirectiveFilterDirs
 ```
 
-***Note***: When using the `ValidArgsFunction`, Cobra will call your registered function after having parsed all flags and arguments provided in the command-line.  You therefore don't need to do this parsing yourself.  For example, when a user calls `helm status --namespace my-rook-ns [tab][tab]`, Cobra will call your registered `ValidArgsFunction` after having parsed the `--namespace` flag, as it would have done when calling the `RunE` function.
+***Note***: When using the `ValidArgsFunction`, Zulu will call your registered function after having parsed all flags and arguments provided in the command-line.  You therefore don't need to do this parsing yourself.  For example, when a user calls `helm status --namespace my-rook-ns [tab][tab]`, Zulu will call your registered `ValidArgsFunction` after having parsed the `--namespace` flag, as it would have done when calling the `RunE` function.
 
 #### Debugging
 
-Cobra achieves dynamic completion through the use of a hidden command called by the completion script.  To debug your Go completion code, you can call this hidden command directly:
+Zulu achieves dynamic completion through the use of a hidden command called by the completion script.  To debug your Go completion code, you can call this hidden command directly:
 ```bash
 $ helm __complete status har<ENTER>
 harbor
@@ -254,19 +254,19 @@ thanos
 :4
 Completion ended with directive: ShellCompDirectiveNoFileComp # This is on stderr
 ```
-Calling the `__complete` command directly allows you to run the Go debugger to troubleshoot your code.  You can also add printouts to your code; Cobra provides the following functions to use for printouts in Go completion code:
+Calling the `__complete` command directly allows you to run the Go debugger to troubleshoot your code.  You can also add printouts to your code; Zulu provides the following functions to use for printouts in Go completion code:
 ```go
 // Prints to the completion script debug file (if BASH_COMP_DEBUG_FILE
 // is set to a file path) and optionally prints to stderr.
-cobra.CompDebug(msg string, printToStdErr bool) {
-cobra.CompDebugln(msg string, printToStdErr bool)
+zulu.CompDebug(msg string, printToStdErr bool) {
+zulu.CompDebugln(msg string, printToStdErr bool)
 
 // Prints to the completion script debug file (if BASH_COMP_DEBUG_FILE
 // is set to a file path) and to stderr.
-cobra.CompError(msg string)
-cobra.CompErrorln(msg string)
+zulu.CompError(msg string)
+zulu.CompErrorln(msg string)
 ```
-***Important:*** You should **not** leave traces that print directly to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the cobra-provided debugging traces functions mentioned above.
+***Important:*** You should **not** leave traces that print directly to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the zulu-provided debugging traces functions mentioned above.
 
 ## Completions for flags
 
@@ -288,12 +288,12 @@ $ kubectl exec [tab][tab]
 
 ### Specify dynamic flag completion
 
-As for nouns, Cobra provides a way of defining dynamic completion of flags.  To provide a Go function that Cobra will execute when it needs the list of completion choices for a flag, you must register the function using the `command.RegisterFlagCompletionFunc()` function.
+As for nouns, Zulu provides a way of defining dynamic completion of flags.  To provide a Go function that Zulu will execute when it needs the list of completion choices for a flag, you must register the function using the `command.RegisterFlagCompletionFunc()` function.
 
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"json", "table", "yaml"}, cobra.ShellCompDirectiveDefault
+cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	return []string{"json", "table", "yaml"}, zulu.ShellCompDirectiveDefault
 })
 ```
 Notice that calling `RegisterFlagCompletionFunc()` is done through the `command` with which the flag is associated.  In our example this dynamic completion will give results like so:
@@ -314,7 +314,7 @@ yaml
 :4
 Completion ended with directive: ShellCompDirectiveNoFileComp # This is on stderr
 ```
-***Important:*** You should **not** leave traces that print to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the cobra-provided debugging traces functions mentioned further above.
+***Important:*** You should **not** leave traces that print to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the zulu-provided debugging traces functions mentioned further above.
 
 ### Specify valid filename extensions for flags that take a filename
 
@@ -326,7 +326,7 @@ cmd.MarkFlagFilename(flagName, "yaml", "json")
 or
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 	return []string{"yaml", "json"}, ShellCompDirectiveFilterFileExt})
 ```
 
@@ -340,22 +340,22 @@ cmd.MarkFlagDirname(flagName)
 or
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return nil, cobra.ShellCompDirectiveFilterDirs
+cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	return nil, zulu.ShellCompDirectiveFilterDirs
 })
 ```
 To limit completions of flag values to directory names *within another directory* you can use a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterDirs` like so:
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"themes"}, cobra.ShellCompDirectiveFilterDirs
+cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	return []string{"themes"}, zulu.ShellCompDirectiveFilterDirs
 })
 ```
 ### Descriptions for completions
 
-Cobra provides support for completion descriptions.  Such descriptions are supported for each shell
+Zulu provides support for completion descriptions.  Such descriptions are supported for each shell
 (however, for bash, it is only available in the [completion V2 version](#bash-completion-v2)).
-For commands and flags, Cobra will provide the descriptions automatically, based on usage information.
+For commands and flags, Zulu will provide the descriptions automatically, based on usage information.
 For example, using zsh:
 ```
 $ helm s[tab]
@@ -369,10 +369,10 @@ $ helm s[tab]
 search  (search for a keyword in charts)  show  (show information of a chart)  status  (displays the status of the named release)
 ```
 
-Cobra allows you to add descriptions to your own completions.  Simply add the description text after each completion, following a `\t` separator.  This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and `RegisterFlagCompletionFunc()`.  For example:
+Zulu allows you to add descriptions to your own completions.  Simply add the description text after each completion, following a `\t` separator.  This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and `RegisterFlagCompletionFunc()`.  For example:
 ```go
-ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	return []string{"harbor\tAn image registry", "thanos\tLong-term metrics"}, cobra.ShellCompDirectiveNoFileComp
+ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	return []string{"harbor\tAn image registry", "thanos\tLong-term metrics"}, zulu.ShellCompDirectiveNoFileComp
 }}
 ```
 or
@@ -383,7 +383,7 @@ ValidArgs: []string{"bash\tCompletions for bash", "zsh\tCompletions for zsh"}
 
 ### Dependencies
 
-The bash completion script generated by Cobra requires the `bash_completion` package. You should update the help text of your completion command to show how to install the `bash_completion` package ([Kubectl docs](https://kubernetes.io/docs/tasks/tools/install-kubectl/#enabling-shell-autocompletion))
+The bash completion script generated by Zulu requires the `bash_completion` package. You should update the help text of your completion command to show how to install the `bash_completion` package ([Kubectl docs](https://kubernetes.io/docs/tasks/tools/install-kubectl/#enabling-shell-autocompletion))
 
 ### Aliases
 
@@ -401,12 +401,12 @@ completion     firstcommand   secondcommand
 ```
 ### Bash legacy dynamic completions
 
-For backward compatibility, Cobra still supports its bash legacy dynamic completion solution.
+For backward compatibility, Zulu still supports its bash legacy dynamic completion solution.
 Please refer to [Bash Completions](bash_completions.md) for details.
 
 ### Bash completion V2
 
-Cobra provides two versions for bash completion.  The original bash completion (which started it all!) can be used by calling
+Zulu provides two versions for bash completion.  The original bash completion (which started it all!) can be used by calling
 `GenBashCompletion()` or `GenBashCompletionFile()`.
 
 A new V2 bash completion version is also available.  This version can be used by calling `GenBashCompletionV2()` or
@@ -420,7 +420,7 @@ completion V2 solution which provides the following extra features:
 - Streamlined user experience thanks to a completion behavior aligned with the other shells 
 
 `Bash` completion V2 supports descriptions for completions. When calling `GenBashCompletionV2()` or `GenBashCompletionFileV2()`
-you must provide these functions with a parameter indicating if the completions should be annotated with a description; Cobra
+you must provide these functions with a parameter indicating if the completions should be annotated with a description; Zulu
 will provide the description automatically based on usage information.  You can choose to make this option configurable by
 your users.
 
@@ -434,15 +434,15 @@ show    (show information of a chart)
 $ helm s[tab][tab]
 search  show  status
 ```
-**Note**: Cobra's default `completion` command uses bash completion V2.  If for some reason you need to use bash completion V1, you will need to implement your own `completion` command. 
+**Note**: Zulu's default `completion` command uses bash completion V2.  If for some reason you need to use bash completion V1, you will need to implement your own `completion` command. 
 ## Zsh completions
 
-Cobra supports native zsh completion generated from the root `cobra.Command`.
+Zulu supports native zsh completion generated from the root `zulu.Command`.
 The generated completion script should be put somewhere in your `$fpath` and be named
 `_<yourProgram>`.  You will need to start a new shell for the completions to become available.
 
-Zsh supports descriptions for completions. Cobra will provide the description automatically,
-based on usage information. Cobra provides a way to completely disable such descriptions by
+Zsh supports descriptions for completions. Zulu will provide the description automatically,
+based on usage information. Zulu provides a way to completely disable such descriptions by
 using `GenZshCompletionNoDesc()` or `GenZshCompletionFileNoDesc()`. You can choose to make
 this a configurable option to your users.
 ```
@@ -467,12 +467,12 @@ search  show  status
 
 ### Zsh completions standardization
 
-Cobra 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backward-compatible, some small changes in behavior were introduced.
+Zulu 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backward-compatible, some small changes in behavior were introduced.
 Please refer to [Zsh Completions](zsh_completions.md) for details.
 
 ## fish completions
 
-Cobra supports native fish completions generated from the root `cobra.Command`.  You can use the `command.GenFishCompletion()` or `command.GenFishCompletionFile()` functions. You must provide these functions with a parameter indicating if the completions should be annotated with a description; Cobra will provide the description automatically based on usage information.  You can choose to make this option configurable by your users.
+Zulu supports native fish completions generated from the root `zulu.Command`.  You can use the `command.GenFishCompletion()` or `command.GenFishCompletionFile()` functions. You must provide these functions with a parameter indicating if the completions should be annotated with a description; Zulu will provide the description automatically based on usage information.  You can choose to make this option configurable by your users.
 ```
 # With descriptions
 $ helm s[tab]
@@ -502,7 +502,7 @@ search  show  status
 
 ## PowerShell completions
 
-Cobra supports native PowerShell completions generated from the root `cobra.Command`. You can use the `command.GenPowerShellCompletion()` or `command.GenPowerShellCompletionFile()` functions. To include descriptions use `command.GenPowerShellCompletionWithDesc()` and `command.GenPowerShellCompletionFileWithDesc()`. Cobra will provide the description automatically based on usage information. You can choose to make this option configurable by your users.
+Zulu supports native PowerShell completions generated from the root `zulu.Command`. You can use the `command.GenPowerShellCompletion()` or `command.GenPowerShellCompletionFile()` functions. To include descriptions use `command.GenPowerShellCompletionWithDesc()` and `command.GenPowerShellCompletionFileWithDesc()`. Zulu will provide the description automatically based on usage information. You can choose to make this option configurable by your users.
 
 The script is designed to support all three PowerShell completion modes:
 

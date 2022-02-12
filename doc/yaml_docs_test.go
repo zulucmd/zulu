@@ -2,12 +2,11 @@ package doc
 
 import (
 	"bytes"
+	"github.com/gowarden/zulu"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/spf13/cobra"
 )
 
 func TestGenYamlDoc(t *testing.T) {
@@ -40,7 +39,7 @@ func TestGenYamlNoTag(t *testing.T) {
 }
 
 func TestGenYamlTree(t *testing.T) {
-	c := &cobra.Command{Use: "do [OPTIONS] arg1 arg2"}
+	c := &zulu.Command{Use: "do [OPTIONS] arg1 arg2"}
 
 	tmpdir, err := ioutil.TempDir("", "test-gen-yaml-tree")
 	if err != nil {

@@ -1,4 +1,4 @@
-package cobra
+package zulu
 
 import (
 	"fmt"
@@ -85,9 +85,9 @@ const (
 
 // CompletionOptions are the options to control shell completion
 type CompletionOptions struct {
-	// DisableDefaultCmd prevents Cobra from creating a default 'completion' command
+	// DisableDefaultCmd prevents Zulu from creating a default 'completion' command
 	DisableDefaultCmd bool
-	// DisableNoDescFlag prevents Cobra from creating the '--no-descriptions' flag
+	// DisableNoDescFlag prevents Zulu from creating the '--no-descriptions' flag
 	// for shells that support completion descriptions
 	DisableNoDescFlag bool
 	// DisableDescriptions turns off all completion descriptions for shells
@@ -216,7 +216,7 @@ func (c *Command) initCompleteCmd(args []string) {
 		// Only create this special command if it is actually being called.
 		// This reduces possible side-effects of creating such a command;
 		// for example, having this command would cause problems to a
-		// cobra program that only consists of the root command, since this
+		// zulu program that only consists of the root command, since this
 		// command would cause the root command to suddenly have a subcommand.
 		c.RemoveCommand(completeCmd)
 	}
@@ -360,9 +360,9 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		}
 
 		if !finalCmd.DisableFlagParsing {
-			// If DisableFlagParsing==false, we have completed the flags as known by Cobra;
+			// If DisableFlagParsing==false, we have completed the flags as known by Zulu;
 			// we can return what we found.
-			// If DisableFlagParsing==true, Cobra may not be aware of all flags, so we
+			// If DisableFlagParsing==true, Zulu may not be aware of all flags, so we
 			// let the logic continue to see if ValidArgsFunction needs to be called.
 			return finalCmd, completions, directive, nil
 		}

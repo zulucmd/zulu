@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
+	"github.com/gowarden/zulu"
+	"github.com/gowarden/zulu/doc"
 )
 
 func ExampleGenManTree() {
-	cmd := &cobra.Command{
+	cmd := &zulu.Command{
 		Use:   "test",
 		Short: "my test program",
 	}
@@ -17,11 +17,11 @@ func ExampleGenManTree() {
 		Title:   "MINE",
 		Section: "3",
 	}
-	cobra.CheckErr(doc.GenManTree(cmd, header, "/tmp"))
+	zulu.CheckErr(doc.GenManTree(cmd, header, "/tmp"))
 }
 
 func ExampleGenMan() {
-	cmd := &cobra.Command{
+	cmd := &zulu.Command{
 		Use:   "test",
 		Short: "my test program",
 	}
@@ -30,6 +30,6 @@ func ExampleGenMan() {
 		Section: "3",
 	}
 	out := new(bytes.Buffer)
-	cobra.CheckErr(doc.GenMan(cmd, header, out))
+	zulu.CheckErr(doc.GenMan(cmd, header, out))
 	fmt.Print(out.String())
 }

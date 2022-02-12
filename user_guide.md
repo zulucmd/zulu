@@ -1,6 +1,6 @@
 # User Guide
 
-While you are welcome to provide your own organization, typically a Cobra-based
+While you are welcome to provide your own organization, typically a Zulu-based
 application will follow the following organizational structure:
 
 ```
@@ -13,7 +13,7 @@ application will follow the following organizational structure:
       main.go
 ```
 
-In a Cobra app, typically the main.go file is very bare. It serves one purpose: initializing Cobra.
+In a Zulu app, typically the main.go file is very bare. It serves one purpose: initializing Zulu.
 
 ```go
 package main
@@ -27,32 +27,25 @@ func main() {
 }
 ```
 
-## Using the Cobra Generator
+## Using the Zulu Library
 
-Cobra provides its own program that will create your application and add any
-commands you want. It's the easiest way to incorporate Cobra into your application.
-
-For complete details on using the Cobra generator, please read [The Cobra Generator README](https://github.com/spf13/cobra/blob/master/cobra/README.md)
-
-## Using the Cobra Library
-
-To manually implement Cobra you need to create a bare main.go file and a rootCmd file.
+To manually implement Zulu you need to create a bare main.go file and a rootCmd file.
 You will optionally provide additional commands as you see fit.
 
 ### Create rootCmd
 
-Cobra doesn't require any special constructors. Simply create your commands.
+Zulu doesn't require any special constructors. Simply create your commands.
 
 Ideally you place this in app/cmd/root.go:
 
 ```go
-var rootCmd = &cobra.Command{
+var rootCmd = &zulu.Command{
   Use:   "hugo",
   Short: "Hugo is a very fast static site generator",
   Long: `A Fast and Flexible Static Site Generator built with
                 love by spf13 and friends in Go.
                 Complete documentation is available at https://hugo.spf13.com`,
-  Run: func(cmd *cobra.Command, args []string) {
+  Run: func(cmd *zulu.Command, args []string) {
     // Do Stuff Here
   },
 }
@@ -76,7 +69,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
+	"github.com/gowarden/zulu"
 	"github.com/spf13/viper"
 )
 
@@ -85,12 +78,12 @@ var (
 	cfgFile     string
 	userLicense string
 
-	rootCmd = &cobra.Command{
-		Use:   "cobra",
-		Short: "A generator for Cobra based Applications",
-		Long: `Cobra is a CLI library for Go that empowers applications.
+	rootCmd = &zulu.Command{
+		Use:   "zulu",
+		Short: "A generator for Zulu based Applications",
+		Long: `Zulu is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+to quickly create a Zulu application.`,
 	}
 )
 
@@ -100,9 +93,9 @@ func Execute() error {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	zulu.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.zulu.yaml)")
 	rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "author name for copyright attribution")
 	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "name of license for the project")
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
@@ -122,12 +115,12 @@ func initConfig() {
 	} else {
 		// Find home directory.
 		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
+		zulu.CheckErr(err)
 
-		// Search config in home directory with name ".cobra" (without extension).
+		// Search config in home directory with name ".zulu" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".cobra")
+		viper.SetConfigName(".zulu")
 	}
 
 	viper.AutomaticEnv()
@@ -143,7 +136,7 @@ func initConfig() {
 With the root command you need to have your main function execute it.
 Execute should be run on the root for clarity, though it can be called on any command.
 
-In a Cobra app, typically the main.go file is very bare. It serves one purpose: to initialize Cobra.
+In a Zulu app, typically the main.go file is very bare. It serves one purpose: to initialize Zulu.
 
 ```go
 package main
@@ -171,18 +164,18 @@ package cmd
 import (
   "fmt"
 
-  "github.com/spf13/cobra"
+  "github.com/gowarden/zulu"
 )
 
 func init() {
   rootCmd.AddCommand(versionCmd)
 }
 
-var versionCmd = &cobra.Command{
+var versionCmd = &zulu.Command{
   Use:   "version",
   Short: "Print the version number of Hugo",
   Long:  `All software has versions. This is Hugo's`,
-  Run: func(cmd *cobra.Command, args []string) {
+  Run: func(cmd *zulu.Command, args []string) {
     fmt.Println("Hugo Static Site Generator v0.9 -- HEAD")
   },
 }
@@ -198,17 +191,17 @@ package cmd
 import (
   "fmt"
 
-  "github.com/spf13/cobra"
+  "github.com/gowarden/zulu"
 )
 
 func init() {
   rootCmd.AddCommand(tryCmd)
 }
 
-var tryCmd = &cobra.Command{
+var tryCmd = &zulu.Command{
   Use:   "try",
   Short: "Try and possibly fail at something",
-  RunE: func(cmd *cobra.Command, args []string) error {
+  RunE: func(cmd *zulu.Command, args []string) error {
     if err := someFunc(); err != nil {
 	return err
     }
@@ -256,12 +249,12 @@ localCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to rea
 
 ### Local Flag on Parent Commands
 
-By default, Cobra only parses local flags on the target command, and any local flags on
-parent commands are ignored. By enabling `Command.TraverseChildren`, Cobra will
+By default, Zulu only parses local flags on the target command, and any local flags on
+parent commands are ignored. By enabling `Command.TraverseChildren`, Zulu will
 parse local flags on each command before executing the target command.
 
 ```go
-command := cobra.Command{
+command := zulu.Command{
   Use: "print [OPTIONS] [COMMANDS]",
   TraverseChildren: true,
 }
@@ -322,15 +315,15 @@ This validation is executed implicitly before the validator defined in `Args`.
 > NOTE: `OnlyValidArgs` and `ExactValidArgs(int)` are now deprecated.
 > `ArbitraryArgs` and `ExactArgs(int)` provide the same functionality now.
 
-Moreover, it is possible to set any custom validator that satisfies `func(cmd *cobra.Command, args []string) error`.
+Moreover, it is possible to set any custom validator that satisfies `func(cmd *zulu.Command, args []string) error`.
 For example:
 
 ```go
-var cmd = &cobra.Command{
+var cmd = &zulu.Command{
   Short: "hello",
-  Args: func(cmd *cobra.Command, args []string) error {
-    // Optionally run one of the validators provided by cobra
-    if err := cobra.MinimumNArgs(1)(cmd, args); err != nil {
+  Args: func(cmd *zulu.Command, args []string) error {
+    // Optionally run one of the validators provided by zulu
+    if err := zulu.MinimumNArgs(1)(cmd, args); err != nil {
         return err
     }
     // Run the custom validation logic
@@ -339,7 +332,7 @@ var cmd = &cobra.Command{
     }
     return fmt.Errorf("invalid color specified: %s", args[0])
   },
-  Run: func(cmd *cobra.Command, args []string) {
+  Run: func(cmd *zulu.Command, args []string) {
     fmt.Println("Hello, World!")
   },
 }
@@ -363,41 +356,41 @@ import (
   "fmt"
   "strings"
 
-  "github.com/spf13/cobra"
+  "github.com/gowarden/zulu"
 )
 
 func main() {
   var echoTimes int
 
-  var cmdPrint = &cobra.Command{
+  var cmdPrint = &zulu.Command{
     Use:   "print [string to print]",
     Short: "Print anything to the screen",
     Long: `print is for printing anything back to the screen.
 For many years people have printed back to the screen.`,
-    Args: cobra.MinimumNArgs(1),
-    Run: func(cmd *cobra.Command, args []string) {
+    Args: zulu.MinimumNArgs(1),
+    Run: func(cmd *zulu.Command, args []string) {
       fmt.Println("Print: " + strings.Join(args, " "))
     },
   }
 
-  var cmdEcho = &cobra.Command{
+  var cmdEcho = &zulu.Command{
     Use:   "echo [string to echo]",
     Short: "Echo anything to the screen",
     Long: `echo is for echoing anything back.
 Echo works a lot like print, except it has a child command.`,
-    Args: cobra.MinimumNArgs(1),
-    Run: func(cmd *cobra.Command, args []string) {
+    Args: zulu.MinimumNArgs(1),
+    Run: func(cmd *zulu.Command, args []string) {
       fmt.Println("Echo: " + strings.Join(args, " "))
     },
   }
 
-  var cmdTimes = &cobra.Command{
+  var cmdTimes = &zulu.Command{
     Use:   "times [string to echo]",
     Short: "Echo anything to the screen more times",
     Long: `echo things multiple times back to the user by providing
 a count and a string.`,
-    Args: cobra.MinimumNArgs(1),
-    Run: func(cmd *cobra.Command, args []string) {
+    Args: zulu.MinimumNArgs(1),
+    Run: func(cmd *zulu.Command, args []string) {
       for i := 0; i < echoTimes; i++ {
         fmt.Println("Echo: " + strings.Join(args, " "))
       }
@@ -406,7 +399,7 @@ a count and a string.`,
 
   cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
 
-  var rootCmd = &cobra.Command{Use: "app"}
+  var rootCmd = &zulu.Command{Use: "app"}
   rootCmd.AddCommand(cmdPrint, cmdEcho)
   cmdEcho.AddCommand(cmdTimes)
   rootCmd.Execute()
@@ -417,39 +410,39 @@ For a more complete example of a larger application, please checkout [Hugo](http
 
 ## Help Command
 
-Cobra automatically adds a help command to your application when you have subcommands.
+Zulu automatically adds a help command to your application when you have subcommands.
 This will be called when a user runs 'app help'. Additionally, help will also
 support all other commands as input. Say, for instance, you have a command called
-'create' without any additional configuration; Cobra will work when 'app help
+'create' without any additional configuration; Zulu will work when 'app help
 create' is called.  Every command will automatically have the '--help' flag added.
 
 ### Example
 
-The following output is automatically generated by Cobra. Nothing beyond the
+The following output is automatically generated by Zulu. Nothing beyond the
 command and flag definitions are needed.
 
-    $ cobra help
+    $ zulu help
 
-    Cobra is a CLI library for Go that empowers applications.
+    Zulu is a CLI library for Go that empowers applications.
     This application is a tool to generate the needed files
-    to quickly create a Cobra application.
+    to quickly create a Zulu application.
 
     Usage:
-      cobra [command]
+      zulu [command]
 
     Available Commands:
-      add         Add a command to a Cobra Application
+      add         Add a command to a Zulu Application
       help        Help about any command
-      init        Initialize a Cobra Application
+      init        Initialize a Zulu Application
 
     Flags:
       -a, --author string    author name for copyright attribution (default "YOUR NAME")
-          --config string    config file (default is $HOME/.cobra.yaml)
-      -h, --help             help for cobra
+          --config string    config file (default is $HOME/.zulu.yaml)
+      -h, --help             help for zulu
       -l, --license string   name of license for the project
           --viper            use Viper for configuration (default true)
 
-    Use "cobra [command] --help" for more information about a command.
+    Use "zulu [command] --help" for more information about a command.
 
 
 Help is just a command like any other. There is no special logic or behavior
@@ -457,7 +450,7 @@ around it. In fact, you can provide your own if you want.
 
 ### Grouping commands in help
 
-Cobra supports grouping of available commands. Groups can either be explicitly defined by `AddGroup` and set by
+Zulu supports grouping of available commands. Groups can either be explicitly defined by `AddGroup` and set by
 the `Group` element of a subcommand. If Groups are not explicitly defined they are implicitly defined.
 
 ### Defining your own help
@@ -475,34 +468,34 @@ The latter two will also apply to any children commands.
 
 ## Usage Message
 
-When the user provides an invalid flag or invalid command, Cobra responds by
+When the user provides an invalid flag or invalid command, Zulu responds by
 showing the user the 'usage'.
 
 ### Example
 You may recognize this from the help above. That's because the default help
 embeds the usage as part of its output.
 
-    $ cobra --invalid
+    $ zulu --invalid
     Error: unknown flag: --invalid
     Usage:
-      cobra [command]
+      zulu [command]
 
     Available Commands:
-      add         Add a command to a Cobra Application
+      add         Add a command to a Zulu Application
       help        Help about any command
-      init        Initialize a Cobra Application
+      init        Initialize a Zulu Application
 
     Flags:
       -a, --author string    author name for copyright attribution (default "YOUR NAME")
-          --config string    config file (default is $HOME/.cobra.yaml)
-      -h, --help             help for cobra
+          --config string    config file (default is $HOME/.zulu.yaml)
+      -h, --help             help for zulu
       -l, --license string   name of license for the project
           --viper            use Viper for configuration (default true)
 
-    Use "cobra [command] --help" for more information about a command.
+    Use "zulu [command] --help" for more information about a command.
 
 ### Defining your own usage
-You can provide your own usage function or template for Cobra to use.
+You can provide your own usage function or template for Zulu to use.
 Like help, the function and template are overridable through public methods:
 
 ```go
@@ -512,7 +505,7 @@ cmd.SetUsageTemplate(s string)
 
 ## Version Flag
 
-Cobra adds a top-level '--version' flag if the Version field is set on the root command.
+Zulu adds a top-level '--version' flag if the Version field is set on the root command.
 Running an application with the '--version' flag will print the version to stdout using
 the version template. The template can be customized using the
 `cmd.SetVersionTemplate(s string)` function.
@@ -535,44 +528,44 @@ package main
 import (
   "fmt"
 
-  "github.com/spf13/cobra"
+  "github.com/gowarden/zulu"
 )
 
 func main() {
 
-  var rootCmd = &cobra.Command{
+  var rootCmd = &zulu.Command{
     Use:   "root [sub]",
     Short: "My root command",
-    PersistentPreRun: func(cmd *cobra.Command, args []string) {
+    PersistentPreRun: func(cmd *zulu.Command, args []string) {
       fmt.Printf("Inside rootCmd PersistentPreRun with args: %v\n", args)
     },
-    PreRun: func(cmd *cobra.Command, args []string) {
+    PreRun: func(cmd *zulu.Command, args []string) {
       fmt.Printf("Inside rootCmd PreRun with args: %v\n", args)
     },
-    Run: func(cmd *cobra.Command, args []string) {
+    Run: func(cmd *zulu.Command, args []string) {
       fmt.Printf("Inside rootCmd Run with args: %v\n", args)
     },
-    PostRun: func(cmd *cobra.Command, args []string) {
+    PostRun: func(cmd *zulu.Command, args []string) {
       fmt.Printf("Inside rootCmd PostRun with args: %v\n", args)
     },
-    PersistentPostRun: func(cmd *cobra.Command, args []string) {
+    PersistentPostRun: func(cmd *zulu.Command, args []string) {
       fmt.Printf("Inside rootCmd PersistentPostRun with args: %v\n", args)
     },
   }
 
-  var subCmd = &cobra.Command{
+  var subCmd = &zulu.Command{
     Use:   "sub [no options!]",
     Short: "My subcommand",
-    PreRun: func(cmd *cobra.Command, args []string) {
+    PreRun: func(cmd *zulu.Command, args []string) {
       fmt.Printf("Inside subCmd PreRun with args: %v\n", args)
     },
-    Run: func(cmd *cobra.Command, args []string) {
+    Run: func(cmd *zulu.Command, args []string) {
       fmt.Printf("Inside subCmd Run with args: %v\n", args)
     },
-    PostRun: func(cmd *cobra.Command, args []string) {
+    PostRun: func(cmd *zulu.Command, args []string) {
       fmt.Printf("Inside subCmd PostRun with args: %v\n", args)
     },
-    PersistentPostRun: func(cmd *cobra.Command, args []string) {
+    PersistentPostRun: func(cmd *zulu.Command, args []string) {
       fmt.Printf("Inside subCmd PersistentPostRun with args: %v\n", args)
     },
   }
@@ -604,7 +597,7 @@ Inside subCmd PersistentPostRun with args: [arg1 arg2]
 
 ## Suggestions when "unknown command" happens
 
-Cobra will print automatic suggestions when "unknown command" errors happen. This allows Cobra to behave similarly to the `git` command when a typo happens. For example:
+Zulu will print automatic suggestions when "unknown command" errors happen. This allows Zulu to behave similarly to the `git` command when a typo happens. For example:
 
 ```
 $ hugo srever
@@ -644,8 +637,8 @@ Run 'kubectl help' for usage.
 
 ## Generating documentation for your command
 
-Cobra can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
+Zulu can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
 
 ## Generating shell completions
 
-Cobra can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
+Zulu can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).

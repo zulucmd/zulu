@@ -1,4 +1,4 @@
-# Cobra Changelog
+# Zulu Changelog
 
 ## v1.1.3
 

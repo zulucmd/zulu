@@ -1,6 +1,6 @@
-# Contributing to Cobra
+# Contributing to Zulu
 
-Thank you so much for contributing to Cobra. We appreciate your time and help.
+Thank you so much for contributing to Zulu. We appreciate your time and help.
 Here are some guidelines to help you get started.
 
 ## Code of Conduct
@@ -10,7 +10,7 @@ others who are seeking help. Harassment of any kind will not be tolerated.
 
 ## Questions
 
-If you have questions regarding Cobra, feel free to ask it in the community
+If you have questions regarding Zulu, feel free to ask it in the community
 [#cobra Slack channel][cobra-slack]
 
 ## Filing a bug or feature
@@ -19,7 +19,7 @@ If you have questions regarding Cobra, feel free to ask it in the community
    similar one was already opened. If there is one already opened, feel free
    to comment on it.
 1. If you believe you've found a bug, please provide detailed steps of
-   reproduction, the version of Cobra and anything else you believe will be
+   reproduction, the version of Zulu and anything else you believe will be
    useful to help troubleshoot it (e.g. OS environment, environment variables,
    etc...). Also state the current behavior vs. the expected behavior.
 1. If you'd like to see a feature or an enhancement please open an issue with
@@ -38,7 +38,7 @@ If you have questions regarding Cobra, feel free to ask it in the community
 ### Quick steps to contribute
 
 1. Fork the project.
-1. Download your fork to your PC (`git clone https://github.com/your_username/cobra && cd cobra`)
+1. Download your fork to your PC (`git clone https://github.com/your_username/zulu && cd zulu`)
 1. Create your feature branch (`git checkout -b my-new-feature`)
 1. Make changes and run tests (`make test`)
 1. Add them to staging (`git add .`)

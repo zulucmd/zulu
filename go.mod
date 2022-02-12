@@ -1,4 +1,4 @@
-module github.com/spf13/cobra
+module github.com/gowarden/zulu
 
 go 1.15
 

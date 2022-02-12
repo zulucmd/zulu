@@ -1,4 +1,4 @@
-package cobra
+package zulu
 
 import (
 	"bytes"
@@ -105,7 +105,7 @@ func TestBashCompletions(t *testing.T) {
 		Aliases: []string{"say"},
 		Short:   "Echo anything to the screen",
 		Long:    "an utterly useless command for testing.",
-		Example: "Just run cobra-test echo",
+		Example: "Just run zulu-test echo",
 		Run:     emptyRun,
 	}
 

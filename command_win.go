@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package cobra
+package zulu
 
 import (
 	"fmt"

@@ -3,7 +3,7 @@ package doc
 import "github.com/spf13/afero"
 
 // This can be used by any code in current package that need to access filesystem
-// It helps softwares using cobra's documentation generation to have better tests
+// It helps softwares using zulu's documentation generation to have better tests
 var docFs *afero.Afero
 
 func init() {

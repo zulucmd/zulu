@@ -1,10 +1,10 @@
-## Generating Zsh Completion For Your cobra.Command
+## Generating Zsh Completion For Your zulu.Command
 
 Please refer to [Shell Completions](shell_completions.md) for details.
 
 ## Zsh completions standardization
 
-Cobra 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backwards-compatible, some small changes in behavior were introduced.
+Zulu 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backwards-compatible, some small changes in behavior were introduced.
 
 ### Deprecation summary
 

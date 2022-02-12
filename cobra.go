@@ -14,7 +14,7 @@
 // Commands similar to git, go tools and other modern CLI tools
 // inspired by go, go-Commander, gh and subcommand
 
-package cobra
+package zulu
 
 import (
 	"fmt"
@@ -76,7 +76,7 @@ func trimRightSpace(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
 }
 
-// FIXME appendIfNotPresent is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of cobra.
+// FIXME appendIfNotPresent is unused by cobra and should be removed in a version 2. It exists only for compatibility with users of zulu.
 
 // appendIfNotPresent will append stringToAppend to the end of s, but only if it's not yet present in s.
 func appendIfNotPresent(s, stringToAppend string) string {
