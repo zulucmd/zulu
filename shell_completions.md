@@ -322,27 +322,20 @@ complete -o default -F __start_origcommand aliasname
 $ aliasname <tab><tab>
 completion     firstcommand   secondcommand
 ```
-### Bash legacy dynamic completions
-
-For backward compatibility, Zulu still supports its bash legacy dynamic completion solution.
-Please refer to [Bash Completions](bash_completions.md) for details.
-
-### Bash completion V2
+### Bash completion
 
 Zulu provides two versions for bash completion.  The original bash completion (which started it all!) can be used by calling
 `GenBashCompletion()` or `GenBashCompletionFile()`.
 
-A new V2 bash completion version is also available.  This version can be used by calling `GenBashCompletionV2()` or
-`GenBashCompletionFileV2()`.  The V2 version does **not** support the legacy dynamic completion
-(see [Bash Completions](bash_completions.md)) but instead works only with the Go dynamic completion
-solution described in this document.
-Unless your program already uses the legacy dynamic completion solution, it is recommended that you use the bash
-completion V2 solution which provides the following extra features:
-- Supports completion descriptions (like the other shells)
-- Small completion script of less than 300 lines (v1 generates scripts of thousands of lines; `kubectl` for example has a bash v1 completion script of over 13K lines)
-- Streamlined user experience thanks to a completion behavior aligned with the other shells 
+Bash completion is also available.  This can be used by calling `GenBashCompletion()` or
+`GenBashCompletionFile()`.
 
-`Bash` completion V2 supports descriptions for completions. When calling `GenBashCompletionV2()` or `GenBashCompletionFileV2()`
+Bash completions provides the following features:
+- Supports completion descriptions (like the other shells).
+- Small completion script of less than 300 lines.
+- Streamlined user experience thanks to a completion behavior aligned with the other shells.
+
+`Bash` completion supports descriptions for completions. When calling `GenBashCompletion()` or `GenBashCompletionFile()`
 you must provide these functions with a parameter indicating if the completions should be annotated with a description; Zulu
 will provide the description automatically based on usage information.  You can choose to make this option configurable by
 your users.
@@ -357,7 +350,7 @@ show    (show information of a chart)
 $ helm s[tab][tab]
 search  show  status
 ```
-**Note**: Zulu's default `completion` command uses bash completion V2.  If for some reason you need to use bash completion V1, you will need to implement your own `completion` command. 
+
 ## Zsh completions
 
 Zulu supports native zsh completion generated from the root `zulu.Command`.
@@ -381,13 +374,6 @@ search  show  status
 ```
 *Note*: Because of backward-compatibility requirements, we were forced to have a different API to disable completion descriptions between `zsh` and `fish`.
 
-### Limitations
-
-* Custom completions implemented in Bash scripting (legacy) are not supported and will be ignored for `zsh` (including the use of the `BashCompCustom` flag annotation).
-  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`, `powershell`).
-* The function `MarkFlagCustom()` is not supported and will be ignored for `zsh`.
-  * You should instead use `RegisterFlagCompletionFunc()`.
-
 ### Zsh completions standardization
 
 Zulu 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backward-compatible, some small changes in behavior were introduced.
@@ -409,10 +395,6 @@ search  show  status
 
 ### Limitations
 
-* Custom completions implemented in bash scripting (legacy) are not supported and will be ignored for `fish` (including the use of the `BashCompCustom` flag annotation).
-  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`, `powershell`).
-* The function `MarkFlagCustom()` is not supported and will be ignored for `fish`.
-  * You should instead use `RegisterFlagCompletionFunc()`.
 * The following flag completion annotations are not supported and will be ignored for `fish`:
   * `BashCompFilenameExt` (filtering by file extension)
   * `BashCompSubdirsInDir` (filtering by directory)
@@ -455,10 +437,6 @@ search  show  status
 
 ### Limitations
 
-* Custom completions implemented in bash scripting (legacy) are not supported and will be ignored for `powershell` (including the use of the `BashCompCustom` flag annotation).
-  * You should instead use `ValidArgsFunction` and `RegisterFlagCompletionFunc()` which are portable to the different shells (`bash`, `zsh`, `fish`, `powershell`).
-* The function `MarkFlagCustom()` is not supported and will be ignored for `powershell`.
-  * You should instead use `RegisterFlagCompletionFunc()`.
 * The following flag completion annotations are not supported and will be ignored for `powershell`:
   * `BashCompFilenameExt` (filtering by file extension)
   * `BashCompSubdirsInDir` (filtering by directory)

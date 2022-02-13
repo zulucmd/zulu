@@ -1472,53 +1472,6 @@ func TestValidArgsFuncAliases(t *testing.T) {
 	}
 }
 
-func TestValidArgsFuncInBashScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
-	child := &Command{
-		Use:               "child",
-		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
-	}
-	rootCmd.AddCommand(child)
-
-	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenBashCompletion(buf))
-	output := buf.String()
-
-	check(t, output, "has_completion_function=1")
-}
-
-func TestNoValidArgsFuncInBashScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
-	child := &Command{
-		Use: "child",
-		Run: emptyRun,
-	}
-	rootCmd.AddCommand(child)
-
-	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenBashCompletion(buf))
-	output := buf.String()
-
-	checkOmit(t, output, "has_completion_function=1")
-}
-
-func TestCompleteCmdInBashScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
-	child := &Command{
-		Use:               "child",
-		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
-	}
-	rootCmd.AddCommand(child)
-
-	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenBashCompletion(buf))
-	output := buf.String()
-
-	check(t, output, ShellCompNoDescRequestCmd)
-}
-
 func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
 	child := &Command{

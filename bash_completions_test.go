@@ -2,10 +2,8 @@ package zulu
 
 import (
 	"bytes"
-	"fmt"
+	"log"
 	"os"
-	"os/exec"
-	"regexp"
 	"strings"
 	"testing"
 )
@@ -22,266 +20,113 @@ func check(t *testing.T, found, expected string) {
 	}
 }
 
-func checkNumOccurrences(t *testing.T, found, expected string, expectedOccurrences int) {
-	numOccurrences := strings.Count(found, expected)
-	if numOccurrences != expectedOccurrences {
-		t.Errorf("Expecting to contain %d occurrences of: \n %q\nGot %d:\n %q\n", expectedOccurrences, expected, numOccurrences, found)
+func TestCompleteNoDesCmdInBashScript(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	child := &Command{
+		Use:               "child",
+		ValidArgsFunction: validArgsFunc,
+		Run:               emptyRun,
 	}
+	rootCmd.AddCommand(child)
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
+	output := buf.String()
+
+	check(t, output, ShellCompNoDescRequestCmd)
 }
 
-func checkRegex(t *testing.T, found, pattern string) {
-	matched, err := regexp.MatchString(pattern, found)
+func TestCompleteCmdInBashScript(t *testing.T) {
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	child := &Command{
+		Use:               "child",
+		ValidArgsFunction: validArgsFunc,
+		Run:               emptyRun,
+	}
+	rootCmd.AddCommand(child)
+
+	buf := new(bytes.Buffer)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf, true))
+	output := buf.String()
+
+	check(t, output, ShellCompRequestCmd)
+	checkOmit(t, output, ShellCompNoDescRequestCmd)
+}
+
+func TestBashProgWithDash(t *testing.T) {
+	rootCmd := &Command{Use: "root-dash", Args: NoArgs, Run: emptyRun}
+	buf := new(bytes.Buffer)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
+	output := buf.String()
+
+	// Functions name should have replace the '-'
+	check(t, output, "__root_dash_init_completion")
+	checkOmit(t, output, "__root-dash_init_completion")
+
+	// The command name should not have replaced the '-'
+	check(t, output, "__start_root_dash root-dash")
+	checkOmit(t, output, "dash root_dash")
+}
+
+func TestBashProgWithColon(t *testing.T) {
+	rootCmd := &Command{Use: "root:colon", Args: NoArgs, Run: emptyRun}
+	buf := new(bytes.Buffer)
+	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
+	output := buf.String()
+
+	// Functions name should have replace the ':'
+	check(t, output, "__root_colon_init_completion")
+	checkOmit(t, output, "__root:colon_init_completion")
+
+	// The command name should not have replaced the ':'
+	check(t, output, "__start_root_colon root:colon")
+	checkOmit(t, output, "colon root_colon")
+}
+
+func TestGenBashCompletionFile(t *testing.T) {
+	err := os.Mkdir("./tmp", 0755)
 	if err != nil {
-		t.Errorf("Error thrown performing MatchString: \n %s\n", err)
+		log.Fatal(err.Error())
 	}
-	if !matched {
-		t.Errorf("Expecting to match: \n %q\nGot:\n %q\n", pattern, found)
+
+	defer os.RemoveAll("./tmp")
+
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	child := &Command{
+		Use:               "child",
+		ValidArgsFunction: validArgsFunc,
+		Run:               emptyRun,
 	}
+	rootCmd.AddCommand(child)
+
+	assertNoErr(t, rootCmd.GenBashCompletionFile("./tmp/test", false))
 }
 
-func runShellCheck(s string) error {
-	cmd := exec.Command("shellcheck", "-s", "bash", "-", "-e",
-		"SC2034", // PREFIX appears unused. Verify it or export it.
-	)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-
-	stdin, err := cmd.StdinPipe()
+func TestFailGenBashCompletionFile(t *testing.T) {
+	err := os.Mkdir("./tmp", 0755)
 	if err != nil {
-		return err
-	}
-	go func() {
-		_, err := stdin.Write([]byte(s))
-		CheckErr(err)
-
-		stdin.Close()
-	}()
-
-	return cmd.Run()
-}
-
-// World worst custom function, just keep telling you to enter hello!
-const bashCompletionFunc = `__root_custom_func() {
-	COMPREPLY=( "hello" )
-}
-`
-
-func TestBashCompletions(t *testing.T) {
-	rootCmd := &Command{
-		Use:                    "root",
-		ArgAliases:             []string{"pods", "nodes", "services", "replicationcontrollers", "po", "no", "svc", "rc"},
-		ValidArgs:              []string{"pod", "node", "service", "replicationcontroller"},
-		BashCompletionFunction: bashCompletionFunc,
-		Run:                    emptyRun,
-	}
-	rootCmd.Flags().IntP("introot", "i", -1, "help message for flag introot")
-	assertNoErr(t, rootCmd.MarkFlagRequired("introot"))
-
-	// Filename.
-	rootCmd.Flags().String("filename", "", "Enter a filename")
-	assertNoErr(t, rootCmd.MarkFlagFilename("filename", "json", "yaml", "yml"))
-
-	// Persistent filename.
-	rootCmd.PersistentFlags().String("persistent-filename", "", "Enter a filename")
-	assertNoErr(t, rootCmd.MarkPersistentFlagFilename("persistent-filename"))
-	assertNoErr(t, rootCmd.MarkPersistentFlagRequired("persistent-filename"))
-
-	// Filename extensions.
-	rootCmd.Flags().String("filename-ext", "", "Enter a filename (extension limited)")
-	assertNoErr(t, rootCmd.MarkFlagFilename("filename-ext"))
-	rootCmd.Flags().String("custom", "", "Enter a filename (extension limited)")
-	assertNoErr(t, rootCmd.MarkFlagCustom("custom", "__complete_custom"))
-
-	// Subdirectories in a given directory.
-	rootCmd.Flags().String("theme", "", "theme to use (located in /themes/THEMENAME/)")
-	assertNoErr(t, rootCmd.Flags().SetAnnotation("theme", BashCompSubdirsInDir, []string{"themes"}))
-
-	// For two word flags check
-	rootCmd.Flags().StringP("two", "t", "", "this is two word flags")
-	rootCmd.Flags().BoolP("two-w-default", "T", false, "this is not two word flags")
-
-	echoCmd := &Command{
-		Use:     "echo [string to echo]",
-		Aliases: []string{"say"},
-		Short:   "Echo anything to the screen",
-		Long:    "an utterly useless command for testing.",
-		Example: "Just run zulu-test echo",
-		Run:     emptyRun,
+		log.Fatal(err.Error())
 	}
 
-	echoCmd.Flags().String("filename", "", "Enter a filename")
-	assertNoErr(t, echoCmd.MarkFlagFilename("filename", "json", "yaml", "yml"))
-	echoCmd.Flags().String("config", "", "config to use (located in /config/PROFILE/)")
-	assertNoErr(t, echoCmd.Flags().SetAnnotation("config", BashCompSubdirsInDir, []string{"config"}))
+	defer os.RemoveAll("./tmp")
 
-	printCmd := &Command{
-		Use:   "print [string to print]",
-		Args:  MinimumNArgs(1),
-		Short: "Print anything to the screen",
-		Long:  "an absolutely utterly useless command for testing.",
-		Run:   emptyRun,
+	f, _ := os.OpenFile("./tmp/test", os.O_CREATE, 0400)
+	defer f.Close()
+
+	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	child := &Command{
+		Use:               "child",
+		ValidArgsFunction: validArgsFunc,
+		Run:               emptyRun,
+	}
+	rootCmd.AddCommand(child)
+
+	got := rootCmd.GenBashCompletionFile("./tmp/test", false)
+	if got == nil {
+		t.Error("should raise permission denied error")
 	}
 
-	deprecatedCmd := &Command{
-		Use:        "deprecated [can't do anything here]",
-		Args:       NoArgs,
-		Short:      "A command which is deprecated",
-		Long:       "an absolutely utterly useless command for testing deprecation!.",
-		Deprecated: "Please use echo instead",
-		Run:        emptyRun,
+	if got.Error() != "open ./tmp/test: permission denied" {
+		t.Errorf("got: %s, want: %s", got.Error(), "open ./tmp/test: permission denied")
 	}
-
-	hiddenCmd := &Command{
-		Use:    "hidden",
-		Short:  "A command which is hidden",
-		Long:   "an absolutely utterly useless command for testing for testing hiding.",
-		Hidden: true,
-		Run:    emptyRun,
-	}
-
-	hiddenSubCmd := &Command{
-		Use:    "subcommandForHidden",
-		Short:  "A command which is attached to a hidden one",
-		Long:   "an absolutely utterly useless command for testing for testing subcommand attached to hidden one.",
-		Hidden: true,
-		Run:    emptyRun,
-	}
-
-	colonCmd := &Command{
-		Use: "cmd:colon",
-		Run: emptyRun,
-	}
-
-	timesCmd := &Command{
-		Use:        "times [# times] [string to echo]",
-		SuggestFor: []string{"counts"},
-		Args:       ArbitraryArgs,
-		ValidArgs:  []string{"one", "two", "three", "four"},
-		Short:      "Echo anything to the screen more times",
-		Long:       "a slightly useless command for testing.",
-		Run:        emptyRun,
-	}
-
-	echoCmd.AddCommand(timesCmd)
-	hiddenCmd.AddCommand(hiddenSubCmd)
-	rootCmd.AddCommand(echoCmd, printCmd, deprecatedCmd, hiddenCmd, colonCmd)
-
-	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenBashCompletion(buf))
-	output := buf.String()
-
-	check(t, output, "_root")
-	check(t, output, "_root_echo")
-	check(t, output, "_root_echo_times")
-	check(t, output, "_root_print")
-	check(t, output, "_root_cmd__colon")
-
-	// check for required flags
-	check(t, output, `must_have_one_flag+=("--introot=")`)
-	check(t, output, `must_have_one_flag+=("--persistent-filename=")`)
-	// check for custom completion function with both qualified and unqualified name
-	checkNumOccurrences(t, output, `__custom_func`, 2)      // 1. check existence, 2. invoke
-	checkNumOccurrences(t, output, `__root_custom_func`, 3) // 1. check existence, 2. invoke, 3. actual definition
-	// check for custom completion function body
-	check(t, output, `COMPREPLY=( "hello" )`)
-	// check for required nouns
-	check(t, output, `must_have_one_noun+=("pod")`)
-	// check for noun aliases
-	check(t, output, `noun_aliases+=("pods")`)
-	check(t, output, `noun_aliases+=("rc")`)
-	checkOmit(t, output, `must_have_one_noun+=("pods")`)
-	// check for filename extension flags
-	check(t, output, `flags_completion+=("_filedir")`)
-	// check for filename extension flags
-	check(t, output, `must_have_one_noun+=("three")`)
-	// check for filename extension flags
-	check(t, output, fmt.Sprintf(`flags_completion+=("__%s_handle_filename_extension_flag json|yaml|yml")`, rootCmd.Name()))
-	// check for filename extension flags in a subcommand
-	checkRegex(t, output, fmt.Sprintf(`_root_echo\(\)\n{[^}]*flags_completion\+=\("__%s_handle_filename_extension_flag json\|yaml\|yml"\)`, rootCmd.Name()))
-	// check for custom flags
-	check(t, output, `flags_completion+=("__complete_custom")`)
-	// check for subdirs_in_dir flags
-	check(t, output, fmt.Sprintf(`flags_completion+=("__%s_handle_subdirs_in_dir_flag themes")`, rootCmd.Name()))
-	// check for subdirs_in_dir flags in a subcommand
-	checkRegex(t, output, fmt.Sprintf(`_root_echo\(\)\n{[^}]*flags_completion\+=\("__%s_handle_subdirs_in_dir_flag config"\)`, rootCmd.Name()))
-
-	// check two word flags
-	check(t, output, `two_word_flags+=("--two")`)
-	check(t, output, `two_word_flags+=("-t")`)
-	checkOmit(t, output, `two_word_flags+=("--two-w-default")`)
-	checkOmit(t, output, `two_word_flags+=("-T")`)
-
-	// check local nonpersistent flag
-	check(t, output, `local_nonpersistent_flags+=("--two")`)
-	check(t, output, `local_nonpersistent_flags+=("--two=")`)
-	check(t, output, `local_nonpersistent_flags+=("-t")`)
-	check(t, output, `local_nonpersistent_flags+=("--two-w-default")`)
-	check(t, output, `local_nonpersistent_flags+=("-T")`)
-
-	checkOmit(t, output, deprecatedCmd.Name())
-
-	// check that hidden command and its subcommand functions are available
-	check(t, output, "_root_hidden")
-	check(t, output, "_root_hidden_subcommandForHidden")
-	checkOmit(t, output, ` commands+=("hidden")`)
-	check(t, output, `hidden_commands+=("hidden")`)
-	check(t, output, `commands+=("subcommandForHidden")`)
-
-	// If available, run shellcheck against the script.
-	if err := exec.Command("which", "shellcheck").Run(); err != nil {
-		return
-	}
-	if err := runShellCheck(output); err != nil {
-		t.Fatalf("shellcheck failed: %v", err)
-	}
-}
-
-func TestBashCompletionHiddenFlag(t *testing.T) {
-	c := &Command{Use: "c", Run: emptyRun}
-
-	const flagName = "hiddenFlag"
-	c.Flags().Bool(flagName, false, "")
-	assertNoErr(t, c.Flags().MarkHidden(flagName))
-
-	buf := new(bytes.Buffer)
-	assertNoErr(t, c.GenBashCompletion(buf))
-	output := buf.String()
-
-	if strings.Contains(output, flagName) {
-		t.Errorf("Expected completion to not include %q flag: Got %v", flagName, output)
-	}
-}
-
-func TestBashCompletionDeprecatedFlag(t *testing.T) {
-	c := &Command{Use: "c", Run: emptyRun}
-
-	const flagName = "deprecated-flag"
-	c.Flags().Bool(flagName, false, "")
-	assertNoErr(t, c.Flags().MarkDeprecated(flagName, "use --not-deprecated instead"))
-
-	buf := new(bytes.Buffer)
-	assertNoErr(t, c.GenBashCompletion(buf))
-	output := buf.String()
-
-	if strings.Contains(output, flagName) {
-		t.Errorf("expected completion to not include %q flag: Got %v", flagName, output)
-	}
-}
-
-func TestBashCompletionTraverseChildren(t *testing.T) {
-	c := &Command{Use: "c", Run: emptyRun, TraverseChildren: true}
-
-	c.Flags().StringP("string-flag", "s", "", "string flag")
-	c.Flags().BoolP("bool-flag", "b", false, "bool flag")
-
-	buf := new(bytes.Buffer)
-	assertNoErr(t, c.GenBashCompletion(buf))
-	output := buf.String()
-
-	// check that local nonpersistent flag are not set since we have TraverseChildren set to true
-	checkOmit(t, output, `local_nonpersistent_flags+=("--string-flag")`)
-	checkOmit(t, output, `local_nonpersistent_flags+=("--string-flag=")`)
-	checkOmit(t, output, `local_nonpersistent_flags+=("-s")`)
-	checkOmit(t, output, `local_nonpersistent_flags+=("--bool-flag")`)
-	checkOmit(t, output, `local_nonpersistent_flags+=("-b")`)
 }

@@ -657,7 +657,7 @@ You will need to start a new shell for this setup to take effect.
 		DisableFlagsInUseLine: true,
 		ValidArgsFunction:     NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
-			return cmd.Root().GenBashCompletionV2(out, !noDesc)
+			return cmd.Root().GenBashCompletion(out, !noDesc)
 		},
 	}
 	if haveNoDescFlag {
@@ -782,8 +782,7 @@ func CompDebug(msg string, printToStdErr bool) {
 	// Such logs are only printed when the user has set the environment
 	// variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
 	if path := os.Getenv("BASH_COMP_DEBUG_FILE"); path != "" {
-		f, err := os.OpenFile(path,
-			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err == nil {
 			defer f.Close()
 			WriteStringAndCheck(f, msg)
