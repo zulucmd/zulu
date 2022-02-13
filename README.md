@@ -69,9 +69,9 @@ and flags that are only available to that command.
 
 In the example above, 'port' is the flag.
 
-Flag functionality is provided by the [pflag
-library](https://github.com/spf13/pflag), a fork of the flag standard library
-which maintains the same interface while adding POSIX compliance.
+Flag functionality is provided by the [zflag
+library](https://github.com/gowarden/zflag), a fork of the great [spf13/pflag](https://github.com/spf13/pflag)
+library, which itself is a fork of the flag standard library which maintains the same interface while adding POSIX compliance.
 
 # Installing
 Using Zulu is easy. First, use `go get` to install the latest version

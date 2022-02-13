@@ -16,6 +16,7 @@ package doc
 import (
 	"bytes"
 	"fmt"
+	"github.com/gowarden/zulu"
 	"io"
 	"os"
 	"path/filepath"
@@ -25,8 +26,7 @@ import (
 	"time"
 
 	"github.com/cpuguy83/go-md2man/v2/md2man"
-	"github.com/gowarden/zulu"
-	"github.com/spf13/pflag"
+	"github.com/gowarden/zflag"
 )
 
 // GenManTree will generate a man page for this command and all descendants
@@ -188,21 +188,21 @@ func manPrintCommands(buf io.StringWriter, header *GenManHeader, cmd *zulu.Comma
 	}
 }
 
-func manPrintFlags(buf io.StringWriter, flags *pflag.FlagSet) {
-	flags.VisitAll(func(flag *pflag.Flag) {
+func manPrintFlags(buf io.StringWriter, flags *zflag.FlagSet) {
+	flags.VisitAll(func(flag *zflag.Flag) {
 		if len(flag.Deprecated) > 0 || flag.Hidden {
 			return
 		}
 		format := ""
-		if len(flag.Shorthand) > 0 && len(flag.ShorthandDeprecated) == 0 {
-			format = fmt.Sprintf("**-%s**, **--%s**", flag.Shorthand, flag.Name)
+		if flag.Shorthand > 0 && len(flag.ShorthandDeprecated) == 0 {
+			format = fmt.Sprintf("**-%c**, **--%s**", flag.Shorthand, flag.Name)
 		} else {
 			format = fmt.Sprintf("**--%s**", flag.Name)
 		}
 		if len(flag.NoOptDefVal) > 0 {
 			format += "["
 		}
-		if flag.Value.Type() == "string" {
+		if v, ok := flag.Value.(zflag.Typed); ok && v.Type() == "string" {
 			// put quotes on the value
 			format += "=%q"
 		} else {

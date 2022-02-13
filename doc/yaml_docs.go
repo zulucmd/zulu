@@ -15,20 +15,20 @@ package doc
 
 import (
 	"fmt"
+	"github.com/gowarden/zulu"
+	"gopkg.in/yaml.v3"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/gowarden/zulu"
-	"github.com/spf13/pflag"
-	"gopkg.in/yaml.v3"
+	"github.com/gowarden/zflag"
 )
 
 type cmdOption struct {
 	Name         string
-	Shorthand    string `yaml:",omitempty"`
+	Shorthand    rune   `yaml:",omitempty"`
 	DefaultValue string `yaml:"default_value,omitempty"`
 	Usage        string `yaml:",omitempty"`
 }
@@ -146,14 +146,14 @@ func GenYamlCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) stri
 	return nil
 }
 
-func genFlagResult(flags *pflag.FlagSet) []cmdOption {
+func genFlagResult(flags *zflag.FlagSet) []cmdOption {
 	var result []cmdOption
 
-	flags.VisitAll(func(flag *pflag.Flag) {
+	flags.VisitAll(func(flag *zflag.Flag) {
 		// Todo, when we mark a shorthand is deprecated, but specify an empty message.
 		// The flag.ShorthandDeprecated is empty as the shorthand is deprecated.
 		// Using len(flag.ShorthandDeprecated) > 0 can't handle this, others are ok.
-		if !(len(flag.ShorthandDeprecated) > 0) && len(flag.Shorthand) > 0 {
+		if !(len(flag.ShorthandDeprecated) > 0) && flag.Shorthand > 0 {
 			opt := cmdOption{
 				flag.Name,
 				flag.Shorthand,

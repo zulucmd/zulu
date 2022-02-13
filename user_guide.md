@@ -36,9 +36,13 @@ You will optionally provide additional commands as you see fit.
 
 Zulu doesn't require any special constructors. Simply create your commands.
 
-Ideally you place this in app/cmd/root.go:
+Ideally you place this in `cmd/$app/main.go`:
 
 ```go
+package main
+
+import "github.com/gowarden/zulu"
+
 var rootCmd = &zulu.Command{
   Use:   "hugo",
   Short: "Hugo is a very fast static site generator",
@@ -50,7 +54,7 @@ var rootCmd = &zulu.Command{
   },
 }
 
-func Execute() {
+func main() {
   if err := rootCmd.Execute(); err != nil {
     fmt.Fprintln(os.Stderr, err)
     os.Exit(1)
@@ -60,22 +64,20 @@ func Execute() {
 
 You will additionally define flags and handle configuration in your init() function.
 
-For example cmd/root.go:
+For example `$app/main.go`:
 
 ```go
-package cmd
+package main
 
 import (
 	"fmt"
 	"os"
 
 	"github.com/gowarden/zulu"
-	"github.com/spf13/viper"
 )
 
 var (
 	// Used for flags.
-	cfgFile     string
 	userLicense string
 
 	rootCmd = &zulu.Command{
@@ -87,73 +89,28 @@ to quickly create a Zulu application.`,
 	}
 )
 
-// Execute executes the root command.
-func Execute() error {
-	return rootCmd.Execute()
+func main() error {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
 
 func init() {
-	zulu.OnInitialize(initConfig)
-
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.zulu.yaml)")
 	rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "author name for copyright attribution")
 	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "name of license for the project")
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
-	viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
-	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
-	viper.SetDefault("author", "NAME HERE <EMAIL ADDRESS>")
-	viper.SetDefault("license", "apache")
 
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(initCmd)
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := os.UserHomeDir()
-		zulu.CheckErr(err)
-
-		// Search config in home directory with name ".zulu" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName(".zulu")
-	}
-
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
-}
-```
-
-### Create your main.go
-
-With the root command you need to have your main function execute it.
-Execute should be run on the root for clarity, though it can be called on any command.
-
-In a Zulu app, typically the main.go file is very bare. It serves one purpose: to initialize Zulu.
-
-```go
-package main
-
-import (
-  "{pathToYourApp}/cmd"
-)
-
-func main() {
-  cmd.Execute()
 }
 ```
 
 ### Create additional commands
 
 Additional commands can be defined and typically are each given their own file
-inside of the cmd/ directory.
+inside the cmd/ directory.
 
 If you wanted to create a version command you would create cmd/version.go and
 populate it with the following:
@@ -260,24 +217,6 @@ command := zulu.Command{
 }
 ```
 
-### Bind Flags with Config
-
-You can also bind your flags with [viper](https://github.com/spf13/viper):
-```go
-var author string
-
-func init() {
-  rootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
-  viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
-}
-```
-
-In this example, the persistent flag `author` is bound with `viper`.
-**Note**: the variable `author` will not be set to the value from config,
-when the `--author` flag is provided by user.
-
-More in [viper documentation](https://github.com/spf13/viper#working-with-flags).
-
 ### Required flags
 
 Flags are optional by default. If instead you wish your command to report an error
@@ -344,7 +283,7 @@ by not providing a 'Run' for the 'rootCmd'.
 
 We have only defined one flag for a single command.
 
-More documentation about flags is available at https://github.com/spf13/pflag
+More documentation about flags is available at https://github.com/gowarden/zflag
 
 ```go
 package main
@@ -403,8 +342,6 @@ a count and a string.`,
 }
 ```
 
-For a more complete example of a larger application, please checkout [Hugo](https://gohugo.io/).
-
 ## Help Command
 
 Zulu automatically adds a help command to your application when you have subcommands.
@@ -437,7 +374,6 @@ command and flag definitions are needed.
           --config string    config file (default is $HOME/.zulu.yaml)
       -h, --help             help for zulu
       -l, --license string   name of license for the project
-          --viper            use Viper for configuration (default true)
 
     Use "zulu [command] --help" for more information about a command.
 
@@ -487,7 +423,6 @@ embeds the usage as part of its output.
           --config string    config file (default is $HOME/.zulu.yaml)
       -h, --help             help for zulu
       -l, --license string   name of license for the project
-          --viper            use Viper for configuration (default true)
 
     Use "zulu [command] --help" for more information about a command.
 

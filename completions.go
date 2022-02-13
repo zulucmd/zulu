@@ -2,11 +2,10 @@ package zulu
 
 import (
 	"fmt"
+	"github.com/gowarden/zflag"
 	"os"
 	"strings"
 	"sync"
-
-	"github.com/spf13/pflag"
 )
 
 const (
@@ -19,7 +18,7 @@ const (
 )
 
 // Global map of flag completion functions. Make sure to use flagCompletionMutex before you try to read and write from it.
-var flagCompletionFunctions = map[*pflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
+var flagCompletionFunctions = map[*zflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
 
 // lock for reading and writing from flagCompletionFunctions
 var flagCompletionMutex = &sync.RWMutex{}
@@ -331,10 +330,8 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 
 		// If we have not found any required flags, only then can we show regular flags
 		if len(completions) == 0 {
-			doCompleteFlags := func(flag *pflag.Flag) {
-				if !flag.Changed ||
-					strings.Contains(flag.Value.Type(), "Slice") ||
-					strings.Contains(flag.Value.Type(), "Array") {
+			doCompleteFlags := func(flag *zflag.Flag) {
+				if v, ok := flag.Value.(zflag.Typed); !flag.Changed || (ok && (strings.Contains(v.Type(), "Slice") || strings.Contains(v.Type(), "Array"))) {
 					// If the flag is not already present, or if it can be specified multiple times (Array or Slice)
 					// we suggest it as a completion
 					completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
@@ -344,10 +341,10 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 			// We cannot use finalCmd.Flags() because we may not have called ParsedFlags() for commands
 			// that have set DisableFlagParsing; it is ParseFlags() that merges the inherited and
 			// non-inherited flags.
-			finalCmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
+			finalCmd.InheritedFlags().VisitAll(func(flag *zflag.Flag) {
 				doCompleteFlags(flag)
 			})
-			finalCmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
+			finalCmd.NonInheritedFlags().VisitAll(func(flag *zflag.Flag) {
 				doCompleteFlags(flag)
 			})
 		}
@@ -375,7 +372,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 			if !finalCmd.Root().TraverseChildren {
 				// Check if there are any local, non-persistent flags on the command-line
 				localNonPersistentFlags := finalCmd.LocalNonPersistentFlags()
-				finalCmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
+				finalCmd.NonInheritedFlags().VisitAll(func(flag *zflag.Flag) {
 					if localNonPersistentFlags.Lookup(flag.Name) != nil && flag.Changed {
 						foundLocalNonPersistentFlag = true
 					}
@@ -454,7 +451,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	return finalCmd, completions, directive, nil
 }
 
-func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []string {
+func getFlagNameCompletions(flag *zflag.Flag, toComplete string) []string {
 	if nonCompletableFlag(flag) {
 		return []string{}
 	}
@@ -479,8 +476,8 @@ func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []string {
 		// }
 	}
 
-	flagName = "-" + flag.Shorthand
-	if len(flag.Shorthand) > 0 && strings.HasPrefix(flagName, toComplete) {
+	flagName = fmt.Sprintf("-%c", flag.Shorthand)
+	if flag.Shorthand > 0 && strings.HasPrefix(flagName, toComplete) {
 		completions = append(completions, fmt.Sprintf("%s\t%s", flagName, flag.Usage))
 	}
 
@@ -490,7 +487,7 @@ func getFlagNameCompletions(flag *pflag.Flag, toComplete string) []string {
 func completeRequireFlags(finalCmd *Command, toComplete string) []string {
 	var completions []string
 
-	doCompleteRequiredFlags := func(flag *pflag.Flag) {
+	doCompleteRequiredFlags := func(flag *zflag.Flag) {
 		if _, present := flag.Annotations[BashCompOneRequiredFlag]; present {
 			if !flag.Changed {
 				// If the flag is not already present, we suggest it as a completion
@@ -502,17 +499,17 @@ func completeRequireFlags(finalCmd *Command, toComplete string) []string {
 	// We cannot use finalCmd.Flags() because we may not have called ParsedFlags() for commands
 	// that have set DisableFlagParsing; it is ParseFlags() that merges the inherited and
 	// non-inherited flags.
-	finalCmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
+	finalCmd.InheritedFlags().VisitAll(func(flag *zflag.Flag) {
 		doCompleteRequiredFlags(flag)
 	})
-	finalCmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
+	finalCmd.NonInheritedFlags().VisitAll(func(flag *zflag.Flag) {
 		doCompleteRequiredFlags(flag)
 	})
 
 	return completions
 }
 
-func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*pflag.Flag, []string, string, error) {
+func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*zflag.Flag, []string, string, error) {
 	if finalCmd.DisableFlagParsing {
 		// We only do flag completion if we are allowed to parse flags
 		// This is important for commands which have requested to do their own flag completion.
@@ -756,7 +753,7 @@ to your powershell profile.
 	completionCmd.AddCommand(bash, zsh, fish, powershell)
 }
 
-func findFlag(cmd *Command, name string) *pflag.Flag {
+func findFlag(cmd *Command, name string) *zflag.Flag {
 	flagSet := cmd.Flags()
 	if len(name) == 1 {
 		// First convert the short flag into a long flag

@@ -5,13 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gowarden/zflag"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/spf13/pflag"
 )
 
 func emptyRun(*Command, []string) {}
@@ -55,7 +54,7 @@ func executeCommandWithContextC(ctx context.Context, root *Command, args ...stri
 }
 
 func resetCommandLineFlagSet() {
-	pflag.CommandLine = pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
+	zflag.CommandLine = zflag.NewFlagSet(os.Args[0], zflag.ExitOnError)
 }
 
 func checkStringContains(t *testing.T, got, expected string) {
@@ -1570,8 +1569,8 @@ func TestPersistentHooks(t *testing.T) {
 
 // Related to https://github.com/spf13/cobra/issues/521.
 func TestGlobalNormFuncPropagation(t *testing.T) {
-	normFunc := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
-		return pflag.NormalizedName(name)
+	normFunc := func(f *zflag.FlagSet, name string) zflag.NormalizedName {
+		return zflag.NormalizedName(name)
 	}
 
 	rootCmd := &Command{Use: "root", Run: emptyRun}
@@ -1590,8 +1589,8 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 
 // Related to https://github.com/spf13/cobra/issues/521.
 func TestNormPassedOnLocal(t *testing.T) {
-	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
-		return pflag.NormalizedName(strings.ToUpper(name))
+	toUpper := func(f *zflag.FlagSet, name string) zflag.NormalizedName {
+		return zflag.NormalizedName(strings.ToUpper(name))
 	}
 
 	c := &Command{}
@@ -1604,8 +1603,8 @@ func TestNormPassedOnLocal(t *testing.T) {
 
 // Related to https://github.com/spf13/cobra/issues/521.
 func TestNormPassedOnInherited(t *testing.T) {
-	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
-		return pflag.NormalizedName(strings.ToUpper(name))
+	toUpper := func(f *zflag.FlagSet, name string) zflag.NormalizedName {
+		return zflag.NormalizedName(strings.ToUpper(name))
 	}
 
 	c := &Command{}
@@ -1632,11 +1631,11 @@ func TestNormPassedOnInherited(t *testing.T) {
 
 // Related to https://github.com/spf13/cobra/issues/521.
 func TestConsistentNormalizedName(t *testing.T) {
-	toUpper := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
-		return pflag.NormalizedName(strings.ToUpper(name))
+	toUpper := func(f *zflag.FlagSet, name string) zflag.NormalizedName {
+		return zflag.NormalizedName(strings.ToUpper(name))
 	}
-	n := func(f *pflag.FlagSet, name string) pflag.NormalizedName {
-		return pflag.NormalizedName(name)
+	n := func(f *zflag.FlagSet, name string) zflag.NormalizedName {
+		return zflag.NormalizedName(name)
 	}
 
 	c := &Command{}
@@ -1649,9 +1648,9 @@ func TestConsistentNormalizedName(t *testing.T) {
 	}
 }
 
-func TestFlagOnPflagCommandLine(t *testing.T) {
+func TestFlagOnZflagCommandLine(t *testing.T) {
 	flagName := "flagOnCommandLine"
-	pflag.String(flagName, "", "about my flag")
+	zflag.String(flagName, "", "about my flag")
 
 	c := &Command{Use: "c", Run: emptyRun}
 	c.AddCommand(&Command{Use: "child", Run: emptyRun})
@@ -1893,7 +1892,7 @@ func TestSortedFlags(t *testing.T) {
 	}
 
 	i := 0
-	c.LocalFlags().VisitAll(func(f *pflag.Flag) {
+	c.LocalFlags().VisitAll(func(f *zflag.Flag) {
 		if i == len(names) {
 			return
 		}
@@ -1907,11 +1906,11 @@ func TestSortedFlags(t *testing.T) {
 }
 
 // TestMergeCommandLineToFlags checks,
-// if pflag.CommandLine is correctly merged to c.Flags() after first call
+// if zflag.CommandLine is correctly merged to c.Flags() after first call
 // of c.mergePersistentFlags.
 // Related to https://github.com/spf13/cobra/issues/443.
 func TestMergeCommandLineToFlags(t *testing.T) {
-	pflag.Bool("boolflag", false, "")
+	zflag.Bool("boolflag", false, "")
 	c := &Command{Use: "c", Run: emptyRun}
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("boolflag") == nil {
@@ -2127,7 +2126,7 @@ func TestFParseErrWhitelistSameCommand(t *testing.T) {
 	c := &Command{
 		Use: "c",
 		Run: emptyRun,
-		FParseErrWhitelist: FParseErrWhitelist{
+		FParseErrWhitelist: FParseErrAllowlist{
 			UnknownFlags: true,
 		},
 	}
@@ -2143,7 +2142,7 @@ func TestFParseErrWhitelistParentCommand(t *testing.T) {
 	root := &Command{
 		Use: "root",
 		Run: emptyRun,
-		FParseErrWhitelist: FParseErrWhitelist{
+		FParseErrWhitelist: FParseErrAllowlist{
 			UnknownFlags: true,
 		},
 	}
@@ -2172,7 +2171,7 @@ func TestFParseErrWhitelistChildCommand(t *testing.T) {
 	c := &Command{
 		Use: "child",
 		Run: emptyRun,
-		FParseErrWhitelist: FParseErrWhitelist{
+		FParseErrWhitelist: FParseErrAllowlist{
 			UnknownFlags: true,
 		},
 	}
@@ -2195,7 +2194,7 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	c := &Command{
 		Use: "child",
 		Run: emptyRun,
-		FParseErrWhitelist: FParseErrWhitelist{
+		FParseErrWhitelist: FParseErrAllowlist{
 			UnknownFlags: true,
 		},
 	}

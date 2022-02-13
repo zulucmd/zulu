@@ -19,17 +19,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/gowarden/zflag"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	flag "github.com/spf13/pflag"
 )
 
-// FParseErrWhitelist configures Flag parse errors to be ignored
-type FParseErrWhitelist flag.ParseErrorsWhitelist
+// FParseErrAllowlist configures Flag parse errors to be ignored
+type FParseErrAllowlist zflag.ParseErrorsAllowlist
 
 type HookFuncE func(cmd *Command, args []string) error
 type HookFunc func(cmd *Command, args []string)
@@ -185,18 +184,18 @@ type Command struct {
 	// flagErrorBuf contains all error messages from pflag.
 	flagErrorBuf *bytes.Buffer
 	// flags is full set of flags.
-	flags *flag.FlagSet
+	flags *zflag.FlagSet
 	// pflags contains persistent flags.
-	pflags *flag.FlagSet
+	pflags *zflag.FlagSet
 	// lflags contains local flags.
-	lflags *flag.FlagSet
+	lflags *zflag.FlagSet
 	// iflags contains inherited flags.
-	iflags *flag.FlagSet
+	iflags *zflag.FlagSet
 	// parentsPflags is all persistent flags of cmd's parents.
-	parentsPflags *flag.FlagSet
+	parentsPflags *zflag.FlagSet
 	// globNormFunc is the global normalization function
 	// that we can use on every pflag set and children commands
-	globNormFunc func(f *flag.FlagSet, name string) flag.NormalizedName
+	globNormFunc func(f *zflag.FlagSet, name string) zflag.NormalizedName
 
 	// usageFunc is usage func defined by user.
 	usageFunc func(*Command) error
@@ -226,7 +225,7 @@ type Command struct {
 	errWriter io.Writer
 
 	//FParseErrWhitelist flag parse errors to be ignored
-	FParseErrWhitelist FParseErrWhitelist
+	FParseErrWhitelist FParseErrAllowlist
 
 	// CompletionOptions is a set of options to control the handling of shell completion
 	CompletionOptions CompletionOptions
@@ -369,7 +368,7 @@ func (c *Command) SetVersionTemplate(s string) {
 
 // SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
 // The user should not have a cyclic dependency on commands.
-func (c *Command) SetGlobalNormalizationFunc(n func(f *flag.FlagSet, name string) flag.NormalizedName) {
+func (c *Command) SetGlobalNormalizationFunc(n func(f *zflag.FlagSet, name string) zflag.NormalizedName) {
 	c.Flags().SetNormalizeFunc(n)
 	c.PersistentFlags().SetNormalizeFunc(n)
 	c.globNormFunc = n
@@ -618,7 +617,7 @@ func (c *Command) VersionTemplate() string {
 `
 }
 
-func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
+func hasNoOptDefVal(name string, fs *zflag.FlagSet) bool {
 	flag := fs.Lookup(name)
 	if flag == nil {
 		return false
@@ -626,7 +625,7 @@ func hasNoOptDefVal(name string, fs *flag.FlagSet) bool {
 	return flag.NoOptDefVal != ""
 }
 
-func shortHasNoOptDefVal(name string, fs *flag.FlagSet) bool {
+func shortHasNoOptDefVal(name string, fs *zflag.FlagSet) bool {
 	if len(name) == 0 {
 		return false
 	}
@@ -913,7 +912,7 @@ func (c *Command) execute(a []string) (err error) {
 		}
 
 		if helpVal {
-			return flag.ErrHelp
+			return zflag.ErrHelp
 		}
 
 		return nil
@@ -949,7 +948,7 @@ func (c *Command) execute(a []string) (err error) {
 
 	hooks = append(hooks, func(cmd *Command, args []string) error {
 		if !c.Runnable() {
-			return flag.ErrHelp
+			return zflag.ErrHelp
 		}
 
 		return c.ValidateArgs(argWoFlags)
@@ -1150,7 +1149,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	if err != nil {
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
-		if err == flag.ErrHelp {
+		if err == zflag.ErrHelp {
 			cmd.HelpFunc()(cmd, args)
 			return cmd, nil
 		}
@@ -1193,7 +1192,7 @@ func (c *Command) validateRequiredFlags() error {
 
 	flags := c.Flags()
 	missingFlagNames := []string{}
-	flags.VisitAll(func(pflag *flag.Flag) {
+	flags.VisitAll(func(pflag *zflag.Flag) {
 		requiredAnnotation, found := pflag.Annotations[BashCompOneRequiredFlag]
 		if !found {
 			return
@@ -1478,22 +1477,22 @@ func (c *Command) DebugFlags() {
 			c.Println(x.Name())
 		}
 		if x.HasFlags() {
-			x.flags.VisitAll(func(f *flag.Flag) {
+			x.flags.VisitAll(func(f *zflag.Flag) {
 				if x.HasPersistentFlags() && x.persistentFlag(f.Name) != nil {
-					c.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [LP]")
+					c.Printf("  -%c, --%s [%s]  %s   [LP]\n", f.Shorthand, f.Name, f.DefValue, f.Value)
 				} else {
-					c.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [L]")
+					c.Printf("  -%c, --%s [%s]  %s   [L]\n", f.Shorthand, f.Name, f.DefValue, f.Value)
 				}
 			})
 		}
 		if x.HasPersistentFlags() {
-			x.pflags.VisitAll(func(f *flag.Flag) {
+			x.pflags.VisitAll(func(f *zflag.Flag) {
 				if x.HasFlags() {
 					if x.flags.Lookup(f.Name) == nil {
-						c.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [P]")
+						c.Printf("  -%c, --%s [%s]  %s   [P]\n", f.Shorthand, f.Name, f.DefValue, f.Value)
 					}
 				} else {
-					c.Println("  -"+f.Shorthand+",", "--"+f.Name, "["+f.DefValue+"]", "", f.Value, "  [P]")
+					c.Printf("  -%c, --%s [%s]  %s   [P]\n", f.Shorthand, f.Name, f.DefValue, f.Value)
 				}
 			})
 		}
@@ -1650,15 +1649,15 @@ func (c *Command) HasParent() bool {
 }
 
 // GlobalNormalizationFunc returns the global normalization function or nil if it doesn't exist.
-func (c *Command) GlobalNormalizationFunc() func(f *flag.FlagSet, name string) flag.NormalizedName {
+func (c *Command) GlobalNormalizationFunc() func(f *zflag.FlagSet, name string) zflag.NormalizedName {
 	return c.globNormFunc
 }
 
 // Flags returns the complete FlagSet that applies
 // to this command (local and persistent declared here and by all parents).
-func (c *Command) Flags() *flag.FlagSet {
+func (c *Command) Flags() *zflag.FlagSet {
 	if c.flags == nil {
-		c.flags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		c.flags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1669,11 +1668,11 @@ func (c *Command) Flags() *flag.FlagSet {
 }
 
 // LocalNonPersistentFlags are flags specific to this command which will NOT persist to subcommands.
-func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
+func (c *Command) LocalNonPersistentFlags() *zflag.FlagSet {
 	persistentFlags := c.PersistentFlags()
 
-	out := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
-	c.LocalFlags().VisitAll(func(f *flag.Flag) {
+	out := zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
+	c.LocalFlags().VisitAll(func(f *zflag.Flag) {
 		if persistentFlags.Lookup(f.Name) == nil {
 			out.AddFlag(f)
 		}
@@ -1682,11 +1681,11 @@ func (c *Command) LocalNonPersistentFlags() *flag.FlagSet {
 }
 
 // LocalFlags returns the local FlagSet specifically set in the current command.
-func (c *Command) LocalFlags() *flag.FlagSet {
+func (c *Command) LocalFlags() *zflag.FlagSet {
 	c.mergePersistentFlags()
 
 	if c.lflags == nil {
-		c.lflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		c.lflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1697,7 +1696,7 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 		c.lflags.SetNormalizeFunc(c.globNormFunc)
 	}
 
-	addToLocal := func(f *flag.Flag) {
+	addToLocal := func(f *zflag.Flag) {
 		if c.lflags.Lookup(f.Name) == nil && c.parentsPflags.Lookup(f.Name) == nil {
 			c.lflags.AddFlag(f)
 		}
@@ -1708,11 +1707,11 @@ func (c *Command) LocalFlags() *flag.FlagSet {
 }
 
 // InheritedFlags returns all flags which were inherited from parent commands.
-func (c *Command) InheritedFlags() *flag.FlagSet {
+func (c *Command) InheritedFlags() *zflag.FlagSet {
 	c.mergePersistentFlags()
 
 	if c.iflags == nil {
-		c.iflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		c.iflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1724,7 +1723,7 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 		c.iflags.SetNormalizeFunc(c.globNormFunc)
 	}
 
-	c.parentsPflags.VisitAll(func(f *flag.Flag) {
+	c.parentsPflags.VisitAll(func(f *zflag.Flag) {
 		if c.iflags.Lookup(f.Name) == nil && local.Lookup(f.Name) == nil {
 			c.iflags.AddFlag(f)
 		}
@@ -1733,14 +1732,14 @@ func (c *Command) InheritedFlags() *flag.FlagSet {
 }
 
 // NonInheritedFlags returns all flags which were not inherited from parent commands.
-func (c *Command) NonInheritedFlags() *flag.FlagSet {
+func (c *Command) NonInheritedFlags() *zflag.FlagSet {
 	return c.LocalFlags()
 }
 
 // PersistentFlags returns the persistent FlagSet specifically set in the current command.
-func (c *Command) PersistentFlags() *flag.FlagSet {
+func (c *Command) PersistentFlags() *zflag.FlagSet {
 	if c.pflags == nil {
-		c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		c.pflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1753,9 +1752,9 @@ func (c *Command) PersistentFlags() *flag.FlagSet {
 func (c *Command) ResetFlags() {
 	c.flagErrorBuf = new(bytes.Buffer)
 	c.flagErrorBuf.Reset()
-	c.flags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+	c.flags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 	c.flags.SetOutput(c.flagErrorBuf)
-	c.pflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+	c.pflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 	c.pflags.SetOutput(c.flagErrorBuf)
 
 	c.lflags = nil
@@ -1807,7 +1806,7 @@ func (c *Command) HasAvailableInheritedFlags() bool {
 }
 
 // Flag climbs up the command tree looking for matching flag.
-func (c *Command) Flag(name string) (flag *flag.Flag) {
+func (c *Command) Flag(name string) (flag *zflag.Flag) {
 	flag = c.Flags().Lookup(name)
 
 	if flag == nil {
@@ -1817,8 +1816,8 @@ func (c *Command) Flag(name string) (flag *flag.Flag) {
 	return
 }
 
-// Recursively find matching persistent flag.
-func (c *Command) persistentFlag(name string) (flag *flag.Flag) {
+// Recursively find matching persistent zflag.
+func (c *Command) persistentFlag(name string) (flag *zflag.Flag) {
 	if c.HasPersistentFlags() {
 		flag = c.PersistentFlags().Lookup(name)
 	}
@@ -1843,7 +1842,7 @@ func (c *Command) ParseFlags(args []string) error {
 	c.mergePersistentFlags()
 
 	// do it here after merging all flags and just before parse
-	c.Flags().ParseErrorsWhitelist = flag.ParseErrorsWhitelist(c.FParseErrWhitelist)
+	c.Flags().ParseErrorsAllowlist = zflag.ParseErrorsAllowlist(c.FParseErrWhitelist)
 
 	err := c.Flags().Parse(args)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
@@ -1872,7 +1871,7 @@ func (c *Command) mergePersistentFlags() {
 // If c.parentsPflags == nil, it makes new.
 func (c *Command) updateParentsPflags() {
 	if c.parentsPflags == nil {
-		c.parentsPflags = flag.NewFlagSet(c.Name(), flag.ContinueOnError)
+		c.parentsPflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 		c.parentsPflags.SetOutput(c.flagErrorBuf)
 		c.parentsPflags.SortFlags = false
 	}
@@ -1881,7 +1880,7 @@ func (c *Command) updateParentsPflags() {
 		c.parentsPflags.SetNormalizeFunc(c.globNormFunc)
 	}
 
-	c.Root().PersistentFlags().AddFlagSet(flag.CommandLine)
+	c.Root().PersistentFlags().AddFlagSet(zflag.CommandLine)
 
 	c.VisitParents(func(parent *Command) {
 		c.parentsPflags.AddFlagSet(parent.PersistentFlags())

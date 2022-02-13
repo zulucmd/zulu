@@ -1,8 +1,6 @@
 package zulu
 
-import (
-	"github.com/spf13/pflag"
-)
+import "github.com/gowarden/zflag"
 
 // MarkFlagRequired instructs the various shell completion implementations to
 // prioritize the named flag when performing completion,
@@ -21,7 +19,7 @@ func (c *Command) MarkPersistentFlagRequired(name string) error {
 // MarkFlagRequired instructs the various shell completion implementations to
 // prioritize the named flag when performing completion,
 // and causes your command to report an error if invoked without the flag.
-func MarkFlagRequired(flags *pflag.FlagSet, name string) error {
+func MarkFlagRequired(flags *zflag.FlagSet, name string) error {
 	return flags.SetAnnotation(name, BashCompOneRequiredFlag, []string{"true"})
 }
 
@@ -50,7 +48,7 @@ func (c *Command) MarkPersistentFlagFilename(name string, extensions ...string) 
 
 // MarkFlagFilename instructs the various shell completion implementations to
 // limit completions for the named flag to the specified file extensions.
-func MarkFlagFilename(flags *pflag.FlagSet, name string, extensions ...string) error {
+func MarkFlagFilename(flags *zflag.FlagSet, name string, extensions ...string) error {
 	return flags.SetAnnotation(name, BashCompFilenameExt, extensions)
 }
 
@@ -60,7 +58,7 @@ func MarkFlagFilename(flags *pflag.FlagSet, name string, extensions ...string) e
 // This will only work for bash completion.
 // It is recommended to instead use c.RegisterFlagCompletionFunc(...) which allows
 // to register a Go function which will work across all shells.
-func MarkFlagCustom(flags *pflag.FlagSet, name string, f string) error {
+func MarkFlagCustom(flags *zflag.FlagSet, name string, f string) error {
 	return flags.SetAnnotation(name, BashCompCustom, []string{f})
 }
 
@@ -79,6 +77,6 @@ func (c *Command) MarkPersistentFlagDirname(name string) error {
 
 // MarkFlagDirname instructs the various shell completion implementations to
 // limit completions for the named flag to directory names.
-func MarkFlagDirname(flags *pflag.FlagSet, name string) error {
+func MarkFlagDirname(flags *zflag.FlagSet, name string) error {
 	return flags.SetAnnotation(name, BashCompSubdirsInDir, []string{})
 }

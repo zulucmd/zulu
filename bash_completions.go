@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/spf13/pflag"
+	"github.com/gowarden/zflag"
 )
 
 // Annotations for Bash completion.
@@ -487,18 +487,18 @@ func writeFlagHandler(buf io.StringWriter, name string, annotations map[string][
 
 const cbn = "\")\n"
 
-func writeShortFlag(buf io.StringWriter, flag *pflag.Flag, cmd *Command) {
+func writeShortFlag(buf io.StringWriter, flag *zflag.Flag, cmd *Command) {
 	name := flag.Shorthand
 	format := "    "
 	if len(flag.NoOptDefVal) == 0 {
 		format += "two_word_"
 	}
-	format += "flags+=(\"-%s" + cbn
+	format += "flags+=(\"-%c" + cbn
 	WriteStringAndCheck(buf, fmt.Sprintf(format, name))
-	writeFlagHandler(buf, "-"+name, flag.Annotations, cmd)
+	writeFlagHandler(buf, fmt.Sprintf("-%c", name), flag.Annotations, cmd)
 }
 
-func writeFlag(buf io.StringWriter, flag *pflag.Flag, cmd *Command) {
+func writeFlag(buf io.StringWriter, flag *zflag.Flag, cmd *Command) {
 	name := flag.Name
 	format := "    flags+=(\"--%s"
 	if len(flag.NoOptDefVal) == 0 {
@@ -513,15 +513,15 @@ func writeFlag(buf io.StringWriter, flag *pflag.Flag, cmd *Command) {
 	writeFlagHandler(buf, "--"+name, flag.Annotations, cmd)
 }
 
-func writeLocalNonPersistentFlag(buf io.StringWriter, flag *pflag.Flag) {
+func writeLocalNonPersistentFlag(buf io.StringWriter, flag *zflag.Flag) {
 	name := flag.Name
 	format := "    local_nonpersistent_flags+=(\"--%[1]s" + cbn
 	if len(flag.NoOptDefVal) == 0 {
 		format += "    local_nonpersistent_flags+=(\"--%[1]s=" + cbn
 	}
 	WriteStringAndCheck(buf, fmt.Sprintf(format, name))
-	if len(flag.Shorthand) > 0 {
-		WriteStringAndCheck(buf, fmt.Sprintf("    local_nonpersistent_flags+=(\"-%s\")\n", flag.Shorthand))
+	if flag.Shorthand > 0 {
+		WriteStringAndCheck(buf, fmt.Sprintf("    local_nonpersistent_flags+=(\"-%c\")\n", flag.Shorthand))
 	}
 }
 
@@ -556,12 +556,12 @@ func writeFlags(buf io.StringWriter, cmd *Command) {
 	}
 
 	localNonPersistentFlags := cmd.LocalNonPersistentFlags()
-	cmd.NonInheritedFlags().VisitAll(func(flag *pflag.Flag) {
+	cmd.NonInheritedFlags().VisitAll(func(flag *zflag.Flag) {
 		if nonCompletableFlag(flag) {
 			return
 		}
 		writeFlag(buf, flag, cmd)
-		if len(flag.Shorthand) > 0 {
+		if flag.Shorthand > 0 {
 			writeShortFlag(buf, flag, cmd)
 		}
 		// localNonPersistentFlags are used to stop the completion of subcommands when one is set
@@ -570,12 +570,12 @@ func writeFlags(buf io.StringWriter, cmd *Command) {
 			writeLocalNonPersistentFlag(buf, flag)
 		}
 	})
-	cmd.InheritedFlags().VisitAll(func(flag *pflag.Flag) {
+	cmd.InheritedFlags().VisitAll(func(flag *zflag.Flag) {
 		if nonCompletableFlag(flag) {
 			return
 		}
 		writeFlag(buf, flag, cmd)
-		if len(flag.Shorthand) > 0 {
+		if flag.Shorthand > 0 {
 			writeShortFlag(buf, flag, cmd)
 		}
 	})
@@ -586,7 +586,7 @@ func writeFlags(buf io.StringWriter, cmd *Command) {
 func writeRequiredFlag(buf io.StringWriter, cmd *Command) {
 	WriteStringAndCheck(buf, "    must_have_one_flag=()\n")
 	flags := cmd.NonInheritedFlags()
-	flags.VisitAll(func(flag *pflag.Flag) {
+	flags.VisitAll(func(flag *zflag.Flag) {
 		if nonCompletableFlag(flag) {
 			return
 		}
@@ -594,14 +594,14 @@ func writeRequiredFlag(buf io.StringWriter, cmd *Command) {
 			switch key {
 			case BashCompOneRequiredFlag:
 				format := "    must_have_one_flag+=(\"--%s"
-				if flag.Value.Type() != "bool" {
+				if v, ok := flag.Value.(zflag.Typed); ok && v.Type() != "bool" {
 					format += "="
 				}
 				format += cbn
 				WriteStringAndCheck(buf, fmt.Sprintf(format, flag.Name))
 
-				if len(flag.Shorthand) > 0 {
-					WriteStringAndCheck(buf, fmt.Sprintf("    must_have_one_flag+=(\"-%s"+cbn, flag.Shorthand))
+				if flag.Shorthand > 0 {
+					WriteStringAndCheck(buf, fmt.Sprintf("    must_have_one_flag+=(\"-%c"+cbn, flag.Shorthand))
 				}
 			}
 		}
@@ -689,7 +689,7 @@ func (c *Command) GenBashCompletion(w io.Writer) error {
 	return err
 }
 
-func nonCompletableFlag(flag *pflag.Flag) bool {
+func nonCompletableFlag(flag *zflag.Flag) bool {
 	return flag.Hidden || len(flag.Deprecated) > 0
 }
 

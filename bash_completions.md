@@ -69,7 +69,7 @@ Similarly, for flags:
 	annotation := make(map[string][]string)
 	annotation[zulu.BashCompCustom] = []string{"__kubectl_get_namespaces"}
 
-	flag := &pflag.Flag{
+	flag := &zflag.Flag{
 		Name:        "namespace",
 		Usage:       usage,
 		Annotations: annotation,
