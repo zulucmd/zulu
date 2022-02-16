@@ -51,16 +51,24 @@ const (
 
 	// ShellCompDirectiveFilterFileExt indicates that the provided completions
 	// should be used as file extension filters.
-	// For flags, using Command.MarkFlagFilename() and Command.MarkPersistentFlagFilename()
-	// is a shortcut to using this directive explicitly.  The BashCompFilenameExt
-	// annotation can also be used to obtain the same behavior for flags.
+	// For example, to complete only files of the form *.json or *.yaml:
+	//    return []string{"yaml", "json"}, ShellCompDirectiveFilterFileExt
+	// The BashCompFilenameExt annotation can also be used to obtain
+	// the same behavior for flags. For flags, using FlagOptFilename() is a shortcut
+	// to using this directive explicitly.
 	ShellCompDirectiveFilterFileExt
 
 	// ShellCompDirectiveFilterDirs indicates that only directory names should
-	// be provided in file completion.  To request directory names within another
-	// directory, the returned completions should specify the directory within
-	// which to search.  The BashCompSubdirsInDir annotation can be used to
-	// obtain the same behavior but only for flags.
+	// be provided in file completion.
+	// For example:
+	//    return nil, ShellCompDirectiveFilterDirs
+	// To request directory names within another directory, the returned completions
+	// should specify a single directory name within which to search. For example,
+	// to complete directories within "themes/":
+	//    return []string{"themes"}, ShellCompDirectiveFilterDirs
+	// The BashCompSubdirsInDir annotation can be used to
+	// obtain the same behavior but only for flags. The function FlagOptDirname
+	// zflag option has been provided as a convenience.
 	ShellCompDirectiveFilterDirs
 
 	// ===========================================================================

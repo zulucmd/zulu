@@ -789,18 +789,15 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 	rootCmd.AddCommand(childCmd)
 
-	rootCmd.Flags().Int("requiredFlag", -1, "required flag", zflag.OptShorthand('r'))
-	assertNoErr(t, rootCmd.MarkFlagRequired("requiredFlag"))
+	rootCmd.Flags().Int("requiredFlag", -1, "required flag", zflag.OptShorthand('r'), FlagOptRequired())
 	requiredFlag := rootCmd.Flags().Lookup("requiredFlag")
 
-	rootCmd.PersistentFlags().Int("requiredPersistent", -1, "required persistent", zflag.OptShorthand('p'))
-	assertNoErr(t, rootCmd.MarkPersistentFlagRequired("requiredPersistent"))
+	rootCmd.PersistentFlags().Int("requiredPersistent", -1, "required persistent", zflag.OptShorthand('p'), FlagOptRequired())
 	requiredPersistent := rootCmd.PersistentFlags().Lookup("requiredPersistent")
 
 	rootCmd.Flags().String("release", "", "Release name", zflag.OptShorthand('R'))
 
-	childCmd.Flags().Bool("subRequired", false, "sub required flag", zflag.OptShorthand('s'))
-	assertNoErr(t, childCmd.MarkFlagRequired("subRequired"))
+	childCmd.Flags().Bool("subRequired", false, "sub required flag", zflag.OptShorthand('s'), FlagOptRequired())
 	childCmd.Flags().Bool("subNotRequired", false, "sub not required flag", zflag.OptShorthand('n'))
 
 	// Test that a required flag is suggested even without the - prefix
@@ -975,20 +972,16 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 	}
 
 	// No extensions.  Should be ignored.
-	rootCmd.Flags().String("file", "", "file flag", zflag.OptShorthand('f'))
-	assertNoErr(t, rootCmd.MarkFlagFilename("file"))
+	rootCmd.Flags().String("file", "", "file flag", zflag.OptShorthand('f'), FlagOptFilename())
 
 	// Single extension
-	rootCmd.Flags().String("log", "", "log flag", zflag.OptShorthand('l'))
-	assertNoErr(t, rootCmd.MarkFlagFilename("log", "log"))
+	rootCmd.Flags().String("log", "", "log flag", zflag.OptShorthand('l'), FlagOptFilename("log"))
 
 	// Multiple extensions
-	rootCmd.Flags().String("yaml", "", "yaml flag", zflag.OptShorthand('y'))
-	assertNoErr(t, rootCmd.MarkFlagFilename("yaml", "yaml", "yml"))
+	rootCmd.Flags().String("yaml", "", "yaml flag", zflag.OptShorthand('y'), FlagOptFilename("yaml", "yml"))
 
 	// Directly using annotation
-	rootCmd.Flags().String("text", "", "text flag", zflag.OptShorthand('t'))
-	assertNoErr(t, rootCmd.Flags().SetAnnotation("text", BashCompFilenameExt, []string{"txt"}))
+	rootCmd.Flags().String("text", "", "text flag", zflag.OptShorthand('t'), zflag.OptAnnotation(BashCompFilenameExt, []string{"txt"}))
 
 	// Test that the completion logic returns the proper info for the completion
 	// script to handle the file filtering
@@ -1097,16 +1090,13 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 	}
 
 	// Filter directories
-	rootCmd.Flags().String("dir", "", "dir flag", zflag.OptShorthand('d'))
-	assertNoErr(t, rootCmd.MarkFlagDirname("dir"))
+	rootCmd.Flags().String("dir", "", "dir flag", zflag.OptShorthand('d'), FlagOptDirname())
 
 	// Filter directories within a directory
-	rootCmd.Flags().String("subdir", "", "subdir", zflag.OptShorthand('s'))
-	assertNoErr(t, rootCmd.Flags().SetAnnotation("subdir", BashCompSubdirsInDir, []string{"themes"}))
+	rootCmd.Flags().String("subdir", "", "subdir", zflag.OptShorthand('s'), FlagOptDirname("themes"))
 
 	// Multiple directory specification get ignored
-	rootCmd.Flags().String("manydir", "", "manydir", zflag.OptShorthand('m'))
-	assertNoErr(t, rootCmd.Flags().SetAnnotation("manydir", BashCompSubdirsInDir, []string{"themes", "colors"}))
+	rootCmd.Flags().String("manydir", "", "manydir", zflag.OptShorthand('m'), zflag.OptAnnotation(BashCompSubdirsInDir, []string{"themes", "colors"}))
 
 	// Test that the completion logic returns the proper info for the completion
 	// script to handle the directory filtering

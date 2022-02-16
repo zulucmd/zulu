@@ -135,24 +135,26 @@ ShellCompDirectiveNoSpace
 // no completion is provided.
 ShellCompDirectiveNoFileComp
 
-// Indicates that the returned completions should be used as file extension filters.
+// ShellCompDirectiveFilterFileExt indicates that the provided completions
+// should be used as file extension filters.
 // For example, to complete only files of the form *.json or *.yaml:
 //    return []string{"yaml", "json"}, ShellCompDirectiveFilterFileExt
-// For flags, using MarkFlagFilename() and MarkPersistentFlagFilename()
-// is a shortcut to using this directive explicitly.
-//
+// The BashCompFilenameExt annotation can also be used to obtain
+// the same behavior for flags. For flags, using FlagOptFilename() is a shortcut
+// to using this directive explicitly.
 ShellCompDirectiveFilterFileExt
 
-// Indicates that only directory names should be provided in file completion.
+// ShellCompDirectiveFilterDirs indicates that only directory names should
+// be provided in file completion.
 // For example:
 //    return nil, ShellCompDirectiveFilterDirs
-// For flags, using MarkFlagDirname() is a shortcut to using this directive explicitly.
-//
 // To request directory names within another directory, the returned completions
 // should specify a single directory name within which to search. For example,
 // to complete directories within "themes/":
 //    return []string{"themes"}, ShellCompDirectiveFilterDirs
-//
+// The BashCompSubdirsInDir annotation can be used to
+// obtain the same behavior but only for flags. The function FlagOptDirname
+// zflag option has been provided as a convenience.
 ShellCompDirectiveFilterDirs
 ```
 
@@ -195,11 +197,11 @@ zulu.CompErrorln(msg string)
 
 ### Mark flags as required
 
-Most of the time completions will only show sub-commands. But if a flag is required to make a sub-command work, you probably want it to show up when the user types [tab][tab].  You can mark a flag as 'Required' like so:
+Most of the time completions will only show sub-commands. But if a flag is required to make a sub-command work, you probably want it to show up when the user types [tab][tab].  You can mark a flag as 'Required' using the `zulu.FlagOptRequired()` option.
 
 ```go
-cmd.MarkFlagRequired("pod")
-cmd.MarkFlagRequired("container")
+flagSet.String("pod", "", "pod usage", zulu.FlagOptRequired())
+flagSet.String("container", "", "container usage", zulu.FlagOptRequired())
 ```
 
 and you'll get something like
@@ -241,10 +243,9 @@ Completion ended with directive: ShellCompDirectiveNoFileComp # This is on stder
 
 ### Specify valid filename extensions for flags that take a filename
 
-To limit completions of flag values to file names with certain extensions you can either use the different `MarkFlagFilename()` functions or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterFileExt`, like so:
+To limit completions of flag values to file names with certain extensions you can either use the `zulu.FlagOptFilename()` function or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterFileExt`, like so:
 ```go
-flagName := "output"
-cmd.MarkFlagFilename(flagName, "yaml", "json")
+flagSet.String("output", "", "output usage", zulu.FlagOptFilename("yaml", "json"))
 ```
 or
 ```go
@@ -255,10 +256,9 @@ cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, 
 
 ### Limit flag completions to directory names
 
-To limit completions of flag values to directory names you can either use the `MarkFlagDirname()` functions or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterDirs`, like so:
+To limit completions of flag values to directory names you can either use the `zulu.FlagOptDirname()` functions or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterDirs`, like so:
 ```go
-flagName := "output"
-cmd.MarkFlagDirname(flagName)
+flagSet.String("output", "", "output usage", zulu.FlagOptDirname())
 ```
 or
 ```go
@@ -399,8 +399,8 @@ search  show  status
   * `BashCompFilenameExt` (filtering by file extension)
   * `BashCompSubdirsInDir` (filtering by directory)
 * The functions corresponding to the above annotations are consequently not supported and will be ignored for `fish`:
-  * `MarkFlagFilename()` and `MarkPersistentFlagFilename()` (filtering by file extension)
-  * `MarkFlagDirname()` and `MarkPersistentFlagDirname()` (filtering by directory)
+  * `FlagOptFilename()` (filtering by file extension)
+  * `FlagOptDirname()` (filtering by directory)
 * Similarly, the following completion directives are not supported and will be ignored for `fish`:
   * `ShellCompDirectiveFilterFileExt` (filtering by file extension)
   * `ShellCompDirectiveFilterDirs` (filtering by directory)
@@ -441,8 +441,8 @@ search  show  status
   * `BashCompFilenameExt` (filtering by file extension)
   * `BashCompSubdirsInDir` (filtering by directory)
 * The functions corresponding to the above annotations are consequently not supported and will be ignored for `powershell`:
-  * `MarkFlagFilename()` and `MarkPersistentFlagFilename()` (filtering by file extension)
-  * `MarkFlagDirname()` and `MarkPersistentFlagDirname()` (filtering by directory)
+  * `FlagOptFilename()` (filtering by file extension)
+  * `FlagOptDirname()` (filtering by directory)
 * Similarly, the following completion directives are not supported and will be ignored for `powershell`:
   * `ShellCompDirectiveFilterFileExt` (filtering by file extension)
   * `ShellCompDirectiveFilterDirs` (filtering by directory)

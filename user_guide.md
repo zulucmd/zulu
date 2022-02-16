@@ -223,14 +223,12 @@ command := zulu.Command{
 Flags are optional by default. If instead you wish your command to report an error
 when a flag has not been set, mark it as required:
 ```go
-rootCmd.Flags().StringVar(&Region, "region", "", "AWS region", zflag.OptShorthand('r'))
-rootCmd.MarkFlagRequired("region")
+rootCmd.Flags().StringVar(&Region, "region", "", "AWS region", zflag.OptShorthand('r'), zulu.FlagOptRequired())
 ```
 
 Or, for persistent flags:
 ```go
-rootCmd.PersistentFlags().StringVar(&Region, "region", "", "AWS region", zflag.OptShorthand('r'))
-rootCmd.MarkPersistentFlagRequired("region")
+rootCmd.PersistentFlags().StringVar(&Region, "region", "", "AWS region", zflag.OptShorthand('r'), zulu.FlagOptRequired())
 ```
 
 ## Positional and Custom Arguments

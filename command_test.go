@@ -778,10 +778,8 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 
 func TestRequiredFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
-	c.Flags().String("foo1", "", "")
-	assertNoErr(t, c.MarkFlagRequired("foo1"))
-	c.Flags().String("foo2", "", "")
-	assertNoErr(t, c.MarkFlagRequired("foo2"))
+	c.Flags().String("foo1", "", "", FlagOptRequired())
+	c.Flags().String("foo2", "", "", FlagOptRequired())
 	c.Flags().String("bar", "", "")
 	expected := fmt.Sprintf("required flag(s) %q, %q not set", "foo1", "foo2")
 
@@ -795,8 +793,7 @@ func TestRequiredFlags(t *testing.T) {
 
 func TestRequiredFlagsWithCustomFlagErrorFunc(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
-	c.Flags().String("foo1", "", "")
-	assertNoErr(t, c.MarkFlagRequired("foo1"))
+	c.Flags().String("foo1", "", "", FlagOptRequired())
 	silentError := "failed flag parsing"
 	c.SetFlagErrorFunc(func(c *Command, err error) error {
 		c.Println(err)
@@ -817,17 +814,13 @@ func TestRequiredFlagsWithCustomFlagErrorFunc(t *testing.T) {
 
 func TestPersistentRequiredFlags(t *testing.T) {
 	parent := &Command{Use: "parent", Run: emptyRun}
-	parent.PersistentFlags().String("foo1", "", "")
-	assertNoErr(t, parent.MarkPersistentFlagRequired("foo1"))
-	parent.PersistentFlags().String("foo2", "", "")
-	assertNoErr(t, parent.MarkPersistentFlagRequired("foo2"))
+	parent.PersistentFlags().String("foo1", "", "", FlagOptRequired())
+	parent.PersistentFlags().String("foo2", "", "", FlagOptRequired())
 	parent.Flags().String("foo3", "", "")
 
 	child := &Command{Use: "child", Run: emptyRun}
-	child.Flags().String("bar1", "", "")
-	assertNoErr(t, child.MarkFlagRequired("bar1"))
-	child.Flags().String("bar2", "", "")
-	assertNoErr(t, child.MarkFlagRequired("bar2"))
+	child.Flags().String("bar1", "", "", FlagOptRequired())
+	child.Flags().String("bar2", "", "", FlagOptRequired())
 	child.Flags().String("bar3", "", "")
 
 	parent.AddCommand(child)
@@ -845,9 +838,8 @@ func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 	// commands that disable flag parsing
 
 	parent := &Command{Use: "parent", Run: emptyRun}
-	parent.PersistentFlags().Bool("foo", false, "")
+	parent.PersistentFlags().Bool("foo", false, "", FlagOptRequired())
 	flag := parent.PersistentFlags().Lookup("foo")
-	assertNoErr(t, parent.MarkPersistentFlagRequired("foo"))
 
 	child := &Command{Use: "child", Run: emptyRun}
 	child.DisableFlagParsing = true
@@ -2457,21 +2449,18 @@ Use "root child [command] --help" for more information about a command.
 				child.Example = "child sub --int 0"
 
 				pfs := root.PersistentFlags()
-				pfs.Int("pint", 1, "persistent int usage", zflag.OptShorthand('q'), zflag.OptGroup("group1"))
+				pfs.Int("pint", 1, "persistent int usage", zflag.OptShorthand('q'), zflag.OptGroup("group1"), FlagOptRequired())
 				pfs.Bool("pbool", false, "persistent bool usage", zflag.OptShorthand('c'), zflag.OptGroup("group2"))
-				assertNoErr(t, MarkFlagRequired(pfs, "pint"))
 
 				fs := child.Flags()
 				fs.String("string1", "some", "string1 usage", zflag.OptShorthand('s'))
 				fs.Bool("bool1", false, "bool1 usage", zflag.OptShorthand('b'))
 
-				fs.String("string2", "some", "string2 usage in group1", zflag.OptGroup("group1"))
+				fs.String("string2", "some", "string2 usage in group1", zflag.OptGroup("group1"), FlagOptRequired())
 				fs.Bool("bool2", false, "bool2 usage in group1", zflag.OptGroup("group1"))
-				assertNoErr(t, MarkFlagRequired(fs, "string2"))
 
 				fs.String("string3", "some", "string3 usage in group2", zflag.OptGroup("group2"))
-				fs.Bool("bool3", false, "bool3 usage in group2", zflag.OptGroup("group2"))
-				assertNoErr(t, MarkFlagRequired(fs, "bool3"))
+				fs.Bool("bool3", false, "bool3 usage in group2", zflag.OptGroup("group2"), FlagOptRequired())
 
 				sub1 := &Command{
 					Use:   "sub1",
