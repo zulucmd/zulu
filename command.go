@@ -18,14 +18,19 @@ package zulu
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
-	"github.com/gowarden/zflag"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/gowarden/zflag"
 )
+
+//go:embed resources/usage.txt.gotmpl
+var defaultUsageTemplate string
 
 // FParseErrAllowlist configures Flag parse errors to be ignored
 type FParseErrAllowlist zflag.ParseErrorsAllowlist
@@ -224,7 +229,7 @@ type Command struct {
 	// errWriter is a writer defined by the user that replaces stderr
 	errWriter io.Writer
 
-	//FParseErrWhitelist flag parse errors to be ignored
+	// FParseErrWhitelist flag parse errors to be ignored
 	FParseErrWhitelist FParseErrAllowlist
 
 	// CompletionOptions is a set of options to control the handling of shell completion
@@ -561,33 +566,7 @@ func (c *Command) UsageTemplate() string {
 	if c.HasParent() {
 		return c.parent.UsageTemplate()
 	}
-	return `Usage:{{if .Runnable}}
-  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
-  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
-
-Aliases:
-  {{.NameAndAliases}}{{end}}{{if .HasExample}}
-
-Examples:
-{{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}
-
-Available Commands:{{range $cmds}}{{if (and (eq .Group "") (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{range $group := .Groups}}
-
-{{.Title}}{{range $cmds}}{{if (and (eq .Group $group.Group) (or .IsAvailableCommand (eq .Name "help")))}}
-  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
-
-Flags:
-{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
-
-Global Flags:
-{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
-
-Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
-  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
-
-Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
-`
+	return defaultUsageTemplate
 }
 
 // HelpTemplate return help template for the command.
@@ -630,7 +609,7 @@ func shortHasNoOptDefVal(name string, fs *zflag.FlagSet) bool {
 		return false
 	}
 
-	flag := fs.ShorthandLookup(name[:1])
+	flag := fs.ShorthandLookupStr(name[:1])
 	if flag == nil {
 		return false
 	}
@@ -643,7 +622,7 @@ func stripFlags(args []string, c *Command) []string {
 	}
 	c.mergePersistentFlags()
 
-	commands := []string{}
+	commands := make([]string, 0)
 	flags := c.Flags()
 
 Loop:
@@ -1220,7 +1199,7 @@ func (c *Command) InitDefaultHelpFlag() {
 		} else {
 			usage += c.Name()
 		}
-		c.Flags().BoolP("help", "h", false, usage)
+		c.Flags().Bool("help", false, usage, zflag.OptShorthand('h'))
 	}
 }
 
@@ -1241,8 +1220,8 @@ func (c *Command) InitDefaultVersionFlag() {
 		} else {
 			usage += c.Name()
 		}
-		if c.Flags().ShorthandLookup("v") == nil {
-			c.Flags().BoolP("version", "v", false, usage)
+		if c.Flags().ShorthandLookup('v') == nil {
+			c.Flags().Bool("version", false, usage, zflag.OptShorthand('v'))
 		} else {
 			c.Flags().Bool("version", false, usage)
 		}
@@ -1662,6 +1641,7 @@ func (c *Command) Flags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.flags.SetOutput(c.flagErrorBuf)
+		c.flags.FlagUsageFormatter = formatter{}
 	}
 
 	return c.flags
@@ -1690,7 +1670,9 @@ func (c *Command) LocalFlags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.lflags.SetOutput(c.flagErrorBuf)
+		c.lflags.FlagUsageFormatter = formatter{}
 	}
+
 	c.lflags.SortFlags = c.Flags().SortFlags
 	if c.globNormFunc != nil {
 		c.lflags.SetNormalizeFunc(c.globNormFunc)
@@ -1716,6 +1698,7 @@ func (c *Command) InheritedFlags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.iflags.SetOutput(c.flagErrorBuf)
+		c.iflags.FlagUsageFormatter = formatter{}
 	}
 
 	local := c.LocalFlags()
@@ -1744,6 +1727,7 @@ func (c *Command) PersistentFlags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.pflags.SetOutput(c.flagErrorBuf)
+		c.pflags.FlagUsageFormatter = formatter{}
 	}
 	return c.pflags
 }
@@ -1874,6 +1858,7 @@ func (c *Command) updateParentsPflags() {
 		c.parentsPflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 		c.parentsPflags.SetOutput(c.flagErrorBuf)
 		c.parentsPflags.SortFlags = false
+		c.parentsPflags.FlagUsageFormatter = formatter{}
 	}
 
 	if c.globNormFunc != nil {

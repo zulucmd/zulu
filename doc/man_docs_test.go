@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/spf13/afero"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
+	"github.com/spf13/afero"
 
 	"github.com/gowarden/zulu"
 )
@@ -202,8 +204,7 @@ func TestGenManSeeAlso(t *testing.T) {
 
 func TestManPrintFlagsHidesShortDeperecated(t *testing.T) {
 	c := &zulu.Command{}
-	c.Flags().StringP("foo", "f", "default", "Foo flag")
-	assertNoErr(t, c.Flags().MarkShorthandDeprecated("foo", "don't use it no more"))
+	c.Flags().String("foo", "default", "Foo flag", zflag.OptShorthand('f'), zflag.OptShorthandDeprecated("don't use it no more"))
 
 	buf := new(bytes.Buffer)
 	manPrintFlags(buf, c.Flags())

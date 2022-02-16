@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gowarden/zflag"
+	"io"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zflag"
 )
 
 func emptyRun(*Command, []string) {}
@@ -456,8 +458,8 @@ func TestFlagShort(t *testing.T) {
 
 	var intFlagValue int
 	var stringFlagValue string
-	c.Flags().IntVarP(&intFlagValue, "intf", "i", -1, "")
-	c.Flags().StringVarP(&stringFlagValue, "sf", "s", "", "")
+	c.Flags().IntVar(&intFlagValue, "intf", -1, "", zflag.OptShorthand('i'))
+	c.Flags().StringVar(&stringFlagValue, "sf", "", "", zflag.OptShorthand('s'))
 
 	output, err := executeCommand(c, "-i", "7", "-sabc", "one", "two")
 	if output != "" {
@@ -486,7 +488,7 @@ func TestChildFlag(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	var intFlagValue int
-	childCmd.Flags().IntVarP(&intFlagValue, "intf", "i", -1, "")
+	childCmd.Flags().IntVar(&intFlagValue, "intf", -1, "", zflag.OptShorthand('i'))
 
 	output, err := executeCommand(rootCmd, "child", "-i7")
 	if output != "" {
@@ -507,8 +509,8 @@ func TestChildFlagWithParentLocalFlag(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	var intFlagValue int
-	rootCmd.Flags().StringP("sf", "s", "", "")
-	childCmd.Flags().IntVarP(&intFlagValue, "intf", "i", -1, "")
+	rootCmd.Flags().String("sf", "", "", zflag.OptShorthand('s'))
+	childCmd.Flags().IntVar(&intFlagValue, "intf", -1, "", zflag.OptShorthand('i'))
 
 	_, err := executeCommand(rootCmd, "child", "-i7", "-sabc")
 	if err == nil {
@@ -524,7 +526,7 @@ func TestChildFlagWithParentLocalFlag(t *testing.T) {
 
 func TestFlagInvalidInput(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun}
-	rootCmd.Flags().IntP("intf", "i", -1, "")
+	rootCmd.Flags().Int("intf", -1, "", zflag.OptShorthand('i'))
 
 	_, err := executeCommand(rootCmd, "-iabc")
 	if err == nil {
@@ -540,7 +542,7 @@ func TestFlagBeforeCommand(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	var flagValue int
-	childCmd.Flags().IntVarP(&flagValue, "intf", "i", -1, "")
+	childCmd.Flags().IntVar(&flagValue, "intf", -1, "", zflag.OptShorthand('i'))
 
 	// With short flag.
 	_, err := executeCommand(rootCmd, "-i7", "child")
@@ -621,10 +623,10 @@ func TestStripFlags(t *testing.T) {
 	}
 
 	c := &Command{Use: "c", Run: emptyRun}
-	c.PersistentFlags().BoolP("persist", "p", false, "")
-	c.Flags().IntP("int", "i", -1, "")
-	c.Flags().StringP("str", "s", "", "")
-	c.Flags().BoolP("bool", "b", false, "")
+	c.PersistentFlags().Bool("persist", false, "", zflag.OptShorthand('p'))
+	c.Flags().Int("int", -1, "", zflag.OptShorthand('i'))
+	c.Flags().String("str", "", "", zflag.OptShorthand('s'))
+	c.Flags().Bool("bool", false, "", zflag.OptShorthand('b'))
 
 	for i, test := range tests {
 		got := stripFlags(test.input, c)
@@ -667,7 +669,7 @@ func TestPersistentFlagsOnSameCommand(t *testing.T) {
 	}
 
 	var flagValue int
-	rootCmd.PersistentFlags().IntVarP(&flagValue, "intf", "i", -1, "")
+	rootCmd.PersistentFlags().IntVar(&flagValue, "intf", -1, "", zflag.OptShorthand('i'))
 
 	output, err := executeCommand(rootCmd, "-i7", "one", "two")
 	if output != "" {
@@ -692,7 +694,7 @@ func TestEmptyInputs(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
 
 	var flagValue int
-	c.Flags().IntVarP(&flagValue, "intf", "i", -1, "")
+	c.Flags().IntVar(&flagValue, "intf", -1, "", zflag.OptShorthand('i'))
 
 	output, err := executeCommand(c, "", "-i7", "")
 	if output != "" {
@@ -751,8 +753,8 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 
 	var parentFlagValue int
 	var childFlagValue int
-	rootCmd.PersistentFlags().IntVarP(&parentFlagValue, "parentf", "p", -1, "")
-	childCmd.Flags().IntVarP(&childFlagValue, "childf", "c", -1, "")
+	rootCmd.PersistentFlags().IntVar(&parentFlagValue, "parentf", -1, "", zflag.OptShorthand('p'))
+	childCmd.Flags().IntVar(&childFlagValue, "childf", -1, "", zflag.OptShorthand('c'))
 
 	output, err := executeCommand(rootCmd, "child", "-c7", "-p8", "one", "two")
 	if output != "" {
@@ -1031,7 +1033,7 @@ func TestShortAndLongVersionFlagInHelp(t *testing.T) {
 
 func TestLongVersionFlagOnlyInHelpWhenShortPredefined(t *testing.T) {
 	rootCmd := &Command{Use: "root", Version: "1.0.0", Run: emptyRun}
-	rootCmd.Flags().StringP("foo", "v", "", "not a version flag")
+	rootCmd.Flags().String("foo", "", "not a version flag", zflag.OptShorthand('v'))
 
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
@@ -1147,13 +1149,13 @@ func TestShorthandVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 
 func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
 	rootCmd := &Command{Use: "root", Run: emptyRun, Version: "1.2.3"}
-	rootCmd.Flags().StringP("notversion", "v", "", "not a version flag")
+	rootCmd.Flags().String("notversion", "", "not a version flag", zflag.OptShorthand('v'))
 
 	_, err := executeCommand(rootCmd, "-v")
 	if err == nil {
 		t.Errorf("Expected error")
 	}
-	check(t, rootCmd.Flags().ShorthandLookup("v").Name, "notversion")
+	check(t, rootCmd.Flags().ShorthandLookupStr("v").Name, "notversion")
 	checkStringContains(t, err.Error(), "flag needs an argument: 'v' in -v")
 }
 
@@ -1925,8 +1927,7 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 // Related to https://github.com/spf13/cobra/issues/463.
 func TestUseDeprecatedFlags(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
-	c.Flags().BoolP("deprecated", "d", false, "deprecated flag")
-	assertNoErr(t, c.Flags().MarkDeprecated("deprecated", "This flag is deprecated"))
+	c.Flags().Bool("deprecated", false, "deprecated flag", zflag.OptShorthand('d'), zflag.OptDeprecated("This flag is deprecated"))
 
 	output, err := executeCommand(c, "c", "-d")
 	if err != nil {
@@ -1938,7 +1939,7 @@ func TestUseDeprecatedFlags(t *testing.T) {
 func TestTraverseWithParentFlags(t *testing.T) {
 	rootCmd := &Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("str", "", "")
-	rootCmd.Flags().BoolP("bool", "b", false, "")
+	rootCmd.Flags().Bool("bool", false, "", zflag.OptShorthand('b'))
 
 	childCmd := &Command{Use: "child"}
 	childCmd.Flags().Int("int", -1, "")
@@ -2113,7 +2114,7 @@ func TestCalledAs(t *testing.T) {
 
 func TestFParseErrWhitelistBackwardCompatibility(t *testing.T) {
 	c := &Command{Use: "c", Run: emptyRun}
-	c.Flags().BoolP("boola", "a", false, "a boolean flag")
+	c.Flags().Bool("boola", false, "a boolean flag", zflag.OptShorthand('a'))
 
 	output, err := executeCommand(c, "c", "-a", "--unknown", "flag")
 	if err == nil {
@@ -2130,7 +2131,7 @@ func TestFParseErrWhitelistSameCommand(t *testing.T) {
 			UnknownFlags: true,
 		},
 	}
-	c.Flags().BoolP("boola", "a", false, "a boolean flag")
+	c.Flags().Bool("boola", false, "a boolean flag", zflag.OptShorthand('a'))
 
 	_, err := executeCommand(c, "c", "-a", "--unknown", "flag")
 	if err != nil {
@@ -2151,7 +2152,7 @@ func TestFParseErrWhitelistParentCommand(t *testing.T) {
 		Use: "child",
 		Run: emptyRun,
 	}
-	c.Flags().BoolP("boola", "a", false, "a boolean flag")
+	c.Flags().Bool("boola", false, "a boolean flag", zflag.OptShorthand('a'))
 
 	root.AddCommand(c)
 
@@ -2175,7 +2176,7 @@ func TestFParseErrWhitelistChildCommand(t *testing.T) {
 			UnknownFlags: true,
 		},
 	}
-	c.Flags().BoolP("boola", "a", false, "a boolean flag")
+	c.Flags().Bool("boola", false, "a boolean flag", zflag.OptShorthand('a'))
 
 	root.AddCommand(c)
 
@@ -2198,13 +2199,13 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 			UnknownFlags: true,
 		},
 	}
-	c.Flags().BoolP("boola", "a", false, "a boolean flag")
+	c.Flags().Bool("boola", false, "a boolean flag", zflag.OptShorthand('a'))
 
 	s := &Command{
 		Use: "sibling",
 		Run: emptyRun,
 	}
-	s.Flags().BoolP("boolb", "b", false, "a boolean flag")
+	s.Flags().Bool("boolb", false, "a boolean flag", zflag.OptShorthand('b'))
 
 	root.AddCommand(c)
 	root.AddCommand(s)
@@ -2318,5 +2319,238 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 	err := root.Execute()
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestUsageTemplate(t *testing.T) {
+	createCmd := func() (*Command, *Command) {
+		root := &Command{
+			Use: "root",
+		}
+		child := &Command{
+			Use: "child",
+			Run: func(cmd *Command, args []string) {
+			},
+		}
+		root.AddCommand(child)
+		return root, child
+	}
+
+	tests := []struct {
+		name          string
+		expectedUsage string
+		testCmd       func(newOut io.Writer) *Command
+	}{
+		{
+			name: "basic test",
+			expectedUsage: `Usage:
+  root [command]
+
+Available Commands:
+  child       child I AM THE CHILD NOW
+
+Use "root [command] --help" for more information about a command.
+`,
+			testCmd: func(newOut io.Writer) *Command {
+				root, child := createCmd()
+				child.Short = "child I AM THE CHILD NOW"
+				root.SetOut(newOut)
+				return root
+			},
+		},
+		{
+			name: "basic child test",
+			expectedUsage: `Usage:
+  root child
+`,
+			testCmd: func(newOut io.Writer) *Command {
+				root, child := createCmd()
+				root.SetOut(newOut)
+				return child
+			},
+		},
+		{
+			name: "alias test",
+			expectedUsage: `Usage:
+  root child
+
+Aliases:
+  child, c
+`,
+			testCmd: func(newOut io.Writer) *Command {
+				root, child := createCmd()
+				root.SetOut(newOut)
+
+				child.Aliases = []string{"c"}
+				return child
+			},
+		},
+		{
+			name: "alias test",
+			expectedUsage: `Usage:
+  root child
+
+Examples:
+  child sub --int 0
+`,
+			testCmd: func(newOut io.Writer) *Command {
+				root, child := createCmd()
+				root.SetOut(newOut)
+				child.Example = "child sub --int 0"
+				return child
+			},
+		},
+		{
+			name: "full test",
+			expectedUsage: `Usage:
+  root child [flags]
+  root child [command]
+
+Aliases:
+  child, c
+
+Examples:
+  child sub --int 0
+
+Available Commands:
+  sub1        sub1 short
+  sub2        sub2 short
+
+group1
+  sub3        sub3 short in group1
+  sub4        sub4 short in group1
+
+group2
+  sub5        sub5 short in group2
+  sub6        sub6 short in group2
+
+Flags:
+  -b, --bool1            bool1 usage
+  -s, --string1 string   string1 usage (default "some")
+
+group1 Flags:
+      --bool2            bool2 usage in group1
+      --string2 string   string2 usage in group1 (required) (default "some")
+
+group2 Flags:
+      --bool3            bool3 usage in group2 (required)
+      --string3 string   string3 usage in group2 (default "some")
+
+Global Flags:
+
+group1 Flags:
+  -q, --pint int   persistent int usage (required) (default 1)
+
+group2 Flags:
+  -c, --pbool      persistent bool usage
+
+Additional help topics:
+  root child sub7 short
+
+Use "root child [command] --help" for more information about a command.
+`,
+			testCmd: func(newOut io.Writer) *Command {
+				root, child := createCmd()
+				root.SetOut(newOut)
+
+				child.Aliases = []string{"c"}
+				child.Example = "child sub --int 0"
+
+				pfs := root.PersistentFlags()
+				pfs.Int("pint", 1, "persistent int usage", zflag.OptShorthand('q'), zflag.OptGroup("group1"))
+				pfs.Bool("pbool", false, "persistent bool usage", zflag.OptShorthand('c'), zflag.OptGroup("group2"))
+				assertNoErr(t, MarkFlagRequired(pfs, "pint"))
+
+				fs := child.Flags()
+				fs.String("string1", "some", "string1 usage", zflag.OptShorthand('s'))
+				fs.Bool("bool1", false, "bool1 usage", zflag.OptShorthand('b'))
+
+				fs.String("string2", "some", "string2 usage in group1", zflag.OptGroup("group1"))
+				fs.Bool("bool2", false, "bool2 usage in group1", zflag.OptGroup("group1"))
+				assertNoErr(t, MarkFlagRequired(fs, "string2"))
+
+				fs.String("string3", "some", "string3 usage in group2", zflag.OptGroup("group2"))
+				fs.Bool("bool3", false, "bool3 usage in group2", zflag.OptGroup("group2"))
+				assertNoErr(t, MarkFlagRequired(fs, "bool3"))
+
+				sub1 := &Command{
+					Use:   "sub1",
+					Short: "sub1 short",
+					Run: func(cmd *Command, args []string) {
+					},
+				}
+
+				sub2 := &Command{
+					Use:   "sub2",
+					Short: "sub2 short",
+					Run: func(cmd *Command, args []string) {
+					},
+				}
+
+				sub3 := &Command{
+					Use:   "sub3",
+					Short: "sub3 short in group1",
+					Group: "group1",
+					Run: func(cmd *Command, args []string) {
+					},
+				}
+
+				sub4 := &Command{
+					Use:   "sub4",
+					Short: "sub4 short in group1",
+					Group: "group1",
+					Run: func(cmd *Command, args []string) {
+					},
+				}
+
+				sub5 := &Command{
+					Use:   "sub5",
+					Short: "sub5 short in group2",
+					Group: "group2",
+					Run: func(cmd *Command, args []string) {
+					},
+				}
+
+				sub6 := &Command{
+					Use:   "sub6",
+					Short: "sub6 short in group2",
+					Group: "group2",
+					Run: func(cmd *Command, args []string) {
+					},
+				}
+
+				sub7 := &Command{
+					Use:   "sub7",
+					Short: "short",
+				}
+
+				child.AddCommand(sub1)
+				child.AddCommand(sub2)
+				child.AddCommand(sub3)
+				child.AddCommand(sub4)
+				child.AddCommand(sub5)
+				child.AddCommand(sub6)
+				child.AddCommand(sub7)
+				return child
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			cmd := test.testCmd(&buf)
+
+			err := cmd.Usage()
+			if err != nil {
+				t.Errorf("was not expecting an error, got: %s", err)
+				t.FailNow()
+			}
+
+			output := buf.String()
+			if output != test.expectedUsage {
+				t.Errorf("Expecting: \n %q\nGot:\n %q\n", test.expectedUsage, output)
+			}
+		})
 	}
 }

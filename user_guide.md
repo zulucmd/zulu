@@ -73,6 +73,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gowarden/zflag"
 	"github.com/gowarden/zulu"
 )
 
@@ -98,8 +99,8 @@ func main() error {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.zulu.yaml)")
-	rootCmd.PersistentFlags().StringP("author", "a", "YOUR NAME", "author name for copyright attribution")
-	rootCmd.PersistentFlags().StringVarP(&userLicense, "license", "l", "", "name of license for the project")
+	rootCmd.PersistentFlags().String("author", "YOUR NAME", "author name for copyright attribution", zflag.OptShorthand('a'))
+	rootCmd.PersistentFlags().StringVar(&userLicense, "license", "", "name of license for the project", zflag.OptShorthand('l'))
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
 
 	rootCmd.AddCommand(addCmd)
@@ -193,7 +194,7 @@ command it's assigned to as well as every command under that command. For
 global flags, assign a flag as a persistent flag on the root.
 
 ```go
-rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
+rootCmd.PersistentFlags().BoolVar(&Verbose, "verbose" false, "verbose output", zflag.OptShorthand('v'))
 ```
 
 ### Local Flags
@@ -201,7 +202,7 @@ rootCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose out
 A flag can also be assigned locally, which will only apply to that specific command.
 
 ```go
-localCmd.Flags().StringVarP(&Source, "source", "s", "", "Source directory to read from")
+localCmd.Flags().StringVar(&Source, "source", "", "Source directory to read from", zflag.OptShorthand('s'))
 ```
 
 ### Local Flag on Parent Commands
@@ -222,13 +223,13 @@ command := zulu.Command{
 Flags are optional by default. If instead you wish your command to report an error
 when a flag has not been set, mark it as required:
 ```go
-rootCmd.Flags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
+rootCmd.Flags().StringVar(&Region, "region", "", "AWS region", zflag.OptShorthand('r'))
 rootCmd.MarkFlagRequired("region")
 ```
 
 Or, for persistent flags:
 ```go
-rootCmd.PersistentFlags().StringVarP(&Region, "region", "r", "", "AWS region (required)")
+rootCmd.PersistentFlags().StringVar(&Region, "region", "", "AWS region", zflag.OptShorthand('r'))
 rootCmd.MarkPersistentFlagRequired("region")
 ```
 
@@ -289,56 +290,57 @@ More documentation about flags is available at https://github.com/gowarden/zflag
 package main
 
 import (
-  "fmt"
-  "strings"
+	"fmt"
+	"strings"
 
-  "github.com/gowarden/zulu"
+	"github.com/gowarden/zflag"
+	"github.com/gowarden/zulu"
 )
 
 func main() {
-  var echoTimes int
+	var echoTimes int
 
-  var cmdPrint = &zulu.Command{
-    Use:   "print [string to print]",
-    Short: "Print anything to the screen",
-    Long: `print is for printing anything back to the screen.
+	var cmdPrint = &zulu.Command{
+		Use:   "print [string to print]",
+		Short: "Print anything to the screen",
+		Long: `print is for printing anything back to the screen.
 For many years people have printed back to the screen.`,
-    Args: zulu.MinimumNArgs(1),
-    Run: func(cmd *zulu.Command, args []string) {
-      fmt.Println("Print: " + strings.Join(args, " "))
-    },
-  }
+		Args: zulu.MinimumNArgs(1),
+		Run: func(cmd *zulu.Command, args []string) {
+			fmt.Println("Print: " + strings.Join(args, " "))
+		},
+	}
 
-  var cmdEcho = &zulu.Command{
-    Use:   "echo [string to echo]",
-    Short: "Echo anything to the screen",
-    Long: `echo is for echoing anything back.
+	var cmdEcho = &zulu.Command{
+		Use:   "echo [string to echo]",
+		Short: "Echo anything to the screen",
+		Long: `echo is for echoing anything back.
 Echo works a lot like print, except it has a child command.`,
-    Args: zulu.MinimumNArgs(1),
-    Run: func(cmd *zulu.Command, args []string) {
-      fmt.Println("Echo: " + strings.Join(args, " "))
-    },
-  }
+		Args: zulu.MinimumNArgs(1),
+		Run: func(cmd *zulu.Command, args []string) {
+			fmt.Println("Echo: " + strings.Join(args, " "))
+		},
+	}
 
-  var cmdTimes = &zulu.Command{
-    Use:   "times [string to echo]",
-    Short: "Echo anything to the screen more times",
-    Long: `echo things multiple times back to the user by providing
+	var cmdTimes = &zulu.Command{
+		Use:   "times [string to echo]",
+		Short: "Echo anything to the screen more times",
+		Long: `echo things multiple times back to the user by providing
 a count and a string.`,
-    Args: zulu.MinimumNArgs(1),
-    Run: func(cmd *zulu.Command, args []string) {
-      for i := 0; i < echoTimes; i++ {
-        fmt.Println("Echo: " + strings.Join(args, " "))
-      }
-    },
-  }
+		Args: zulu.MinimumNArgs(1),
+		Run: func(cmd *zulu.Command, args []string) {
+			for i := 0; i < echoTimes; i++ {
+				fmt.Println("Echo: " + strings.Join(args, " "))
+			}
+		},
+	}
 
-  cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
+	cmdTimes.Flags().IntVar(&echoTimes, "times", 1, "times to echo the input", zflag.OptShorthand('t'))
 
-  var rootCmd = &zulu.Command{Use: "app"}
-  rootCmd.AddCommand(cmdPrint, cmdEcho)
-  cmdEcho.AddCommand(cmdTimes)
-  rootCmd.Execute()
+	var rootCmd = &zulu.Command{Use: "app"}
+	rootCmd.AddCommand(cmdPrint, cmdEcho)
+	cmdEcho.AddCommand(cmdTimes)
+	rootCmd.Execute()
 }
 ```
 

@@ -2,10 +2,11 @@ package zulu
 
 import (
 	"fmt"
-	"github.com/gowarden/zflag"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/gowarden/zflag"
 )
 
 const (
@@ -758,11 +759,11 @@ func findFlag(cmd *Command, name string) *zflag.Flag {
 	if len(name) == 1 {
 		// First convert the short flag into a long flag
 		// as the cmd.Flag() search only accepts long flags
-		if short := flagSet.ShorthandLookup(name); short != nil {
+		if short := flagSet.ShorthandLookupStr(name); short != nil {
 			name = short.Name
 		} else {
 			set := cmd.InheritedFlags()
-			if short = set.ShorthandLookup(name); short != nil {
+			if short = set.ShorthandLookupStr(name); short != nil {
 				name = short.Name
 			} else {
 				return nil

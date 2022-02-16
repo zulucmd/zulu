@@ -5,27 +5,28 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gowarden/zflag"
 	"github.com/gowarden/zulu"
 )
 
 func emptyRun(*zulu.Command, []string) {}
 
 func init() {
-	rootCmd.PersistentFlags().StringP("rootflag", "r", "two", "")
-	rootCmd.PersistentFlags().StringP("strtwo", "t", "two", "help message for parent flag strtwo")
+	rootCmd.PersistentFlags().String("rootflag", "two", "", zflag.OptShorthand('r'))
+	rootCmd.PersistentFlags().String("strtwo", "two", "help message for parent flag strtwo", zflag.OptShorthand('t'))
 
-	echoCmd.PersistentFlags().StringP("strone", "s", "one", "help message for flag strone")
-	echoCmd.PersistentFlags().BoolP("persistentbool", "p", false, "help message for flag persistentbool")
-	echoCmd.Flags().IntP("intone", "i", 123, "help message for flag intone")
-	echoCmd.Flags().BoolP("boolone", "b", true, "help message for flag boolone")
+	echoCmd.PersistentFlags().String("strone", "one", "help message for flag strone", zflag.OptShorthand('s'))
+	echoCmd.PersistentFlags().Bool("persistentbool", false, "help message for flag persistentbool", zflag.OptShorthand('p'))
+	echoCmd.Flags().Int("intone", 123, "help message for flag intone", zflag.OptShorthand('i'))
+	echoCmd.Flags().Bool("boolone", true, "help message for flag boolone", zflag.OptShorthand('b'))
 
-	timesCmd.PersistentFlags().StringP("strtwo", "t", "2", "help message for child flag strtwo")
-	timesCmd.Flags().IntP("inttwo", "j", 234, "help message for flag inttwo")
-	timesCmd.Flags().BoolP("booltwo", "c", false, "help message for flag booltwo")
+	timesCmd.PersistentFlags().String("strtwo", "2", "help message for child flag strtwo", zflag.OptShorthand('t'))
+	timesCmd.Flags().Int("inttwo", 234, "help message for flag inttwo", zflag.OptShorthand('j'))
+	timesCmd.Flags().Bool("booltwo", false, "help message for flag booltwo", zflag.OptShorthand('c'))
 
-	printCmd.PersistentFlags().StringP("strthree", "s", "three", "help message for flag strthree")
-	printCmd.Flags().IntP("intthree", "i", 345, "help message for flag intthree")
-	printCmd.Flags().BoolP("boolthree", "b", true, "help message for flag boolthree")
+	printCmd.PersistentFlags().String("strthree", "three", "help message for flag strthree", zflag.OptShorthand('s'))
+	printCmd.Flags().Int("intthree", 345, "help message for flag intthree", zflag.OptShorthand('i'))
+	printCmd.Flags().Bool("boolthree", true, "help message for flag boolthree", zflag.OptShorthand('b'))
 
 	echoCmd.AddCommand(timesCmd, echoSubCmd, deprecatedCmd)
 	rootCmd.AddCommand(printCmd, echoCmd, dummyCmd)
