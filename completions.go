@@ -120,6 +120,7 @@ func FixedCompletions(choices []string, directive ShellCompDirective) func(cmd *
 }
 
 // RegisterFlagCompletionFunc should be called to register a function to provide completion for a flag.
+// todo move this to either Command or Flag Annotation
 func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)) error {
 	flag := c.Flag(flagName)
 	if flag == nil {
@@ -592,8 +593,8 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*z
 	}
 
 	if !flagWithEqual {
-		if len(flag.NoOptDefVal) != 0 {
-			// We had assumed dealing with a two-word flag but the flag is a boolean flag.
+		if _, isOptional := flag.Value.(zflag.OptionalValue); isOptional {
+			// We had assumed dealing with a two-word flag but the flag is an optional flag.
 			// In that case, there is no value following it, so we are not really doing flag completion.
 			// Reset everything to do noun completion.
 			trimmedArgs = args

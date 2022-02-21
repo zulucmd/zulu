@@ -32,8 +32,8 @@ import (
 //go:embed resources/usage.txt.gotmpl
 var defaultUsageTemplate string
 
-// FParseErrAllowlist configures Flag parse errors to be ignored
-type FParseErrAllowlist zflag.ParseErrorsAllowlist
+// FParseErrAllowList configures Flag parse errors to be ignored
+type FParseErrAllowList zflag.ParseErrorsAllowlist
 
 type HookFuncE func(cmd *Command, args []string) error
 type HookFunc func(cmd *Command, args []string)
@@ -229,8 +229,8 @@ type Command struct {
 	// errWriter is a writer defined by the user that replaces stderr
 	errWriter io.Writer
 
-	// FParseErrWhitelist flag parse errors to be ignored
-	FParseErrWhitelist FParseErrAllowlist
+	// FParseErrAllowList flag parse errors to be ignored
+	FParseErrAllowList FParseErrAllowList
 
 	// CompletionOptions is a set of options to control the handling of shell completion
 	CompletionOptions CompletionOptions
@@ -596,15 +596,17 @@ func (c *Command) VersionTemplate() string {
 `
 }
 
-func hasNoOptDefVal(name string, fs *zflag.FlagSet) bool {
+func isBoolFlag(name string, fs *zflag.FlagSet) bool {
 	flag := fs.Lookup(name)
 	if flag == nil {
 		return false
 	}
-	return flag.NoOptDefVal != ""
+
+	_, isBool := flag.Value.(zflag.BoolFlag)
+	return isBool
 }
 
-func shortHasNoOptDefVal(name string, fs *zflag.FlagSet) bool {
+func isShortBoolFlag(name string, fs *zflag.FlagSet) bool {
 	if len(name) == 0 {
 		return false
 	}
@@ -613,7 +615,9 @@ func shortHasNoOptDefVal(name string, fs *zflag.FlagSet) bool {
 	if flag == nil {
 		return false
 	}
-	return flag.NoOptDefVal != ""
+
+	_, isBool := flag.Value.(zflag.BoolFlag)
+	return isBool
 }
 
 func stripFlags(args []string, c *Command) []string {
@@ -633,11 +637,11 @@ Loop:
 		case s == "--":
 			// "--" terminates the flags
 			break Loop
-		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !hasNoOptDefVal(s[2:], flags):
+		case strings.HasPrefix(s, "--") && !strings.Contains(s, "=") && !isBoolFlag(s[2:], flags):
 			// If '--flag arg' then
 			// delete arg from args.
 			fallthrough // (do the same as below)
-		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !shortHasNoOptDefVal(s[1:], flags):
+		case strings.HasPrefix(s, "-") && !strings.Contains(s, "=") && len(s) == 2 && !isShortBoolFlag(s[1:], flags):
 			// If '-f arg' then
 			// delete 'arg' from args or break the loop if len(args) <= 1.
 			if len(args) <= 1 {
@@ -746,11 +750,11 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 		// A long flag with a space separated value
 		case strings.HasPrefix(arg, "--") && !strings.Contains(arg, "="):
 			// TODO: this isn't quite right, we should really check ahead for 'true' or 'false'
-			inFlag = !hasNoOptDefVal(arg[2:], c.Flags())
+			inFlag = !isBoolFlag(arg[2:], c.Flags())
 			flags = append(flags, arg)
 			continue
 		// A short flag with a space separated value
-		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !shortHasNoOptDefVal(arg[1:], c.Flags()):
+		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !isShortBoolFlag(arg[1:], c.Flags()):
 			inFlag = true
 			flags = append(flags, arg)
 			continue
@@ -1641,7 +1645,7 @@ func (c *Command) Flags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.flags.SetOutput(c.flagErrorBuf)
-		c.flags.FlagUsageFormatter = formatter{}
+		c.flags.FlagUsageFormatter = defaultUsageFormatter
 	}
 
 	return c.flags
@@ -1670,7 +1674,7 @@ func (c *Command) LocalFlags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.lflags.SetOutput(c.flagErrorBuf)
-		c.lflags.FlagUsageFormatter = formatter{}
+		c.lflags.FlagUsageFormatter = defaultUsageFormatter
 	}
 
 	c.lflags.SortFlags = c.Flags().SortFlags
@@ -1698,7 +1702,7 @@ func (c *Command) InheritedFlags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.iflags.SetOutput(c.flagErrorBuf)
-		c.iflags.FlagUsageFormatter = formatter{}
+		c.iflags.FlagUsageFormatter = defaultUsageFormatter
 	}
 
 	local := c.LocalFlags()
@@ -1727,7 +1731,7 @@ func (c *Command) PersistentFlags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.pflags.SetOutput(c.flagErrorBuf)
-		c.pflags.FlagUsageFormatter = formatter{}
+		c.pflags.FlagUsageFormatter = defaultUsageFormatter
 	}
 	return c.pflags
 }
@@ -1826,7 +1830,7 @@ func (c *Command) ParseFlags(args []string) error {
 	c.mergePersistentFlags()
 
 	// do it here after merging all flags and just before parse
-	c.Flags().ParseErrorsAllowlist = zflag.ParseErrorsAllowlist(c.FParseErrWhitelist)
+	c.Flags().ParseErrorsAllowlist = zflag.ParseErrorsAllowlist(c.FParseErrAllowList)
 
 	err := c.Flags().Parse(args)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
@@ -1858,7 +1862,7 @@ func (c *Command) updateParentsPflags() {
 		c.parentsPflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 		c.parentsPflags.SetOutput(c.flagErrorBuf)
 		c.parentsPflags.SortFlags = false
-		c.parentsPflags.FlagUsageFormatter = formatter{}
+		c.parentsPflags.FlagUsageFormatter = defaultUsageFormatter
 	}
 
 	if c.globNormFunc != nil {

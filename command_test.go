@@ -2119,7 +2119,7 @@ func TestFParseErrWhitelistSameCommand(t *testing.T) {
 	c := &Command{
 		Use: "c",
 		Run: emptyRun,
-		FParseErrWhitelist: FParseErrAllowlist{
+		FParseErrAllowList: FParseErrAllowList{
 			UnknownFlags: true,
 		},
 	}
@@ -2135,7 +2135,7 @@ func TestFParseErrWhitelistParentCommand(t *testing.T) {
 	root := &Command{
 		Use: "root",
 		Run: emptyRun,
-		FParseErrWhitelist: FParseErrAllowlist{
+		FParseErrAllowList: FParseErrAllowList{
 			UnknownFlags: true,
 		},
 	}
@@ -2164,7 +2164,7 @@ func TestFParseErrWhitelistChildCommand(t *testing.T) {
 	c := &Command{
 		Use: "child",
 		Run: emptyRun,
-		FParseErrWhitelist: FParseErrAllowlist{
+		FParseErrAllowList: FParseErrAllowList{
 			UnknownFlags: true,
 		},
 	}
@@ -2187,7 +2187,7 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	c := &Command{
 		Use: "child",
 		Run: emptyRun,
-		FParseErrWhitelist: FParseErrAllowlist{
+		FParseErrAllowList: FParseErrAllowList{
 			UnknownFlags: true,
 		},
 	}

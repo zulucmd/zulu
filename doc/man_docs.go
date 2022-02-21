@@ -16,7 +16,6 @@ package doc
 import (
 	"bytes"
 	"fmt"
-	"github.com/gowarden/zulu"
 	"io"
 	"os"
 	"path/filepath"
@@ -24,6 +23,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gowarden/zulu"
 
 	"github.com/cpuguy83/go-md2man/v2/md2man"
 	"github.com/gowarden/zflag"
@@ -199,7 +200,7 @@ func manPrintFlags(buf io.StringWriter, flags *zflag.FlagSet) {
 		} else {
 			format = fmt.Sprintf("**--%s**", flag.Name)
 		}
-		if len(flag.NoOptDefVal) > 0 {
+		if _, isOptional := flag.Value.(zflag.OptionalValue); isOptional {
 			format += "["
 		}
 		if v, ok := flag.Value.(zflag.Typed); ok && v.Type() == "string" {
@@ -208,7 +209,7 @@ func manPrintFlags(buf io.StringWriter, flags *zflag.FlagSet) {
 		} else {
 			format += "=%s"
 		}
-		if len(flag.NoOptDefVal) > 0 {
+		if _, isOptional := flag.Value.(zflag.OptionalValue); isOptional {
 			format += "]"
 		}
 		format += "\n\t%s\n\n"
