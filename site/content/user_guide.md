@@ -569,8 +569,11 @@ Run 'kubectl help' for usage.
 
 ## Generating documentation for your command
 
-Zulu can generate documentation based on subcommands, flags, etc. Read more about it in the [docs generation documentation](doc/README.md).
+Zulu can generate documentation based on subcommands, flags, etc.
+Read more about it in the [docs generation documentation](docgen/_index.md).
 
 ## Generating shell completions
 
-Zulu can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell. If you add more information to your commands, these completions can be amazingly powerful and flexible.  Read more about it in [Shell Completions](shell_completions.md).
+Zulu can generate a shell-completion file for the following shells: bash, zsh, fish, PowerShell.
+If you add more information to your commands, these completions can be amazingly powerful and flexible.
+Read more about it in [Shell Completions](completions/_index.md).

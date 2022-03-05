@@ -89,8 +89,8 @@ import "github.com/gowarden/zulu"
 Zulu provides its own program that will create your application and add any
 commands you want. It's the easiest way to incorporate Zulu into your application.
 
-For complete details on using the Zulu library, please read the [The Zulu User Guide](user_guide.md).
+For complete details on using the Zulu library, please read the [The Zulu User Guide](site/content/user_guide.md).
 
 # License
 
-Zulu is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/gowarden/zulu/blob/master/LICENSE.txt)
+Zulu is released under the Apache 2.0 license. See [LICENSE.txt](LICENSE.txt)

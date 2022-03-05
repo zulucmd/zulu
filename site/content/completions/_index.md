@@ -322,10 +322,7 @@ complete -o default -F __start_origcommand aliasname
 $ aliasname <tab><tab>
 completion     firstcommand   secondcommand
 ```
-### Bash completion
-
-Zulu provides two versions for bash completion.  The original bash completion (which started it all!) can be used by calling
-`GenBashCompletion()` or `GenBashCompletionFile()`.
+### Bash completions
 
 Bash completion is also available.  This can be used by calling `GenBashCompletion()` or
 `GenBashCompletionFile()`.
@@ -377,7 +374,7 @@ search  show  status
 ### Zsh completions standardization
 
 Zulu 1.1 standardized its zsh completion support to align it with its other shell completions.  Although the API was kept backward-compatible, some small changes in behavior were introduced.
-Please refer to [Zsh Completions](zsh_completions.md) for details.
+Please refer to [Zsh Completions](zsh.md) for details.
 
 ## fish completions
 
@@ -426,7 +423,7 @@ search  (search for a keyword in charts)  show  (show information of a chart)  s
 
 # With descriptions and Mode 'MenuComplete' The description of the current selected value will be displayed below the suggestions.
 $ helm s[tab]
-search    show     status  
+search    show     status
 
 search for a keyword in charts
 
