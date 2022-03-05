@@ -1096,7 +1096,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	args := c.args
 
 	// Workaround FAIL with "go test -v" or "zulu.test -test.v", see #155
-	if c.args == nil && filepath.Base(os.Args[0]) != "zulu.test" {
+	if c.args == nil && !strings.Contains(filepath.Base(os.Args[0]), "zulu.test") {
 		args = os.Args[1:]
 	}
 
