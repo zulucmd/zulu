@@ -49,13 +49,11 @@ Available Commands:
 {{- end }}
 
 {{- if .HasAvailableInheritedFlags }}
-
-Global Flags:
 {{- if .HasAvailableLocalFlags }}
 {{- $flags := .InheritedFlags }}
 {{- range $flags.Groups }}
 
-{{ . }}{{- if . }} {{ end }}Flags:
+Global {{ if . }}{{ . }} {{ end }}Flags:
 {{ $flags.FlagUsagesForGroup . | trimTrailingWhitespaces }}
 {{- end }}
 {{- end }}

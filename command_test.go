@@ -2428,12 +2428,10 @@ group2 Flags:
       --bool3            bool3 usage in group2 (required)
       --string3 string   string3 usage in group2 (default "some")
 
-Global Flags:
-
-group1 Flags:
+Global group1 Flags:
   -q, --pint int   persistent int usage (required) (default 1)
 
-group2 Flags:
+Global group2 Flags:
   -c, --pbool      persistent bool usage
 
 Additional help topics:
