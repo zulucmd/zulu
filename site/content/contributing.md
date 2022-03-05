@@ -1,3 +1,7 @@
+---
+weight: 30
+---
+
 # Contributing to Zulu
 
 Thank you so much for contributing to Zulu. We appreciate your time and help.

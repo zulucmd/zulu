@@ -1,4 +1,8 @@
-# User Guide
+---
+weight: 4
+---
+
+# Getting Started
 
 While you are welcome to provide your own organization, typically a Zulu-based
 application will follow the following organizational structure:

@@ -1,3 +1,7 @@
+---
+weight: 31
+---
+
 # Zulu Changelog
 
 ## v1.1.3
@@ -35,6 +39,7 @@
 Announcing v1.0.0 of Cobra. 🎉
 
 ### Notable Changes
+
 * Fish completion (including support for Go custom completion) @marckhouzam
 * API (urgent): Rename BashCompDirectives to ShellCompDirectives @marckhouzam
 * Remove/replace SetOutput on Command - deprecated @jpmcb
