@@ -119,23 +119,6 @@ func FixedCompletions(choices []string, directive ShellCompDirective) func(cmd *
 	}
 }
 
-// RegisterFlagCompletionFunc should be called to register a function to provide completion for a flag.
-// todo move this to either Command or Flag Annotation
-func (c *Command) RegisterFlagCompletionFunc(flagName string, f func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)) error {
-	flag := c.Flag(flagName)
-	if flag == nil {
-		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' does not exist", flagName)
-	}
-	flagCompletionMutex.Lock()
-	defer flagCompletionMutex.Unlock()
-
-	if _, exists := flagCompletionFunctions[flag]; exists {
-		return fmt.Errorf("RegisterFlagCompletionFunc: flag '%s' already registered", flagName)
-	}
-	flagCompletionFunctions[flag] = f
-	return nil
-}
-
 // Returns a string listing the different directive enabled in the specified parameter
 func (d ShellCompDirective) string() string {
 	var directives []string

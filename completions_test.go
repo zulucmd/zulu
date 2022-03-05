@@ -1491,26 +1491,28 @@ func TestFlagCompletionInGo(t *testing.T) {
 		Use: "root",
 		Run: emptyRun,
 	}
-	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'))
-	assertNoErr(t, rootCmd.RegisterFlagCompletionFunc("introot", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		completions := []string{}
-		for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
-			if strings.HasPrefix(comp, toComplete) {
-				completions = append(completions, comp)
+	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
+		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			completions := make([]string, 0)
+			for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
+				if strings.HasPrefix(comp, toComplete) {
+					completions = append(completions, comp)
+				}
 			}
-		}
-		return completions, ShellCompDirectiveDefault
-	}))
-	rootCmd.Flags().String("filename", "", "Enter a filename")
-	assertNoErr(t, rootCmd.RegisterFlagCompletionFunc("filename", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		completions := []string{}
-		for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
-			if strings.HasPrefix(comp, toComplete) {
-				completions = append(completions, comp)
+			return completions, ShellCompDirectiveDefault
+		}),
+	)
+	rootCmd.Flags().String("filename", "", "Enter a filename",
+		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			completions := make([]string, 0)
+			for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
+				if strings.HasPrefix(comp, toComplete) {
+					completions = append(completions, comp)
+				}
 			}
-		}
-		return completions, ShellCompDirectiveNoSpace | ShellCompDirectiveNoFileComp
-	}))
+			return completions, ShellCompDirectiveNoSpace | ShellCompDirectiveNoFileComp
+		}),
+	)
 
 	// Test completing an empty string
 	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--introot", "")
@@ -1699,10 +1701,11 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 	rootCmd.AddCommand(childCmd, childCmd2)
 	childCmd.Flags().Bool("bool", false, "test bool flag")
-	childCmd.Flags().String("string", "", "test string flag")
-	_ = childCmd.RegisterFlagCompletionFunc("string", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		return []string{"myval"}, ShellCompDirectiveDefault
-	})
+	childCmd.Flags().String("string", "", "test string flag",
+		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"myval"}, ShellCompDirectiveDefault
+		}),
+	)
 
 	// Test flag completion with no argument
 	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child", "--")
@@ -1915,10 +1918,11 @@ func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
 		},
 	}
 	childCmd.Flags().Bool("bool", false, "test bool flag")
-	childCmd.Flags().String("string", "", "test string flag")
-	_ = childCmd.RegisterFlagCompletionFunc("string", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		return []string{"myval"}, ShellCompDirectiveDefault
-	})
+	childCmd.Flags().String("string", "", "test string flag",
+		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			return []string{"myval"}, ShellCompDirectiveDefault
+		}),
+	)
 
 	// Important: This is a test for https://github.com/spf13/cobra/issues/1437
 	// Only add the subcommand after RegisterFlagCompletionFunc was called, do not change this order!
@@ -1945,26 +1949,28 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 		Use: "root",
 		Run: emptyRun,
 	}
-	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'))
-	assertNoErr(t, rootCmd.RegisterFlagCompletionFunc("introot", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		completions := []string{}
-		for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
-			if strings.HasPrefix(comp, toComplete) {
-				completions = append(completions, comp)
+	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
+		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			completions := []string{}
+			for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
+				if strings.HasPrefix(comp, toComplete) {
+					completions = append(completions, comp)
+				}
 			}
-		}
-		return completions, ShellCompDirectiveDefault
-	}))
-	rootCmd.Flags().String("filename", "", "Enter a filename")
-	assertNoErr(t, rootCmd.RegisterFlagCompletionFunc("filename", func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		completions := []string{}
-		for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
-			if strings.HasPrefix(comp, toComplete) {
-				completions = append(completions, comp)
+			return completions, ShellCompDirectiveDefault
+		}),
+	)
+	rootCmd.Flags().String("filename", "", "Enter a filename",
+		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+			completions := []string{}
+			for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
+				if strings.HasPrefix(comp, toComplete) {
+					completions = append(completions, comp)
+				}
 			}
-		}
-		return completions, ShellCompDirectiveNoSpace | ShellCompDirectiveNoFileComp
-	}))
+			return completions, ShellCompDirectiveNoSpace | ShellCompDirectiveNoFileComp
+		}),
+	)
 
 	// Test completing an empty string
 	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--introot", "")
@@ -2409,10 +2415,11 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	f := rootCmd.Flags()
 	f.Bool("short", false, "short flag 1", zflag.OptShorthand('s'))
 	f.Bool("short2", false, "short flag 2", zflag.OptShorthand('d'))
-	f.String("short3", "", "short flag 3", zflag.OptShorthand('f'))
-	_ = rootCmd.RegisterFlagCompletionFunc("short3", func(*Command, []string, string) ([]string, ShellCompDirective) {
-		return []string{"works"}, ShellCompDirectiveNoFileComp
-	})
+	f.String("short3", "", "short flag 3", zflag.OptShorthand('f'),
+		FlagOptCompletionFunc(func(*Command, []string, string) ([]string, ShellCompDirective) {
+			return []string{"works"}, ShellCompDirectiveNoFileComp
+		}),
+	)
 
 	// Test that a single shorthand flag works
 	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-s", "")
