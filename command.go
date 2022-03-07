@@ -161,9 +161,15 @@ type Command struct {
 	postRunHooks []HookFuncE
 	// persistentPostRunHooks are executed after the command or one of its children have executed.
 	persistentPostRunHooks []HookFuncE
+	// finalizeHooks: executes at the end of the function. This always executes, even if
+	// there are errors. Will panic if it produces errors. Children of this command will
+	// not inherit.
+	finalizeHooks []HookFuncE
+	// persistentFinalizeHooks: FinalizeE but children inherit and execute this too.
+	persistentFinalizeHooks []HookFuncE
 
 	// groups for commands
-	commandgroups []*Group
+	commandGroups []*Group
 
 	// args is actual args parsed from flags.
 	args []string
@@ -828,9 +834,9 @@ func (c *Command) execute(a []string) (err error) {
 
 	defer func() {
 		var hooks []HookFuncE
-		appendHooks(&hooks, c.FinalizeE, nil)
+		appendHooks(&hooks, c.FinalizeE, c.finalizeHooks)
 		for p := c; p != nil; p = p.Parent() {
-			appendHooks(&hooks, p.PersistentFinalizeE, nil)
+			appendHooks(&hooks, p.PersistentFinalizeE, p.persistentFinalizeHooks)
 		}
 
 		for _, x := range hooks {
@@ -974,7 +980,7 @@ func (c *Command) OnPersistentInitialize(f ...HookFuncE) {
 // OnInitialize registers one or more hooks on the command to be executed
 // before the flags of the command are parsed.
 func (c *Command) OnInitialize(f ...HookFuncE) {
-	c.persistentInitializeHooks = append(c.persistentInitializeHooks, f...)
+	c.initializeHooks = append(c.persistentInitializeHooks, f...)
 }
 
 // OnPersistentPreRun registers one or more hooks on the command to be executed
@@ -1007,13 +1013,13 @@ func (c *Command) OnPersistentPostRun(f ...HookFuncE) {
 // OnFinalize registers one or more hooks on the command to be executed after the
 // command has executed even if it errors.
 func (c *Command) OnFinalize(f ...HookFuncE) {
-	c.postRunHooks = append(c.postRunHooks, f...)
+	c.finalizeHooks = append(c.finalizeHooks, f...)
 }
 
 // OnPersistentFinalize register one or more hooks on the command to be executed
 // after the command or one of its children have executed even if it errors.
 func (c *Command) OnPersistentFinalize(f ...HookFuncE) {
-	c.persistentPostRunHooks = append(c.persistentPostRunHooks, f...)
+	c.persistentFinalizeHooks = append(c.persistentFinalizeHooks, f...)
 }
 
 // ExecuteContext is the same as Execute(), but sets the ctx on the command.
@@ -1312,12 +1318,12 @@ func (c *Command) AddCommand(cmds ...*Command) {
 
 // Groups returns a slice of child command groups.
 func (c *Command) Groups() []*Group {
-	return c.commandgroups
+	return c.commandGroups
 }
 
-// ContainGroups return if group is in command groups.
+// ContainsGroup return if group is in command groups.
 func (c *Command) ContainsGroup(group string) bool {
-	for _, x := range c.commandgroups {
+	for _, x := range c.commandGroups {
 		if x.Group == group {
 			return true
 		}
@@ -1327,12 +1333,12 @@ func (c *Command) ContainsGroup(group string) bool {
 
 // AddGroup adds one or more command groups to this parent command.
 func (c *Command) AddGroup(groups ...*Group) {
-	c.commandgroups = append(c.commandgroups, groups...)
+	c.commandGroups = append(c.commandGroups, groups...)
 }
 
 // RemoveCommand removes one or more commands from a parent command.
 func (c *Command) RemoveCommand(cmds ...*Command) {
-	commands := []*Command{}
+	commands := make([]*Command, 0, len(c.commands)-len(cmds))
 main:
 	for _, command := range c.commands {
 		for _, cmd := range cmds {
