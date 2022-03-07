@@ -9,7 +9,7 @@ import (
 	"github.com/gowarden/zulu"
 )
 
-func emptyRun(*zulu.Command, []string) {}
+func emptyRun(*zulu.Command, []string) error { return nil }
 
 func init() {
 	rootCmd.PersistentFlags().String("rootflag", "two", "", zflag.OptShorthand('r'))
@@ -36,7 +36,7 @@ var rootCmd = &zulu.Command{
 	Use:   "root",
 	Short: "Root short description",
 	Long:  "Root long description",
-	Run:   emptyRun,
+	RunE:  emptyRun,
 }
 
 var echoCmd = &zulu.Command{
@@ -51,7 +51,7 @@ var echoSubCmd = &zulu.Command{
 	Use:   "echosub [string to print]",
 	Short: "second sub command for echo",
 	Long:  "an absolutely utterly useless command for testing gendocs!.",
-	Run:   emptyRun,
+	RunE:  emptyRun,
 }
 
 var timesCmd = &zulu.Command{
@@ -59,7 +59,7 @@ var timesCmd = &zulu.Command{
 	SuggestFor: []string{"counts"},
 	Short:      "Echo anything to the screen more times",
 	Long:       `a slightly useless command for testing.`,
-	Run:        emptyRun,
+	RunE:       emptyRun,
 }
 
 var deprecatedCmd = &zulu.Command{

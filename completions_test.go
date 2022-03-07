@@ -39,33 +39,33 @@ func validArgsFunc2(cmd *Command, args []string, toComplete string) ([]string, S
 
 func TestCmdNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 	childCmd1 := &Command{
 		Use:   "firstChild",
 		Short: "First command",
-		Run:   emptyRun,
+		RunE:  emptyRun,
 	}
 	childCmd2 := &Command{
-		Use: "secondChild",
-		Run: emptyRun,
+		Use:  "secondChild",
+		RunE: emptyRun,
 	}
 	hiddenCmd := &Command{
 		Use:    "testHidden",
 		Hidden: true, // Not completed
-		Run:    emptyRun,
+		RunE:   emptyRun,
 	}
 	deprecatedCmd := &Command{
 		Use:        "testDeprecated",
 		Deprecated: "deprecated", // Not completed
-		Run:        emptyRun,
+		RunE:       emptyRun,
 	}
 	aliasedCmd := &Command{
 		Use:     "aliased",
 		Short:   "A command with aliases",
 		Aliases: []string{"testAlias", "testSynonym"}, // Not completed
-		Run:     emptyRun,
+		RunE:    emptyRun,
 	}
 
 	rootCmd.AddCommand(childCmd1, childCmd2, hiddenCmd, deprecatedCmd, aliasedCmd)
@@ -141,8 +141,8 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 
 func TestNoCmdNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 	rootCmd.Flags().String("localroot", "", "local root flag")
 
@@ -150,7 +150,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 		Use:   "childCmd1",
 		Short: "First command",
 		Args:  MinimumNArgs(0),
-		Run:   emptyRun,
+		RunE:  emptyRun,
 	}
 	rootCmd.AddCommand(childCmd1)
 	childCmd1.PersistentFlags().String("persistent", "", "persistent flag", zflag.OptShorthand('p'))
@@ -159,8 +159,8 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	nonPersistentFlag := childCmd1.Flags().Lookup("nonPersistent")
 
 	childCmd2 := &Command{
-		Use: "childCmd2",
-		Run: emptyRun,
+		Use:  "childCmd2",
+		RunE: emptyRun,
 	}
 	childCmd1.AddCommand(childCmd2)
 
@@ -362,12 +362,12 @@ func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
 		ValidArgs: []string{"one", "two"},
-		Run:       emptyRun,
+		RunE:      emptyRun,
 	}
 
 	childCmd := &Command{
-		Use: "thechild",
-		Run: emptyRun,
+		Use:  "thechild",
+		RunE: emptyRun,
 	}
 
 	rootCmd.AddCommand(childCmd)
@@ -412,13 +412,13 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:               "root",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 
 	childCmd := &Command{
 		Use:   "thechild",
 		Short: "The child command",
-		Run:   emptyRun,
+		RunE:  emptyRun,
 	}
 
 	rootCmd.AddCommand(childCmd)
@@ -477,12 +477,12 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 
 func TestFlagNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 	childCmd := &Command{
-		Use: "childCmd",
-		Run: emptyRun,
+		Use:  "childCmd",
+		RunE: emptyRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -560,13 +560,13 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 
 func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 	childCmd := &Command{
 		Use:   "childCmd",
 		Short: "first command",
-		Run:   emptyRun,
+		RunE:  emptyRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -644,13 +644,13 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 
 func TestFlagNameCompletionRepeat(t *testing.T) {
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 	childCmd := &Command{
 		Use:   "childCmd",
 		Short: "first command",
-		Run:   emptyRun,
+		RunE:  emptyRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -767,14 +767,14 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
 		ValidArgs: []string{"realArg"},
-		Run:       emptyRun,
+		RunE:      emptyRun,
 	}
 	childCmd := &Command{
 		Use: "childCmd",
 		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 			return []string{"subArg"}, ShellCompDirectiveNoFileComp
 		},
-		Run: emptyRun,
+		RunE: emptyRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -956,8 +956,8 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 
 func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 
 	// No extensions.  Should be ignored.
@@ -1074,8 +1074,8 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 
 func TestFlagDirFilterCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 
 	// Filter directories
@@ -1199,13 +1199,13 @@ func TestValidArgsFuncCmdContext(t *testing.T) {
 	}
 
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 	childCmd := &Command{
 		Use:               "childCmd",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -1231,7 +1231,7 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 	rootCmd := &Command{
 		Use:               "root",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 
 	// Test completing an empty string
@@ -1275,7 +1275,7 @@ func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
 		// The problem is in the implementation of legacyArgs().
 		Args:              MinimumNArgs(1),
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 
 	// Check completing with wrong number of args
@@ -1294,16 +1294,16 @@ func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
 }
 
 func TestValidArgsFuncChildCmds(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child1Cmd := &Command{
 		Use:               "child1",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	child2Cmd := &Command{
 		Use:               "child2",
 		ValidArgsFunction: validArgsFunc2,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
@@ -1398,12 +1398,12 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 }
 
 func TestValidArgsFuncAliases(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		Aliases:           []string{"son", "daughter"},
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -1454,11 +1454,11 @@ func TestValidArgsFuncAliases(t *testing.T) {
 }
 
 func TestCompleteNoDesCmdInZshScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -1470,11 +1470,11 @@ func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 }
 
 func TestCompleteCmdInZshScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -1488,8 +1488,8 @@ func TestCompleteCmdInZshScript(t *testing.T) {
 
 func TestFlagCompletionInGo(t *testing.T) {
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
 		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
@@ -1582,16 +1582,16 @@ func TestFlagCompletionInGo(t *testing.T) {
 }
 
 func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child1Cmd := &Command{
 		Use:               "child1",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	child2Cmd := &Command{
 		Use:               "child2",
 		ValidArgsFunction: validArgsFunc2,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
@@ -1686,17 +1686,17 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 }
 
 func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
-	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd := &Command{Use: "root", RunE: emptyRun}
 	childCmd := &Command{
-		Use: "child",
-		Run: emptyRun,
+		Use:  "child",
+		RunE: emptyRun,
 		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 			return []string{"--validarg", "test"}, ShellCompDirectiveDefault
 		},
 	}
 	childCmd2 := &Command{
 		Use:       "child2",
-		Run:       emptyRun,
+		RunE:      emptyRun,
 		ValidArgs: []string{"arg1", "arg2"},
 	}
 	rootCmd.AddCommand(childCmd, childCmd2)
@@ -1909,10 +1909,10 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 }
 
 func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
-	rootCmd := &Command{Use: "root", Run: emptyRun}
+	rootCmd := &Command{Use: "root", RunE: emptyRun}
 	childCmd := &Command{
-		Use: "child",
-		Run: emptyRun,
+		Use:  "child",
+		RunE: emptyRun,
 		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 			return []string{"--validarg", "test"}, ShellCompDirectiveDefault
 		},
@@ -1946,8 +1946,8 @@ func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
 
 func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	rootCmd := &Command{
-		Use: "root",
-		Run: emptyRun,
+		Use:  "root",
+		RunE: emptyRun,
 	}
 	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
 		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
@@ -2046,7 +2046,7 @@ func TestValidArgsNotValidArgsFunc(t *testing.T) {
 		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 			return []string{"three", "four"}, ShellCompDirectiveNoFileComp
 		},
-		Run: emptyRun,
+		RunE: emptyRun,
 	}
 
 	// Test that if both ValidArgs and ValidArgsFunction are present
@@ -2088,7 +2088,7 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 		Args:       ArbitraryArgs,
 		ValidArgs:  []string{"one", "two", "three"},
 		ArgAliases: []string{"un", "deux", "trois"},
-		Run:        emptyRun,
+		RunE:       emptyRun,
 	}
 
 	// Test that argaliases are not completed when there are validargs that match
@@ -2141,20 +2141,20 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 }
 
 func TestCompleteHelp(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child1Cmd := &Command{
-		Use: "child1",
-		Run: emptyRun,
+		Use:  "child1",
+		RunE: emptyRun,
 	}
 	child2Cmd := &Command{
-		Use: "child2",
-		Run: emptyRun,
+		Use:  "child2",
+		RunE: emptyRun,
 	}
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
 	child3Cmd := &Command{
-		Use: "child3",
-		Run: emptyRun,
+		Use:  "child3",
+		RunE: emptyRun,
 	}
 	child1Cmd.AddCommand(child3Cmd)
 
@@ -2224,7 +2224,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd := &Command{
 		Use:  "root",
 		Args: NoArgs,
-		Run:  emptyRun,
+		RunE: emptyRun,
 	}
 
 	// Test that no completion command is created if there are not other sub-commands
@@ -2237,8 +2237,8 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	}
 
 	subCmd := &Command{
-		Use: "sub",
-		Run: emptyRun,
+		Use:  "sub",
+		RunE: emptyRun,
 	}
 	rootCmd.AddCommand(subCmd)
 
@@ -2356,10 +2356,10 @@ func TestDefaultCompletionCmd(t *testing.T) {
 }
 
 func TestCompleteCompletion(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	subCmd := &Command{
-		Use: "sub",
-		Run: emptyRun,
+		Use:  "sub",
+		RunE: emptyRun,
 	}
 	rootCmd.AddCommand(subCmd)
 
@@ -2410,7 +2410,7 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	rootCmd := &Command{
 		Use:       "root",
 		ValidArgs: []string{"foo", "bar"},
-		Run:       emptyRun,
+		RunE:      emptyRun,
 	}
 	f := rootCmd.Flags()
 	f.Bool("short", false, "short flag 1", zflag.OptShorthand('s'))
@@ -2506,10 +2506,10 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 		return []string{"--flag", "-f"}, ShellCompDirectiveNoFileComp
 	}
 
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	childCmd := &Command{
 		Use:                "child",
-		Run:                emptyRun,
+		RunE:               emptyRun,
 		DisableFlagParsing: true,
 		ValidArgsFunction:  flagValidArgs,
 	}
@@ -2567,7 +2567,7 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 	rootCmd := &Command{
 		Use:  "root",
 		Args: nil, // Args must be nil to trigger the legacyArgs() function
-		Run:  emptyRun,
+		RunE: emptyRun,
 		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 			return []string{"arg1", "arg2"}, ShellCompDirectiveNoFileComp
 		},
@@ -2607,12 +2607,12 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 }
 
 func TestFixedCompletions(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	choices := []string{"apple", "banana", "orange"}
 	childCmd := &Command{
 		Use:               "child",
 		ValidArgsFunction: FixedCompletions(choices, ShellCompDirectiveNoFileComp),
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(childCmd)
 

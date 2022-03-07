@@ -111,59 +111,40 @@ type Command struct {
 	// command does not define one.
 	Version string
 
-	// The *Run functions are executed in the following order:
-	//   * PersistentInitialize()
-	//   * Initialize()
-	//   * PersistentPreRun()
-	//   * PreRun()
-	//   * Run()
-	//   * PostRun()
-	//   * PersistentPostRun()
-	//   * Finalize()
-	//   * PersistentFinalize()
+	// The *RunE functions are executed in the following order:
+	//   * PersistentInitializeE
+	//   * InitializeE
+	//   * PersistentPreRunE
+	//   * PreRunE
+	//   * RunE
+	//   * PostRunE
+	//   * PersistentPostRunE
+	//   * FinalizeE
+	//   * PersistentFinalizeE
 	// All functions get the same args, the arguments after the command name.
-	//
 
-	// PersistentInitialize: First thing that is run before parsing arguments. children
+	// PersistentInitializeE: First thing that is run before parsing arguments. Children
 	// of this command will inherit and execute prior to parsing flags.
-	PersistentInitialize HookFunc
-	// PersistentInitializeE: PersistentInitialize but returns an error.
 	PersistentInitializeE HookFuncE
-	// Initialize: PersistentInitialize but children do not inherit.
-	Initialize HookFunc
-	// InitializeE: Initialize but returns an error.
+	// InitializeE: PersistentInitializeE but children do not inherit.
 	InitializeE HookFuncE
 
-	// PersistentPreRun: children of this command will inherit and execute.
-	PersistentPreRun HookFunc
-	// PersistentPreRunE: func(cmd *Command, args []string) error but returns an error.
+	// PersistentPreRunE: children of this command will inherit and execute.
 	PersistentPreRunE HookFuncE
-	// PreRun: children of this command will not inherit.
-	PreRun HookFunc
-	// PreRunE: func(cmd *Command, args []string) error but returns an error.
+	// PreRuEn: children of this command will not inherit.
 	PreRunE HookFuncE
-	// Run: Typically the actual work function. Most commands will only implement this.
-	Run HookFunc
-	// RunE: func(cmd *Command, args []string) error but returns an error.
+	// RunE: Typically the actual work function. Most commands will only implement this.
 	RunE HookFuncE
-	// PostRun: run after the Run command.
-	PostRun HookFunc
-	// PostRunE: func(cmd *Command, args []string) error but returns an error.
+	// PostRunE: run after the RunE command.
 	PostRunE HookFuncE
-	// PersistentPostRun: children of this command will inherit and execute after PostRun.
-	PersistentPostRun HookFunc
-	// PersistentPostRunE: func(cmd *Command, args []string) error but returns an error.
+	// PersistentPostRunE: children of this command will inherit and execute after PostRunE.
 	PersistentPostRunE HookFuncE
 
-	// Finalize: execute at the end of the function. This always executes, even if
+	// FinalizeE: execute at the end of the function. This always executes, even if
 	// there are errors. Will panic if it produces errors. Children of this command will
 	// not inherit.
-	Finalize HookFunc
-	// FinalizeE: Finalize but returns an error.
 	FinalizeE HookFuncE
-	// PersistentFinalize: Finalize but children inherit and execute this too.
-	PersistentFinalize HookFunc
-	// PersistentFinalizeE: PersistentFinalize but returns an error.
+	// PersistentFinalizeE: FinalizeE but children inherit and execute this too.
 	PersistentFinalizeE HookFuncE
 
 	// persistentPreRunHooks are executed before the flags of a command or one of its children are parsed.
@@ -825,10 +806,9 @@ func (c *Command) ArgsLenAtDash() int {
 	return c.Flags().ArgsLenAtDash()
 }
 
-// CancelRun will nil out the Run and RunE of a command. This can be called from
-// PreRun-style functions to prevent the command from running.
+// CancelRun will nil out the RunE of a command. This can be called from
+// PreRunE-style functions to prevent the command from running.
 func (c *Command) CancelRun() {
-	c.Run = nil
 	c.RunE = nil
 }
 
@@ -848,9 +828,9 @@ func (c *Command) execute(a []string) (err error) {
 
 	defer func() {
 		var hooks []HookFuncE
-		appendHooks(&hooks, c.FinalizeE, c.Finalize, nil)
+		appendHooks(&hooks, c.FinalizeE, nil)
 		for p := c; p != nil; p = p.Parent() {
-			appendHooks(&hooks, p.PersistentFinalizeE, p.PersistentFinalize, nil)
+			appendHooks(&hooks, p.PersistentFinalizeE, nil)
 		}
 
 		for _, x := range hooks {
@@ -870,9 +850,9 @@ func (c *Command) execute(a []string) (err error) {
 	})
 
 	for p := c; p != nil; p = p.Parent() {
-		prependHooks(&hooks, p.persistentInitializeHooks, p.PersistentInitializeE, p.PersistentInitialize)
+		prependHooks(&hooks, p.persistentInitializeHooks, p.PersistentInitializeE)
 	}
-	prependHooks(&hooks, c.initializeHooks, c.InitializeE, c.Initialize)
+	prependHooks(&hooks, c.initializeHooks, c.InitializeE)
 
 	hooks = append(hooks, func(cmd *Command, args []string) error {
 		err := c.ParseFlags(a)
@@ -938,10 +918,10 @@ func (c *Command) execute(a []string) (err error) {
 	})
 
 	for p := c; p != nil; p = p.Parent() {
-		prependHooks(&hooks, p.persistentPreRunHooks, p.PersistentPreRunE, p.PersistentPreRun)
+		prependHooks(&hooks, p.persistentPreRunHooks, p.PersistentPreRunE)
 	}
 
-	prependHooks(&hooks, c.preRunHooks, c.PreRunE, c.PreRun)
+	prependHooks(&hooks, c.preRunHooks, c.PreRunE)
 
 	// Include the validateRequiredFlags() logic as a hook
 	// to be executed before running the main Run hooks.
@@ -954,11 +934,11 @@ func (c *Command) execute(a []string) (err error) {
 		return nil
 	})
 
-	prependHooks(&hooks, c.runHooks, c.RunE, c.Run)
-	prependHooks(&hooks, c.postRunHooks, c.PostRunE, c.PostRun)
+	prependHooks(&hooks, c.runHooks, c.RunE)
+	prependHooks(&hooks, c.postRunHooks, c.PostRunE)
 
 	for p := c; p != nil; p = p.Parent() {
-		appendHooks(&hooks, p.PersistentPostRunE, p.PersistentPostRun, p.persistentPostRunHooks)
+		appendHooks(&hooks, p.PersistentPostRunE, p.persistentPostRunHooks)
 	}
 
 	// Execute the hooks execution chain:
@@ -971,30 +951,18 @@ func (c *Command) execute(a []string) (err error) {
 	return nil
 }
 
-func prependHooks(hooks *[]HookFuncE, newHooks []HookFuncE, runE HookFuncE, run HookFunc) {
+func prependHooks(hooks *[]HookFuncE, newHooks []HookFuncE, runE HookFuncE) {
 	*hooks = append(*hooks, newHooks...)
 	if runE != nil {
 		*hooks = append(*hooks, runE)
-	} else if run != nil {
-		*hooks = append(*hooks, wrapVoidHook(run))
 	}
 }
 
-func appendHooks(hooks *[]HookFuncE, runE HookFuncE, run HookFunc, newHooks []HookFuncE) {
+func appendHooks(hooks *[]HookFuncE, runE HookFuncE, newHooks []HookFuncE) {
 	if runE != nil {
 		*hooks = append(*hooks, runE)
-	} else if run != nil {
-		*hooks = append(*hooks, wrapVoidHook(run))
 	}
 	*hooks = append(*hooks, newHooks...)
-}
-
-// wrapVoidHook wraps a void hook into a function having the return error signature
-func wrapVoidHook(hook HookFunc) HookFuncE {
-	return func(cmd *Command, args []string) error {
-		hook(cmd, args)
-		return nil
-	}
 }
 
 // OnPersistentInitialize registers one or more hooks on the command to be executed
@@ -1049,7 +1017,7 @@ func (c *Command) OnPersistentFinalize(f ...HookFuncE) {
 }
 
 // ExecuteContext is the same as Execute(), but sets the ctx on the command.
-// Retrieve ctx by calling cmd.Context() inside your *Run lifecycle or ValidArgs
+// Retrieve ctx by calling cmd.Context() inside your *RunE lifecycle or ValidArgs
 // functions.
 func (c *Command) ExecuteContext(ctx context.Context) error {
 	c.ctx = ctx
@@ -1065,7 +1033,7 @@ func (c *Command) Execute() error {
 }
 
 // ExecuteContextC is the same as ExecuteC(), but sets the ctx on the command.
-// Retrieve ctx by calling cmd.Context() inside your *Run lifecycle or ValidArgs
+// Retrieve ctx by calling cmd.Context() inside your *RunE lifecycle or ValidArgs
 // functions.
 func (c *Command) ExecuteContextC(ctx context.Context) (*Command, error) {
 	c.ctx = ctx
@@ -1265,7 +1233,7 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 				}
 				return completions, ShellCompDirectiveNoFileComp
 			},
-			Run: func(c *Command, args []string) {
+			RunE: func(c *Command, args []string) error {
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
 					c.Printf("Unknown help topic %#q\n", args)
@@ -1274,6 +1242,8 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
 					CheckErr(cmd.Help())
 				}
+
+				return nil
 			},
 			Group: c.helpCommandGroup,
 		}
@@ -1547,7 +1517,7 @@ func (c *Command) HasExample() bool {
 
 // Runnable determines if the command is itself runnable.
 func (c *Command) Runnable() bool {
-	return c.Run != nil || c.RunE != nil
+	return c.RunE != nil
 }
 
 // HasSubCommands determines if the command has children commands.

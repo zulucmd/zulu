@@ -178,10 +178,10 @@ func TestGenManNoGenTagWithDisabledParent(t *testing.T) {
 }
 
 func TestGenManSeeAlso(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Run: emptyRun}
-	aCmd := &zulu.Command{Use: "aaa", Run: emptyRun, Hidden: true} // #229
-	bCmd := &zulu.Command{Use: "bbb", Run: emptyRun}
-	cCmd := &zulu.Command{Use: "ccc", Run: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	aCmd := &zulu.Command{Use: "aaa", RunE: emptyRun, Hidden: true} // #229
+	bCmd := &zulu.Command{Use: "bbb", RunE: emptyRun}
+	cCmd := &zulu.Command{Use: "ccc", RunE: emptyRun}
 	rootCmd.AddCommand(aCmd, bCmd, cCmd)
 
 	buf := new(bytes.Buffer)

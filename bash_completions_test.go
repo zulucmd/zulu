@@ -21,11 +21,11 @@ func check(t *testing.T, found, expected string) {
 }
 
 func TestCompleteNoDesCmdInBashScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -37,11 +37,11 @@ func TestCompleteNoDesCmdInBashScript(t *testing.T) {
 }
 
 func TestCompleteCmdInBashScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -54,7 +54,7 @@ func TestCompleteCmdInBashScript(t *testing.T) {
 }
 
 func TestBashProgWithDash(t *testing.T) {
-	rootCmd := &Command{Use: "root-dash", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root-dash", Args: NoArgs, RunE: emptyRun}
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
@@ -69,7 +69,7 @@ func TestBashProgWithDash(t *testing.T) {
 }
 
 func TestBashProgWithColon(t *testing.T) {
-	rootCmd := &Command{Use: "root:colon", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root:colon", Args: NoArgs, RunE: emptyRun}
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
@@ -91,11 +91,11 @@ func TestGenBashCompletionFile(t *testing.T) {
 
 	defer os.RemoveAll("./tmp")
 
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -113,11 +113,11 @@ func TestFailGenBashCompletionFile(t *testing.T) {
 	f, _ := os.OpenFile("./tmp/test", os.O_CREATE, 0400)
 	defer f.Close()
 
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 

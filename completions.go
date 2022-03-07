@@ -159,7 +159,7 @@ func (c *Command) initCompleteCmd(args []string) {
 		Short:                 "Request shell completion choices for the specified command-line",
 		Long: fmt.Sprintf("%[2]s is a special command that is used by the shell completion logic\n%[1]s",
 			"to request completion choices for the specified command-line.", ShellCompRequestCmd),
-		Run: func(cmd *Command, args []string) {
+		RunE: func(cmd *Command, args []string) error {
 			finalCmd, completions, directive, err := cmd.getCompletions(args)
 			if err != nil {
 				CompErrorln(err.Error())
@@ -200,6 +200,8 @@ func (c *Command) initCompleteCmd(args []string) {
 			// Print some helpful info to stderr for the user to understand.
 			// Output from stderr must be ignored by the completion script.
 			fmt.Fprintf(finalCmd.ErrOrStderr(), "Completion ended with directive: %s\n", directive.string())
+
+			return nil
 		},
 	}
 	c.AddCommand(completeCmd)

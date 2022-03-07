@@ -8,11 +8,11 @@ import (
 )
 
 func TestCompleteNoDesCmdInFishScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -24,11 +24,11 @@ func TestCompleteNoDesCmdInFishScript(t *testing.T) {
 }
 
 func TestCompleteCmdInFishScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -41,7 +41,7 @@ func TestCompleteCmdInFishScript(t *testing.T) {
 }
 
 func TestProgWithDash(t *testing.T) {
-	rootCmd := &Command{Use: "root-dash", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root-dash", Args: NoArgs, RunE: emptyRun}
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
@@ -56,7 +56,7 @@ func TestProgWithDash(t *testing.T) {
 }
 
 func TestProgWithColon(t *testing.T) {
-	rootCmd := &Command{Use: "root:colon", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root:colon", Args: NoArgs, RunE: emptyRun}
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
@@ -78,11 +78,11 @@ func TestGenFishCompletionFile(t *testing.T) {
 
 	defer os.RemoveAll("./tmp")
 
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -100,11 +100,11 @@ func TestFailGenFishCompletionFile(t *testing.T) {
 	f, _ := os.OpenFile("./tmp/test", os.O_CREATE, 0400)
 	defer f.Close()
 
-	rootCmd := &Command{Use: "root", Args: NoArgs, Run: emptyRun}
+	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
 	child := &Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		Run:               emptyRun,
+		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(child)
 
