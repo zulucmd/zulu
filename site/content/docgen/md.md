@@ -1,5 +1,5 @@
 ---
-weight: 22
+weight: 220
 ---
 
 ## Markdown Docs
@@ -30,7 +30,7 @@ func main() {
 
 That will get you a Markdown document `/tmp/test.md`
 
-### The entire command tree
+### For the entire command tree
 
 This program can actually generate docs for the kubectl command in the kubernetes project
 

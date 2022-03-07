@@ -1,5 +1,5 @@
 ---
-weight: 1
+weight: 10
 ---
 
 # Overview
@@ -22,4 +22,4 @@ Zulu provides:
 * Automatically generated man pages for your application
 * Command aliases so you can change things without breaking them
 * The flexibility to define your own help, usage, etc.
-* Optional seamless integration with [viper](https://github.com/spf13/viper) for 12-factor apps
+* Optional seamless integration with [koanf](https://github.com/gowarden/koanf-zflag) for 12-factor apps

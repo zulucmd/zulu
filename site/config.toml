@@ -1,7 +1,7 @@
 theme = "docuapi"
 languageCode = "en-us"
-baseurl = "https://spf13.github.io/cobra/"
-title = "Cobra"
+baseurl = "https://gowarden.github.io/zulu/"
+title = "Zulu"
 
 disableKinds = ["taxonomyTerm"]
 
@@ -18,7 +18,7 @@ defaultContentLanguage = "en"
 [module.hugoVersion]
 [[module.imports]]
 # We need one module import for Hugo to detect us as a Hugo Module.
-path="github.com/bep/empty-hugo-module"
+path = "github.com/bep/empty-hugo-module"
 
 [params]
 search = true
@@ -28,15 +28,15 @@ search = true
 [markup.goldmark.parser]
 autoHeadingIDType = "github-ascii"
 [markup.goldmark.renderer]
-unsafe= true
+unsafe = true
 
 [languages]
 [languages.en]
 languageName = "English"
 weight = 2
-title = "Cobra documentation"
+title = "Zulu documentation"
 toc_footers = [
-    "[![github.com/spf13/cobra](https://img.shields.io/badge/-spf13/cobra-323131.svg?logo=github&style=flat-square&longCache=true)](https://github.com/spf13/cobra)",
+    "[![github.com/gowraden/zulu](https://img.shields.io/badge/-gowarden/zulu-323131.svg?logo=github&style=flat-square&longCache=true)](https://github.com/gowarden/zulu)",
     "Built with [Hugo](https://gohugo.io/) theme [DocuAPI](https://github.com/bep/docuapi) by [bep](https://github.com/bep)"
 ]
 [languages.en.blackfriday]

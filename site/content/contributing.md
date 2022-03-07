@@ -1,5 +1,5 @@
 ---
-weight: 30
+weight: 1000
 ---
 
 # Contributing to Zulu
@@ -14,8 +14,8 @@ others who are seeking help. Harassment of any kind will not be tolerated.
 
 ## Questions
 
-If you have questions regarding Zulu, feel free to ask it in the community
-[#cobra Slack channel][cobra-slack]
+If you have questions regarding Zulu, feel free to raise a ticket to ask a
+question.
 
 ## Filing a bug or feature
 
@@ -49,6 +49,3 @@ If you have questions regarding Zulu, feel free to ask it in the community
 1. Commit your changes (`git commit -m 'Add some feature'`)
 1. Push to the branch (`git push origin my-new-feature`)
 1. Create new pull request
-
-<!-- Links -->
-[cobra-slack]: https://gophers.slack.com/archives/CD3LP1199

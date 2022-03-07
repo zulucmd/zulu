@@ -1,5 +1,5 @@
 ---
-weight: 2
+weight: 40
 ---
 
 # Concepts
@@ -18,13 +18,17 @@ or
 
 A few good real world examples may better illustrate this point.
 
-In the following example, 'server' is a command, and 'port' is a flag:
+In the following example, 'server' is a command, and 'port' is a flag.
 
-    hugo server --port=1313
+```shell
+$ hugo server --port=1313
+```
 
 In this command we are telling Git to clone the url bare.
 
-    git clone URL --bare
+```shell
+$ git clone URL --bare
+```
 
 ## Commands
 
@@ -47,4 +51,4 @@ In the example above, 'port' is the flag.
 
 Flag functionality is provided by the [zflag
 library](https://github.com/gowarden/zflag), a fork of the great [spf13/pflag](https://github.com/spf13/pflag)
-library, which itself is a fork of the flag standard library which maintains the same interface while adding POSIX compliance.
+library, which itself is a fork of the flag package from the standard library which maintains the same interface while adding POSIX compliance.

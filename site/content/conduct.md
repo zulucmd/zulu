@@ -1,4 +1,8 @@
-## Zulu User Contract
+---
+weight: 1015
+---
+
+# Conduct
 
 ### Versioning
 Zulu will follow a steady release cadence. Non-breaking changes will be released as minor versions quarterly. Patch bug releases are at the discretion of the maintainers. Users can expect security patch fixes to be released within relatively short order of a CVE becoming known. For more information on security patch fixes see the CVE section below. Releases will follow [Semantic Versioning](https://semver.org/). Users tracking the Master branch should expect unpredictable breaking changes as the project continues to move forward. For stability, it is highly recommended to use a release.
@@ -33,5 +37,4 @@ There may, at times, need to be exceptions where breaking changes are allowed in
 Maintainers will ensure the Zulu test suite utilizes the current supported versions of Golang.
 
 ### Disclaimer
-Changes to this document and the contents therein are at the discretion of the maintainers.
-None of the contents of this document are legally binding in any way to the maintainers or the users.
+Changes to this document and the contents therein are at the discretion of the maintainers. None of the contents of this document are legally binding in any way to the maintainers or the users.

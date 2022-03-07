@@ -1,8 +1,8 @@
 ---
-weight: 31
+weight: 1010
 ---
 
-# Zulu Changelog
+# Changelog
 
 ## v1.1.3
 

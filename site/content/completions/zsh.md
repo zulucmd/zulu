@@ -1,7 +1,7 @@
 ---
-weight: 14
+weight: 140
 ---
 
-## Generating Zsh Completion For Your zulu.Command
+### Zsh
 
 Please refer to [Shell Completions](_index.md) for details.

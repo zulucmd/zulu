@@ -1,1 +1,6 @@
 /public
+themes
+node_modules
+assets/jsconfig.json
+resources
+.hugo_build.lock

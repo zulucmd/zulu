@@ -1,5 +1,5 @@
 ---
-weight: 23
+weight: 230
 ---
 
 ## ReStructured Text Docs
@@ -30,7 +30,7 @@ func main() {
 
 That will get you a ReST document `/tmp/test.rst`
 
-### The entire command tree
+### For the entire command tree
 
 This program can actually generate docs for the kubectl command in the kubernetes project
 

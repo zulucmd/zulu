@@ -1,5 +1,5 @@
 ---
-weight: 10
+weight: 100
 ---
 
 # Shell completions
@@ -14,7 +14,7 @@ The currently supported shells are:
 Zulu will automatically provide your program with a fully functional `completion` command,
 similarly to how it provides the `help` command.
 
-## Adapting the default completion command
+## Default completion command
 
 Zulu provides a few options for the default `completion` command.  To configure such options you must set
 the `CompletionOptions` field on the *root* command.
@@ -54,8 +54,9 @@ cmd := &zulu.Command{
 	Short:   "Display one or many resources",
 	Long:    get_long,
 	Example: get_example,
-	Run: func(cmd *zulu.Command, args []string) {
+	RunE: func(cmd *zulu.Command, args []string) error {
 		zulu.CheckErr(RunGet(f, out, cmd, args))
+		return nil
 	},
 	ValidArgs: validArgs,
 }
@@ -103,8 +104,9 @@ cmd := &zulu.Command{
 	Use:   "status RELEASE_NAME",
 	Short: "Display the status of the named release",
 	Long:  status_long,
-	Run: func(cmd *zulu.Command, args []string) {
+	RunE: func(cmd *zulu.Command, args []string) error {
 		RunStatus(args[0])
+		return nil
 	},
 	ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 		if len(args) != 0 {
@@ -115,7 +117,7 @@ cmd := &zulu.Command{
 }
 ```
 Where `getReleasesFromCluster()` is a Go function that returns the list of current Helm release names running on the Kubernetes cluster.
-Similarly as for `Run`, the `args` parameter represents the arguments present on the command-line, while the `toComplete` parameter represents the final argument which the user is trying to complete (e.g., `helm status th<TAB>` will have `toComplete` be `"th"`); the `toComplete` parameter will be empty when the user has requested completions right after typing a space (e.g., `helm status <TAB>`). Notice we put the `ValidArgsFunction` on the `status` sub-command, as it provides completions for this sub-command specifically. Let's assume the Helm releases on the cluster are: `harbor`, `notary`, `rook` and `thanos` then this dynamic completion will give results like:
+Similarly as for `RunE`, the `args` parameter represents the arguments present on the command-line, while the `toComplete` parameter represents the final argument which the user is trying to complete (e.g., `helm status th<TAB>` will have `toComplete` be `"th"`); the `toComplete` parameter will be empty when the user has requested completions right after typing a space (e.g., `helm status <TAB>`). Notice we put the `ValidArgsFunction` on the `status` sub-command, as it provides completions for this sub-command specifically. Let's assume the Helm releases on the cluster are: `harbor`, `notary`, `rook` and `thanos` then this dynamic completion will give results like:
 
 ```bash
 $ helm status [tab][tab]

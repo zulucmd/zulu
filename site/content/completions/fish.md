@@ -1,7 +1,7 @@
 ---
-weight: 12
+weight: 120
 ---
 
-## Generating Fish Completions For Your zulu.Command
+## Fish
 
 Please refer to [Shell Completions](_index.md) for details.

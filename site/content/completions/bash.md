@@ -1,7 +1,7 @@
 ---
-weight: 11
+weight: 110
 ---
 
-# Generating Bash Completions For Your zulu.Command
+## Bash
 
 Please refer to [Shell Completions](_index.md) for details.

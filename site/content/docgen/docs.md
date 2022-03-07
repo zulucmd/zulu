@@ -1,4 +1,9 @@
+---
+weight: 200
+---
+
 # Documentation generation
+Zulu supports generating different types of documentation. This section explain how to generate man pages, markdown, and others.
 
 ## Options
 

@@ -1,4 +1,8 @@
-# Generating AsciiDoc Docs For Your Own zulu.Command
+---
+weight: 250
+---
+
+## AsciiDoc Docs
 
 Generating AsciiDoc pages from a zulu command is incredibly easy. An example is as follows:
 
@@ -26,7 +30,7 @@ func main() {
 
 That will get you a AsciiDoc document `/tmp/test.adoc`
 
-## Generate AsciiDoc docs for the entire command tree
+### Generate for the entire command tree
 
 This program can actually generate docs for the kubectl command in the kubernetes project
 
@@ -55,7 +59,7 @@ func main() {
 
 This will generate a whole series of files, one for each command in the tree, in the directory specified (in this case "./")
 
-## Generate AsciiDoc docs for a single command
+### Generate for a single command
 
 You may wish to have more control over the output, or only generate for a single command, instead of the entire command tree. If this is the case you may prefer to `GenAsciidoc` instead of `GenAsciidocTree`
 
@@ -69,7 +73,7 @@ You may wish to have more control over the output, or only generate for a single
 
 This will write the AsciiDoc doc for ONLY "cmd" into the out, buffer.
 
-## Customize the output
+### Customize the output
 
 Both `GenAsciidoc` and `GenAsciidocTree` have alternate versions with callbacks to get some control of the output:
 

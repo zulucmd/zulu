@@ -1,7 +1,7 @@
 ---
-weight: 13
+weight: 130
 ---
 
-# Generating PowerShell Completions For Your Own zulu.Command
+## PowerShell
 
 Please refer to [Shell Completions](_index.md#powershell-completions) for details.

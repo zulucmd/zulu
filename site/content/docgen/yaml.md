@@ -1,5 +1,5 @@
 ---
-weight: 24
+weight: 240
 ---
 
 ## Yaml Docs
@@ -30,7 +30,7 @@ func main() {
 
 That will get you a Yaml document `/tmp/test.yaml`
 
-### The entire command tree
+### For the entire command tree
 
 This program can actually generate docs for the kubectl command in the kubernetes project
 
