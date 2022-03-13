@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/gowarden/zulu/internal/util"
 )
 
 // GenZshCompletionFile generates zsh completion file including descriptions.
@@ -51,7 +53,7 @@ func genZshComp(buf io.StringWriter, name string, includeDesc bool) {
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
 	}
-	WriteStringAndCheck(buf, fmt.Sprintf(`#compdef _%[1]s %[1]s
+	util.WriteStringAndCheck(buf, fmt.Sprintf(`#compdef _%[1]s %[1]s
 
 # zsh completion for %-36[1]s -*- shell-script -*-
 

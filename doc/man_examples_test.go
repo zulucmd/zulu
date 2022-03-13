@@ -6,6 +6,7 @@ import (
 
 	"github.com/gowarden/zulu"
 	"github.com/gowarden/zulu/doc"
+	"github.com/gowarden/zulu/internal/util"
 )
 
 func ExampleGenManTree() {
@@ -17,7 +18,7 @@ func ExampleGenManTree() {
 		Title:   "MINE",
 		Section: "3",
 	}
-	zulu.CheckErr(doc.GenManTree(cmd, header, "/tmp"))
+	util.CheckErr(doc.GenManTree(cmd, header, "/tmp"))
 }
 
 func ExampleGenMan() {
@@ -30,6 +31,6 @@ func ExampleGenMan() {
 		Section: "3",
 	}
 	out := new(bytes.Buffer)
-	zulu.CheckErr(doc.GenMan(cmd, header, out))
+	util.CheckErr(doc.GenMan(cmd, header, out))
 	fmt.Print(out.String())
 }

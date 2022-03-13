@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gowarden/zflag"
+	"github.com/gowarden/zulu/internal/util"
 )
 
 // Annotations for Bash completion.
@@ -51,7 +52,7 @@ func genBashComp(buf io.Writer, name string, includeDesc bool) {
 		"ShellCompDirectiveFilterFileExt": ShellCompDirectiveFilterFileExt,
 		"ShellCompDirectiveFilterDirs":    ShellCompDirectiveFilterDirs,
 	})
-	CheckErr(err)
+	util.CheckErr(err)
 }
 
 // GenBashCompletionFile generates Bash completion version 2.

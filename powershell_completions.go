@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/gowarden/zulu/internal/util"
 )
 
 func genPowerShellComp(buf io.StringWriter, name string, includeDesc bool) {
@@ -15,7 +17,7 @@ func genPowerShellComp(buf io.StringWriter, name string, includeDesc bool) {
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
 	}
-	WriteStringAndCheck(buf, fmt.Sprintf(`# powershell completion for %-36[1]s -*- shell-script -*-
+	util.WriteStringAndCheck(buf, fmt.Sprintf(`# powershell completion for %-36[1]s -*- shell-script -*-
 
 function __%[1]s_debug {
     if ($env:BASH_COMP_DEBUG_FILE) {

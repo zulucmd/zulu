@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/gowarden/zulu"
+	"github.com/gowarden/zulu/internal/util"
 
 	"github.com/cpuguy83/go-md2man/v2/md2man"
 	"github.com/gowarden/zflag"
@@ -154,14 +155,14 @@ func manPreamble(buf io.StringWriter, header *GenManHeader, cmd *zulu.Command, d
 		description = cmd.Short
 	}
 
-	zulu.WriteStringAndCheck(buf, fmt.Sprintf(`%% "%s" "%s" "%s" "%s" "%s"
+	util.WriteStringAndCheck(buf, fmt.Sprintf(`%% "%s" "%s" "%s" "%s" "%s"
 # NAME
 `, header.Title, header.Section, header.date, header.Source, header.Manual))
-	zulu.WriteStringAndCheck(buf, fmt.Sprintf("%s \\- %s\n\n", dashedName, cmd.Short))
-	zulu.WriteStringAndCheck(buf, "# SYNOPSIS\n")
-	zulu.WriteStringAndCheck(buf, fmt.Sprintf("**%s**\n\n", cmd.UseLine()))
-	zulu.WriteStringAndCheck(buf, "# DESCRIPTION\n")
-	zulu.WriteStringAndCheck(buf, description+"\n\n")
+	util.WriteStringAndCheck(buf, fmt.Sprintf("%s \\- %s\n\n", dashedName, cmd.Short))
+	util.WriteStringAndCheck(buf, "# SYNOPSIS\n")
+	util.WriteStringAndCheck(buf, fmt.Sprintf("**%s**\n\n", cmd.UseLine()))
+	util.WriteStringAndCheck(buf, "# DESCRIPTION\n")
+	util.WriteStringAndCheck(buf, description+"\n\n")
 }
 
 func manPrintCommands(buf io.StringWriter, header *GenManHeader, cmd *zulu.Command) {
@@ -180,12 +181,12 @@ func manPrintCommands(buf io.StringWriter, header *GenManHeader, cmd *zulu.Comma
 	}
 
 	// Add a 'COMMANDS' section in the generated documentation
-	zulu.WriteStringAndCheck(buf, "# COMMANDS\n")
+	util.WriteStringAndCheck(buf, "# COMMANDS\n")
 	// For each sub-commands, and an entry with the command name and it's Short description and reference to dedicated
 	// man page
 	for _, c := range subCommands {
 		dashedPath := strings.ReplaceAll(c.CommandPath(), " ", "-")
-		zulu.WriteStringAndCheck(buf, fmt.Sprintf("**%s**\n\t%s \n\tSee **%s(%s)**.\n\n", c.Name(), c.Short, dashedPath, header.Section))
+		util.WriteStringAndCheck(buf, fmt.Sprintf("**%s**\n\t%s \n\tSee **%s(%s)**.\n\n", c.Name(), c.Short, dashedPath, header.Section))
 	}
 }
 
@@ -213,22 +214,22 @@ func manPrintFlags(buf io.StringWriter, flags *zflag.FlagSet) {
 			format += "]"
 		}
 		format += "\n\t%s\n\n"
-		zulu.WriteStringAndCheck(buf, fmt.Sprintf(format, flag.DefValue, flag.Usage))
+		util.WriteStringAndCheck(buf, fmt.Sprintf(format, flag.DefValue, flag.Usage))
 	})
 }
 
 func manPrintOptions(buf io.StringWriter, command *zulu.Command) {
 	flags := command.NonInheritedFlags()
 	if flags.HasAvailableFlags() {
-		zulu.WriteStringAndCheck(buf, "# OPTIONS\n")
+		util.WriteStringAndCheck(buf, "# OPTIONS\n")
 		manPrintFlags(buf, flags)
-		zulu.WriteStringAndCheck(buf, "\n")
+		util.WriteStringAndCheck(buf, "\n")
 	}
 	flags = command.InheritedFlags()
 	if flags.HasAvailableFlags() {
-		zulu.WriteStringAndCheck(buf, "# OPTIONS INHERITED FROM PARENT COMMANDS\n")
+		util.WriteStringAndCheck(buf, "# OPTIONS INHERITED FROM PARENT COMMANDS\n")
 		manPrintFlags(buf, flags)
-		zulu.WriteStringAndCheck(buf, "\n")
+		util.WriteStringAndCheck(buf, "\n")
 	}
 }
 

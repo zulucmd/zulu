@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/gowarden/zflag"
+	"github.com/gowarden/zulu/internal/util"
 )
 
 //go:embed resources/usage.txt.gotmpl
@@ -484,7 +485,7 @@ func (c *Command) UsageString() string {
 	c.outWriter = bb
 	c.errWriter = bb
 
-	CheckErr(c.Usage())
+	util.CheckErr(c.Usage())
 
 	// Setting things back to normal
 	c.outWriter = tmpOutput
@@ -1243,10 +1244,10 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 				cmd, _, e := c.Root().Find(args)
 				if cmd == nil || e != nil {
 					c.Printf("Unknown help topic %#q\n", args)
-					CheckErr(c.Root().Usage())
+					util.CheckErr(c.Root().Usage())
 				} else {
 					cmd.InitDefaultHelpFlag() // make possible 'help' flag to be shown
-					CheckErr(cmd.Help())
+					util.CheckErr(cmd.Help())
 				}
 
 				return nil

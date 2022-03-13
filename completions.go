@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/gowarden/zflag"
+	"github.com/gowarden/zulu/internal/util"
 )
 
 const (
@@ -780,7 +781,7 @@ func CompDebug(msg string, printToStdErr bool) {
 		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err == nil {
 			defer f.Close()
-			WriteStringAndCheck(f, msg)
+			util.WriteStringAndCheck(f, msg)
 		}
 	}
 

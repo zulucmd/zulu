@@ -55,7 +55,9 @@ cmd := &zulu.Command{
 	Long:    get_long,
 	Example: get_example,
 	RunE: func(cmd *zulu.Command, args []string) error {
-		zulu.CheckErr(RunGet(f, out, cmd, args))
+		if err := RunGet(f, out, cmd, args); err != nil {
+			panic(err)
+		}
 		return nil
 	},
 	ValidArgs: validArgs,

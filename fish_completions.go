@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"github.com/gowarden/zulu/internal/util"
 )
 
 func genFishComp(buf io.StringWriter, name string, includeDesc bool) {
@@ -18,8 +20,8 @@ func genFishComp(buf io.StringWriter, name string, includeDesc bool) {
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
 	}
-	WriteStringAndCheck(buf, fmt.Sprintf("# fish completion for %-36s -*- shell-script -*-\n", name))
-	WriteStringAndCheck(buf, fmt.Sprintf(`
+	util.WriteStringAndCheck(buf, fmt.Sprintf("# fish completion for %-36s -*- shell-script -*-\n", name))
+	util.WriteStringAndCheck(buf, fmt.Sprintf(`
 function __%[1]s_debug
     set -l file "$BASH_COMP_DEBUG_FILE"
     if test -n "$file"
