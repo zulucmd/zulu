@@ -1,4 +1,4 @@
-package doc
+package doc_test
 
 import (
 	"regexp"

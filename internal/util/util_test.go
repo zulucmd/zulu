@@ -1,8 +1,10 @@
-package util
+package util_test
 
 import (
 	"errors"
 	"testing"
+
+	"github.com/gowarden/zulu/internal/util"
 )
 
 func TestCheckErr(t *testing.T) {
@@ -50,7 +52,7 @@ func TestCheckErr(t *testing.T) {
 					t.Errorf("Didn't panic to be %t", tt.panic)
 				}
 			}()
-			CheckErr(tt.msg)
+			util.CheckErr(tt.msg)
 		})
 	}
 }

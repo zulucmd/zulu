@@ -1,16 +1,18 @@
-package zulu
+package zulu_test
 
 import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zulu"
 )
 
 type argsTestcase struct {
-	exerr  string         // Expected error key (see map[string][string])
-	args   PositionalArgs // Args validator
-	wValid bool           // Define `ValidArgs` in the command
-	rargs  []string       // Runtime args
+	exerr  string              // Expected error key (see map[string][string])
+	args   zulu.PositionalArgs // Args validator
+	wValid bool                // Define `ValidArgs` in the command
+	rargs  []string            // Runtime args
 }
 
 var errStrings = map[string]string{
@@ -23,7 +25,7 @@ var errStrings = map[string]string{
 }
 
 func (tc *argsTestcase) test(t *testing.T) {
-	c := &Command{
+	c := &zulu.Command{
 		Use:  "c",
 		Args: tc.args,
 		RunE: emptyRun,
@@ -66,9 +68,9 @@ func testArgs(t *testing.T, tests map[string]argsTestcase) {
 
 func TestArgs_No(t *testing.T) {
 	testArgs(t, map[string]argsTestcase{
-		"      | ":      {"", NoArgs, false, []string{}},
-		"      | Arb":   {"unknown", NoArgs, false, []string{"one"}},
-		"Valid | Valid": {"unknown", NoArgs, true, []string{"one"}},
+		"      | ":      {"", zulu.NoArgs, false, []string{}},
+		"      | Arb":   {"unknown", zulu.NoArgs, false, []string{"one"}},
+		"Valid | Valid": {"unknown", zulu.NoArgs, true, []string{"one"}},
 	})
 }
 func TestArgs_Nil(t *testing.T) {
@@ -80,57 +82,57 @@ func TestArgs_Nil(t *testing.T) {
 }
 func TestArgs_Arbitrary(t *testing.T) {
 	testArgs(t, map[string]argsTestcase{
-		"      | Arb":     {"", ArbitraryArgs, false, []string{"a", "b"}},
-		"Valid | Valid":   {"", ArbitraryArgs, true, []string{"one", "two"}},
-		"Valid | Invalid": {"invalid", ArbitraryArgs, true, []string{"a"}},
+		"      | Arb":     {"", zulu.ArbitraryArgs, false, []string{"a", "b"}},
+		"Valid | Valid":   {"", zulu.ArbitraryArgs, true, []string{"one", "two"}},
+		"Valid | Invalid": {"invalid", zulu.ArbitraryArgs, true, []string{"a"}},
 	})
 }
 func TestArgs_MinimumN(t *testing.T) {
 	testArgs(t, map[string]argsTestcase{
-		"      | Arb":         {"", MinimumNArgs(2), false, []string{"a", "b", "c"}},
-		"Valid | Valid":       {"", MinimumNArgs(2), true, []string{"one", "three"}},
-		"Valid | Invalid":     {"invalid", MinimumNArgs(2), true, []string{"a", "b"}},
-		"      | Less":        {"less", MinimumNArgs(2), false, []string{"a"}},
-		"Valid | Less":        {"less", MinimumNArgs(2), true, []string{"one"}},
-		"Valid | LessInvalid": {"invalid", MinimumNArgs(2), true, []string{"a"}},
+		"      | Arb":         {"", zulu.MinimumNArgs(2), false, []string{"a", "b", "c"}},
+		"Valid | Valid":       {"", zulu.MinimumNArgs(2), true, []string{"one", "three"}},
+		"Valid | Invalid":     {"invalid", zulu.MinimumNArgs(2), true, []string{"a", "b"}},
+		"      | Less":        {"less", zulu.MinimumNArgs(2), false, []string{"a"}},
+		"Valid | Less":        {"less", zulu.MinimumNArgs(2), true, []string{"one"}},
+		"Valid | LessInvalid": {"invalid", zulu.MinimumNArgs(2), true, []string{"a"}},
 	})
 }
 func TestArgs_MaximumN(t *testing.T) {
 	testArgs(t, map[string]argsTestcase{
-		"      | Arb":         {"", MaximumNArgs(3), false, []string{"a", "b"}},
-		"Valid | Valid":       {"", MaximumNArgs(2), true, []string{"one", "three"}},
-		"Valid | Invalid":     {"invalid", MaximumNArgs(2), true, []string{"a", "b"}},
-		"      | More":        {"more", MaximumNArgs(2), false, []string{"a", "b", "c"}},
-		"Valid | More":        {"more", MaximumNArgs(2), true, []string{"one", "three", "two"}},
-		"Valid | MoreInvalid": {"invalid", MaximumNArgs(2), true, []string{"a", "b", "c"}},
+		"      | Arb":         {"", zulu.MaximumNArgs(3), false, []string{"a", "b"}},
+		"Valid | Valid":       {"", zulu.MaximumNArgs(2), true, []string{"one", "three"}},
+		"Valid | Invalid":     {"invalid", zulu.MaximumNArgs(2), true, []string{"a", "b"}},
+		"      | More":        {"more", zulu.MaximumNArgs(2), false, []string{"a", "b", "c"}},
+		"Valid | More":        {"more", zulu.MaximumNArgs(2), true, []string{"one", "three", "two"}},
+		"Valid | MoreInvalid": {"invalid", zulu.MaximumNArgs(2), true, []string{"a", "b", "c"}},
 	})
 }
 func TestArgs_Exact(t *testing.T) {
 	testArgs(t, map[string]argsTestcase{
-		"      | Arb":                 {"", ExactArgs(3), false, []string{"a", "b", "c"}},
-		"Valid | Valid":               {"", ExactArgs(3), true, []string{"three", "one", "two"}},
-		"Valid | Invalid":             {"invalid", ExactArgs(3), true, []string{"three", "a", "two"}},
-		"      | InvalidCount":        {"notexact", ExactArgs(2), false, []string{"a", "b", "c"}},
-		"Valid | InvalidCount":        {"notexact", ExactArgs(2), true, []string{"three", "one", "two"}},
-		"Valid | InvalidCountInvalid": {"invalid", ExactArgs(2), true, []string{"three", "a", "two"}},
+		"      | Arb":                 {"", zulu.ExactArgs(3), false, []string{"a", "b", "c"}},
+		"Valid | Valid":               {"", zulu.ExactArgs(3), true, []string{"three", "one", "two"}},
+		"Valid | Invalid":             {"invalid", zulu.ExactArgs(3), true, []string{"three", "a", "two"}},
+		"      | InvalidCount":        {"notexact", zulu.ExactArgs(2), false, []string{"a", "b", "c"}},
+		"Valid | InvalidCount":        {"notexact", zulu.ExactArgs(2), true, []string{"three", "one", "two"}},
+		"Valid | InvalidCountInvalid": {"invalid", zulu.ExactArgs(2), true, []string{"three", "a", "two"}},
 	})
 }
 func TestArgs_Range(t *testing.T) {
 	testArgs(t, map[string]argsTestcase{
-		"      | Arb":                 {"", RangeArgs(2, 4), false, []string{"a", "b", "c"}},
-		"Valid | Valid":               {"", RangeArgs(2, 4), true, []string{"three", "one", "two"}},
-		"Valid | Invalid":             {"invalid", RangeArgs(2, 4), true, []string{"three", "a", "two"}},
-		"      | InvalidCount":        {"notinrange", RangeArgs(2, 4), false, []string{"a"}},
-		"Valid | InvalidCount":        {"notinrange", RangeArgs(2, 4), true, []string{"two"}},
-		"Valid | InvalidCountInvalid": {"invalid", RangeArgs(2, 4), true, []string{"a"}},
+		"      | Arb":                 {"", zulu.RangeArgs(2, 4), false, []string{"a", "b", "c"}},
+		"Valid | Valid":               {"", zulu.RangeArgs(2, 4), true, []string{"three", "one", "two"}},
+		"Valid | Invalid":             {"invalid", zulu.RangeArgs(2, 4), true, []string{"three", "a", "two"}},
+		"      | InvalidCount":        {"notinrange", zulu.RangeArgs(2, 4), false, []string{"a"}},
+		"Valid | InvalidCount":        {"notinrange", zulu.RangeArgs(2, 4), true, []string{"two"}},
+		"Valid | InvalidCountInvalid": {"invalid", zulu.RangeArgs(2, 4), true, []string{"a"}},
 	})
 }
 
 // Takes(No)Args
 
 func TestRootTakesNoArgs(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "illegal", "args")
@@ -146,8 +148,8 @@ func TestRootTakesNoArgs(t *testing.T) {
 }
 
 func TestRootTakesArgs(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: ArbitraryArgs, RunE: emptyRun}
-	childCmd := &Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.ArbitraryArgs, RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "legal", "args")
@@ -157,8 +159,8 @@ func TestRootTakesArgs(t *testing.T) {
 }
 
 func TestChildTakesNoArgs(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", Args: NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", Args: zulu.NoArgs, RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "child", "illegal", "args")
@@ -174,8 +176,8 @@ func TestChildTakesNoArgs(t *testing.T) {
 }
 
 func TestChildTakesArgs(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", Args: ArbitraryArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", Args: zulu.ArbitraryArgs, RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "child", "legal", "args")
@@ -187,9 +189,9 @@ func TestChildTakesArgs(t *testing.T) {
 func TestMatchAll(t *testing.T) {
 	// Somewhat contrived example check that ensures there are exactly 3
 	// arguments, and each argument is exactly 2 bytes long.
-	pargs := MatchAll(
-		ExactArgs(3),
-		func(cmd *Command, args []string) error {
+	pargs := zulu.MatchAll(
+		zulu.ExactArgs(3),
+		func(cmd *zulu.Command, args []string) error {
 			for _, arg := range args {
 				if len([]byte(arg)) != 2 {
 					return fmt.Errorf("expected to be exactly 2 bytes long")
@@ -217,7 +219,7 @@ func TestMatchAll(t *testing.T) {
 		},
 	}
 
-	rootCmd := &Command{Use: "root", Args: pargs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: pargs, RunE: emptyRun}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
@@ -237,7 +239,7 @@ func TestMatchAll(t *testing.T) {
 // It makes sure the root command accepts arguments if it does not have
 // sub-commands.
 func TestLegacyArgsRootAcceptsArgs(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: nil, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: nil, RunE: emptyRun}
 
 	_, err := executeCommand(rootCmd, "somearg")
 	if err != nil {
@@ -249,9 +251,9 @@ func TestLegacyArgsRootAcceptsArgs(t *testing.T) {
 // to the legacyArgs() function.
 // It makes sure a sub-command accepts arguments and further sub-commands
 func TestLegacyArgsSubcmdAcceptsArgs(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: nil, RunE: emptyRun}
-	childCmd := &Command{Use: "child", Args: nil, RunE: emptyRun}
-	grandchildCmd := &Command{Use: "grandchild", Args: nil, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: nil, RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", Args: nil, RunE: emptyRun}
+	grandchildCmd := &zulu.Command{Use: "grandchild", Args: nil, RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 	childCmd.AddCommand(grandchildCmd)
 

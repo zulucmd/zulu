@@ -1,4 +1,4 @@
-package zulu
+package zulu_test
 
 import (
 	"bytes"
@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/gowarden/zulu"
 )
 
 func checkOmit(t *testing.T, found, unexpected string) {
@@ -21,8 +23,8 @@ func check(t *testing.T, found, expected string) {
 }
 
 func TestCompleteNoDesCmdInBashScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
@@ -33,12 +35,12 @@ func TestCompleteNoDesCmdInBashScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
 
-	check(t, output, ShellCompNoDescRequestCmd)
+	check(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestCompleteCmdInBashScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
@@ -49,12 +51,12 @@ func TestCompleteCmdInBashScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, true))
 	output := buf.String()
 
-	check(t, output, ShellCompRequestCmd)
-	checkOmit(t, output, ShellCompNoDescRequestCmd)
+	check(t, output, zulu.ShellCompRequestCmd)
+	checkOmit(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestBashProgWithDash(t *testing.T) {
-	rootCmd := &Command{Use: "root-dash", Args: NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root-dash", Args: zulu.NoArgs, RunE: emptyRun}
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
@@ -69,7 +71,7 @@ func TestBashProgWithDash(t *testing.T) {
 }
 
 func TestBashProgWithColon(t *testing.T) {
-	rootCmd := &Command{Use: "root:colon", Args: NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root:colon", Args: zulu.NoArgs, RunE: emptyRun}
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
@@ -91,8 +93,8 @@ func TestGenBashCompletionFile(t *testing.T) {
 
 	defer os.RemoveAll("./tmp")
 
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
@@ -113,8 +115,8 @@ func TestFailGenBashCompletionFile(t *testing.T) {
 	f, _ := os.OpenFile("./tmp/test", os.O_CREATE, 0400)
 	defer f.Close()
 
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,

@@ -1,18 +1,20 @@
-package doc
+package doc_test
 
 import (
 	"bytes"
-	"github.com/gowarden/zulu"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/gowarden/zulu"
+	"github.com/gowarden/zulu/doc"
 )
 
 func TestGenYamlDoc(t *testing.T) {
 	// We generate on s subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := GenYaml(echoCmd, buf); err != nil {
+	if err := doc.GenYaml(echoCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -30,7 +32,7 @@ func TestGenYamlNoTag(t *testing.T) {
 	defer func() { rootCmd.DisableAutoGenTag = false }()
 
 	buf := new(bytes.Buffer)
-	if err := GenYaml(rootCmd, buf); err != nil {
+	if err := doc.GenYaml(rootCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -47,7 +49,7 @@ func TestGenYamlTree(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	if err := GenYamlTree(c, tmpdir); err != nil {
+	if err := doc.GenYamlTree(c, tmpdir); err != nil {
 		t.Fatalf("GenYamlTree failed: %s", err.Error())
 	}
 
@@ -59,7 +61,7 @@ func TestGenYamlTree(t *testing.T) {
 func TestGenYamlDocRunnable(t *testing.T) {
 	// Testing a runnable command: should contain the "usage" field
 	buf := new(bytes.Buffer)
-	if err := GenYaml(rootCmd, buf); err != nil {
+	if err := doc.GenYaml(rootCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -77,7 +79,7 @@ func BenchmarkGenYamlToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := GenYaml(rootCmd, file); err != nil {
+		if err := doc.GenYaml(rootCmd, file); err != nil {
 			b.Fatal(err)
 		}
 	}

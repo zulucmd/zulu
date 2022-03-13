@@ -1,4 +1,4 @@
-package doc
+package doc_test
 
 import (
 	"bytes"
@@ -8,12 +8,13 @@ import (
 	"testing"
 
 	"github.com/gowarden/zulu"
+	"github.com/gowarden/zulu/doc"
 )
 
 func TestGenRSTDoc(t *testing.T) {
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := GenReST(echoCmd, buf); err != nil {
+	if err := doc.GenReST(echoCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -35,7 +36,7 @@ func TestGenRSTNoHiddenParents(t *testing.T) {
 		defer func() { f.Hidden = false }()
 	}
 	buf := new(bytes.Buffer)
-	if err := GenReST(echoCmd, buf); err != nil {
+	if err := doc.GenReST(echoCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -55,7 +56,7 @@ func TestGenRSTNoTag(t *testing.T) {
 	defer func() { rootCmd.DisableAutoGenTag = false }()
 
 	buf := new(bytes.Buffer)
-	if err := GenReST(rootCmd, buf); err != nil {
+	if err := doc.GenReST(rootCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -73,7 +74,7 @@ func TestGenRSTTree(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	if err := GenReSTTree(c, tmpdir); err != nil {
+	if err := doc.GenReSTTree(c, tmpdir); err != nil {
 		t.Fatalf("GenReSTTree failed: %s", err.Error())
 	}
 
@@ -92,7 +93,7 @@ func BenchmarkGenReSTToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := GenReST(rootCmd, file); err != nil {
+		if err := doc.GenReST(rootCmd, file); err != nil {
 			b.Fatal(err)
 		}
 	}

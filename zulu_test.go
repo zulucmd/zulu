@@ -1,8 +1,10 @@
-package zulu
+package zulu_test
 
 import (
 	"testing"
 	"text/template"
+
+	"github.com/gowarden/zulu"
 )
 
 func assertNoErr(t *testing.T, e error) {
@@ -12,13 +14,13 @@ func assertNoErr(t *testing.T, e error) {
 }
 
 func TestAddTemplateFunctions(t *testing.T) {
-	AddTemplateFunc("t", func() bool { return true })
-	AddTemplateFuncs(template.FuncMap{
+	zulu.AddTemplateFunc("t", func() bool { return true })
+	zulu.AddTemplateFuncs(template.FuncMap{
 		"f": func() bool { return false },
 		"h": func() string { return "Hello," },
 		"w": func() string { return "world." }})
 
-	c := &Command{}
+	c := &zulu.Command{}
 	c.SetUsageTemplate(`{{if t}}{{h}}{{end}}{{if f}}{{h}}{{end}} {{w}}`)
 
 	const expected = "Hello, world."

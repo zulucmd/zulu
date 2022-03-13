@@ -1,4 +1,4 @@
-package zulu
+package zulu_test
 
 import (
 	"bytes"
@@ -13,16 +13,17 @@ import (
 	"testing"
 
 	"github.com/gowarden/zflag"
+	"github.com/gowarden/zulu"
 )
 
-func emptyRun(*Command, []string) error { return nil }
+func emptyRun(*zulu.Command, []string) error { return nil }
 
-func executeCommand(root *Command, args ...string) (output string, err error) {
+func executeCommand(root *zulu.Command, args ...string) (output string, err error) {
 	_, output, err = executeCommandC(root, args...)
 	return output, err
 }
 
-func executeCommandWithContext(ctx context.Context, root *Command, args ...string) (output string, err error) {
+func executeCommandWithContext(ctx context.Context, root *zulu.Command, args ...string) (output string, err error) {
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
@@ -33,7 +34,7 @@ func executeCommandWithContext(ctx context.Context, root *Command, args ...strin
 	return buf.String(), err
 }
 
-func executeCommandC(root *Command, args ...string) (c *Command, output string, err error) {
+func executeCommandC(root *zulu.Command, args ...string) (c *zulu.Command, output string, err error) {
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
@@ -44,7 +45,7 @@ func executeCommandC(root *Command, args ...string) (c *Command, output string, 
 	return c, buf.String(), err
 }
 
-func executeCommandWithContextC(ctx context.Context, root *Command, args ...string) (c *Command, output string, err error) {
+func executeCommandWithContextC(ctx context.Context, root *zulu.Command, args ...string) (c *zulu.Command, output string, err error) {
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
@@ -75,13 +76,13 @@ const onetwo = "one two"
 
 func TestSingleCommand(t *testing.T) {
 	var rootCmdArgs []string
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
-		Args: ExactArgs(2),
-		RunE: func(_ *Command, args []string) error { rootCmdArgs = args; return nil },
+		Args: zulu.ExactArgs(2),
+		RunE: func(_ *zulu.Command, args []string) error { rootCmdArgs = args; return nil },
 	}
-	aCmd := &Command{Use: "a", Args: NoArgs, RunE: emptyRun}
-	bCmd := &Command{Use: "b", Args: NoArgs, RunE: emptyRun}
+	aCmd := &zulu.Command{Use: "a", Args: zulu.NoArgs, RunE: emptyRun}
+	bCmd := &zulu.Command{Use: "b", Args: zulu.NoArgs, RunE: emptyRun}
 	rootCmd.AddCommand(aCmd, bCmd)
 
 	output, err := executeCommand(rootCmd, "one", "two")
@@ -100,13 +101,13 @@ func TestSingleCommand(t *testing.T) {
 
 func TestChildCommand(t *testing.T) {
 	var child1CmdArgs []string
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child1Cmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child1Cmd := &zulu.Command{
 		Use:  "child1",
-		Args: ExactArgs(2),
-		RunE: func(_ *Command, args []string) error { child1CmdArgs = args; return nil },
+		Args: zulu.ExactArgs(2),
+		RunE: func(_ *zulu.Command, args []string) error { child1CmdArgs = args; return nil },
 	}
-	child2Cmd := &Command{Use: "child2", Args: NoArgs, RunE: emptyRun}
+	child2Cmd := &zulu.Command{Use: "child2", Args: zulu.NoArgs, RunE: emptyRun}
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
 	output, err := executeCommand(rootCmd, "child1", "one", "two")
@@ -124,7 +125,7 @@ func TestChildCommand(t *testing.T) {
 }
 
 func TestCallCommandWithoutSubcommands(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
 	_, err := executeCommand(rootCmd)
 	if err != nil {
 		t.Errorf("Calling command without subcommands should not have error: %v", err)
@@ -132,8 +133,8 @@ func TestCallCommandWithoutSubcommands(t *testing.T) {
 }
 
 func TestRootExecuteUnknownCommand(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	rootCmd.AddCommand(&Command{Use: "child", RunE: emptyRun})
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	rootCmd.AddCommand(&zulu.Command{Use: "child", RunE: emptyRun})
 
 	output, _ := executeCommand(rootCmd, "unknown")
 
@@ -145,8 +146,8 @@ func TestRootExecuteUnknownCommand(t *testing.T) {
 }
 
 func TestSubcommandExecuteC(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	c, output, err := executeCommandC(rootCmd, "child")
@@ -165,16 +166,16 @@ func TestSubcommandExecuteC(t *testing.T) {
 func TestExecuteContext(t *testing.T) {
 	ctx := context.TODO()
 
-	ctxRun := func(cmd *Command, args []string) error {
+	ctxRun := func(cmd *zulu.Command, args []string) error {
 		if cmd.Context() != ctx {
 			t.Errorf("Command %q must have context when called with ExecuteContext", cmd.Use)
 		}
 		return nil
 	}
 
-	rootCmd := &Command{Use: "root", RunE: ctxRun, PreRunE: ctxRun}
-	childCmd := &Command{Use: "child", RunE: ctxRun, PreRunE: ctxRun}
-	granchildCmd := &Command{Use: "grandchild", RunE: ctxRun, PreRunE: ctxRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: ctxRun, PreRunE: ctxRun}
+	childCmd := &zulu.Command{Use: "child", RunE: ctxRun, PreRunE: ctxRun}
+	granchildCmd := &zulu.Command{Use: "grandchild", RunE: ctxRun, PreRunE: ctxRun}
 
 	childCmd.AddCommand(granchildCmd)
 	rootCmd.AddCommand(childCmd)
@@ -195,7 +196,7 @@ func TestExecuteContext(t *testing.T) {
 func TestExecuteContextC(t *testing.T) {
 	ctx := context.TODO()
 
-	ctxRun := func(cmd *Command, args []string) error {
+	ctxRun := func(cmd *zulu.Command, args []string) error {
 		if cmd.Context() != ctx {
 			t.Errorf("Command %q must have context when called with ExecuteContext", cmd.Use)
 		}
@@ -203,9 +204,9 @@ func TestExecuteContextC(t *testing.T) {
 		return nil
 	}
 
-	rootCmd := &Command{Use: "root", RunE: ctxRun, PreRunE: ctxRun}
-	childCmd := &Command{Use: "child", RunE: ctxRun, PreRunE: ctxRun}
-	granchildCmd := &Command{Use: "grandchild", RunE: ctxRun, PreRunE: ctxRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: ctxRun, PreRunE: ctxRun}
+	childCmd := &zulu.Command{Use: "child", RunE: ctxRun, PreRunE: ctxRun}
+	granchildCmd := &zulu.Command{Use: "grandchild", RunE: ctxRun, PreRunE: ctxRun}
 
 	childCmd.AddCommand(granchildCmd)
 	rootCmd.AddCommand(childCmd)
@@ -224,16 +225,16 @@ func TestExecuteContextC(t *testing.T) {
 }
 
 func TestExecute_NoContext(t *testing.T) {
-	run := func(cmd *Command, args []string) error {
+	run := func(cmd *zulu.Command, args []string) error {
 		if cmd.Context() != context.Background() {
 			t.Errorf("Command %s must have background context", cmd.Use)
 		}
 		return nil
 	}
 
-	rootCmd := &Command{Use: "root", RunE: run, PreRunE: run}
-	childCmd := &Command{Use: "child", RunE: run, PreRunE: run}
-	granchildCmd := &Command{Use: "grandchild", RunE: run, PreRunE: run}
+	rootCmd := &zulu.Command{Use: "root", RunE: run, PreRunE: run}
+	childCmd := &zulu.Command{Use: "child", RunE: run, PreRunE: run}
+	granchildCmd := &zulu.Command{Use: "grandchild", RunE: run, PreRunE: run}
 
 	childCmd.AddCommand(granchildCmd)
 	rootCmd.AddCommand(childCmd)
@@ -252,10 +253,10 @@ func TestExecute_NoContext(t *testing.T) {
 }
 
 func TestRootUnknownCommandSilenced(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
 	rootCmd.SilenceErrors = true
 	rootCmd.SilenceUsage = true
-	rootCmd.AddCommand(&Command{Use: "child", RunE: emptyRun})
+	rootCmd.AddCommand(&zulu.Command{Use: "child", RunE: emptyRun})
 
 	output, _ := executeCommand(rootCmd, "unknown")
 	if output != "" {
@@ -265,17 +266,17 @@ func TestRootUnknownCommandSilenced(t *testing.T) {
 
 func TestCommandAlias(t *testing.T) {
 	var timesCmdArgs []string
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	echoCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	echoCmd := &zulu.Command{
 		Use:     "echo",
 		Aliases: []string{"say", "tell"},
-		Args:    NoArgs,
+		Args:    zulu.NoArgs,
 		RunE:    emptyRun,
 	}
-	timesCmd := &Command{
+	timesCmd := &zulu.Command{
 		Use:  "times",
-		Args: ExactArgs(2),
-		RunE: func(_ *Command, args []string) error { timesCmdArgs = args; return nil },
+		Args: zulu.ExactArgs(2),
+		RunE: func(_ *zulu.Command, args []string) error { timesCmdArgs = args; return nil },
 	}
 	echoCmd.AddCommand(timesCmd)
 	rootCmd.AddCommand(echoCmd)
@@ -295,16 +296,16 @@ func TestCommandAlias(t *testing.T) {
 }
 
 func TestEnablePrefixMatching(t *testing.T) {
-	EnablePrefixMatching = true
+	zulu.EnablePrefixMatching = true
 
 	var aCmdArgs []string
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	aCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	aCmd := &zulu.Command{
 		Use:  "aCmd",
-		Args: ExactArgs(2),
-		RunE: func(_ *Command, args []string) error { aCmdArgs = args; return nil },
+		Args: zulu.ExactArgs(2),
+		RunE: func(_ *zulu.Command, args []string) error { aCmdArgs = args; return nil },
 	}
-	bCmd := &Command{Use: "bCmd", Args: NoArgs, RunE: emptyRun}
+	bCmd := &zulu.Command{Use: "bCmd", Args: zulu.NoArgs, RunE: emptyRun}
 	rootCmd.AddCommand(aCmd, bCmd)
 
 	output, err := executeCommand(rootCmd, "a", "one", "two")
@@ -320,24 +321,24 @@ func TestEnablePrefixMatching(t *testing.T) {
 		t.Errorf("aCmdArgs expected: %q, got: %q", onetwo, got)
 	}
 
-	EnablePrefixMatching = false
+	zulu.EnablePrefixMatching = false
 }
 
 func TestAliasPrefixMatching(t *testing.T) {
-	EnablePrefixMatching = true
+	zulu.EnablePrefixMatching = true
 
 	var timesCmdArgs []string
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	echoCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	echoCmd := &zulu.Command{
 		Use:     "echo",
 		Aliases: []string{"say", "tell"},
-		Args:    NoArgs,
+		Args:    zulu.NoArgs,
 		RunE:    emptyRun,
 	}
-	timesCmd := &Command{
+	timesCmd := &zulu.Command{
 		Use:  "times",
-		Args: ExactArgs(2),
-		RunE: func(_ *Command, args []string) error { timesCmdArgs = args; return nil },
+		Args: zulu.ExactArgs(2),
+		RunE: func(_ *zulu.Command, args []string) error { timesCmdArgs = args; return nil },
 	}
 	echoCmd.AddCommand(timesCmd)
 	rootCmd.AddCommand(echoCmd)
@@ -355,7 +356,7 @@ func TestAliasPrefixMatching(t *testing.T) {
 		t.Errorf("timesCmdArgs expected: %v, got: %v", onetwo, got)
 	}
 
-	EnablePrefixMatching = false
+	zulu.EnablePrefixMatching = false
 }
 
 // TestChildSameName checks the correct behaviour of zulu in cases,
@@ -363,13 +364,13 @@ func TestAliasPrefixMatching(t *testing.T) {
 // is executed with args "foo foo".
 func TestChildSameName(t *testing.T) {
 	var fooCmdArgs []string
-	rootCmd := &Command{Use: "foo", Args: NoArgs, RunE: emptyRun}
-	fooCmd := &Command{
+	rootCmd := &zulu.Command{Use: "foo", Args: zulu.NoArgs, RunE: emptyRun}
+	fooCmd := &zulu.Command{
 		Use:  "foo",
-		Args: ExactArgs(2),
-		RunE: func(_ *Command, args []string) error { fooCmdArgs = args; return nil },
+		Args: zulu.ExactArgs(2),
+		RunE: func(_ *zulu.Command, args []string) error { fooCmdArgs = args; return nil },
 	}
-	barCmd := &Command{Use: "bar", Args: NoArgs, RunE: emptyRun}
+	barCmd := &zulu.Command{Use: "bar", Args: zulu.NoArgs, RunE: emptyRun}
 	rootCmd.AddCommand(fooCmd, barCmd)
 
 	output, err := executeCommand(rootCmd, "foo", "one", "two")
@@ -391,12 +392,12 @@ func TestChildSameName(t *testing.T) {
 // with the same name.
 func TestGrandChildSameName(t *testing.T) {
 	var fooCmdArgs []string
-	rootCmd := &Command{Use: "foo", Args: NoArgs, RunE: emptyRun}
-	barCmd := &Command{Use: "bar", Args: NoArgs, RunE: emptyRun}
-	fooCmd := &Command{
+	rootCmd := &zulu.Command{Use: "foo", Args: zulu.NoArgs, RunE: emptyRun}
+	barCmd := &zulu.Command{Use: "bar", Args: zulu.NoArgs, RunE: emptyRun}
+	fooCmd := &zulu.Command{
 		Use:  "foo",
-		Args: ExactArgs(2),
-		RunE: func(_ *Command, args []string) error { fooCmdArgs = args; return nil },
+		Args: zulu.ExactArgs(2),
+		RunE: func(_ *zulu.Command, args []string) error { fooCmdArgs = args; return nil },
 	}
 	barCmd.AddCommand(fooCmd)
 	rootCmd.AddCommand(barCmd)
@@ -417,10 +418,10 @@ func TestGrandChildSameName(t *testing.T) {
 
 func TestFlagLong(t *testing.T) {
 	var cArgs []string
-	c := &Command{
+	c := &zulu.Command{
 		Use:  "c",
-		Args: ArbitraryArgs,
-		RunE: func(_ *Command, args []string) error { cArgs = args; return nil },
+		Args: zulu.ArbitraryArgs,
+		RunE: func(_ *zulu.Command, args []string) error { cArgs = args; return nil },
 	}
 
 	var intFlagValue int
@@ -454,10 +455,10 @@ func TestFlagLong(t *testing.T) {
 
 func TestFlagShort(t *testing.T) {
 	var cArgs []string
-	c := &Command{
+	c := &zulu.Command{
 		Use:  "c",
-		Args: ArbitraryArgs,
-		RunE: func(_ *Command, args []string) error { cArgs = args; return nil },
+		Args: zulu.ArbitraryArgs,
+		RunE: func(_ *zulu.Command, args []string) error { cArgs = args; return nil },
 	}
 
 	var intFlagValue int
@@ -487,8 +488,8 @@ func TestFlagShort(t *testing.T) {
 }
 
 func TestChildFlag(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	var intFlagValue int
@@ -508,8 +509,8 @@ func TestChildFlag(t *testing.T) {
 }
 
 func TestChildFlagWithParentLocalFlag(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	var intFlagValue int
@@ -529,7 +530,7 @@ func TestChildFlagWithParentLocalFlag(t *testing.T) {
 }
 
 func TestFlagInvalidInput(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
 	rootCmd.Flags().Int("intf", -1, "", zflag.OptShorthand('i'))
 
 	_, err := executeCommand(rootCmd, "-iabc")
@@ -541,8 +542,8 @@ func TestFlagInvalidInput(t *testing.T) {
 }
 
 func TestFlagBeforeCommand(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	var flagValue int
@@ -626,14 +627,14 @@ func TestStripFlags(t *testing.T) {
 		},
 	}
 
-	c := &Command{Use: "c", RunE: emptyRun}
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
 	c.PersistentFlags().Bool("persist", false, "", zflag.OptShorthand('p'))
 	c.Flags().Int("int", -1, "", zflag.OptShorthand('i'))
 	c.Flags().String("str", "", "", zflag.OptShorthand('s'))
 	c.Flags().Bool("bool", false, "", zflag.OptShorthand('b'))
 
 	for i, test := range tests {
-		got := stripFlags(test.input, c)
+		got := zulu.StripFlags(test.input, c)
 		if !reflect.DeepEqual(test.output, got) {
 			t.Errorf("(%v) Expected: %v, got: %v", i, test.output, got)
 		}
@@ -642,10 +643,10 @@ func TestStripFlags(t *testing.T) {
 
 func TestDisableFlagParsing(t *testing.T) {
 	var cArgs []string
-	c := &Command{
+	c := &zulu.Command{
 		Use:                "c",
 		DisableFlagParsing: true,
-		RunE:               func(_ *Command, args []string) error { cArgs = args; return nil },
+		RunE:               func(_ *zulu.Command, args []string) error { cArgs = args; return nil },
 	}
 
 	args := []string{"cmd", "-v", "-race", "-file", "foo.go"}
@@ -664,10 +665,10 @@ func TestDisableFlagParsing(t *testing.T) {
 
 func TestPersistentFlagsOnSameCommand(t *testing.T) {
 	var rootCmdArgs []string
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
-		Args: ArbitraryArgs,
-		RunE: func(_ *Command, args []string) error { rootCmdArgs = args; return nil },
+		Args: zulu.ArbitraryArgs,
+		RunE: func(_ *zulu.Command, args []string) error { rootCmdArgs = args; return nil },
 	}
 
 	var flagValue int
@@ -693,7 +694,7 @@ func TestPersistentFlagsOnSameCommand(t *testing.T) {
 // TestEmptyInputs checks,
 // if flags correctly parsed with blank strings in args.
 func TestEmptyInputs(t *testing.T) {
-	c := &Command{Use: "c", RunE: emptyRun}
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
 
 	var flagValue int
 	c.Flags().IntVar(&flagValue, "intf", -1, "", zflag.OptShorthand('i'))
@@ -715,8 +716,8 @@ func TestOverwrittenFlag(t *testing.T) {
 	// TODO: This test fails, but should work.
 	t.Skip()
 
-	parent := &Command{Use: "parent", RunE: emptyRun}
-	child := &Command{Use: "child", RunE: emptyRun}
+	parent := &zulu.Command{Use: "parent", RunE: emptyRun}
+	child := &zulu.Command{Use: "child", RunE: emptyRun}
 
 	parent.PersistentFlags().Bool("boolf", false, "")
 	parent.PersistentFlags().Int("intf", -1, "")
@@ -745,11 +746,11 @@ func TestOverwrittenFlag(t *testing.T) {
 
 func TestPersistentFlagsOnChild(t *testing.T) {
 	var childCmdArgs []string
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{
 		Use:  "child",
-		Args: ArbitraryArgs,
-		RunE: func(_ *Command, args []string) error { childCmdArgs = args; return nil },
+		Args: zulu.ArbitraryArgs,
+		RunE: func(_ *zulu.Command, args []string) error { childCmdArgs = args; return nil },
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -779,9 +780,9 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 }
 
 func TestRequiredFlags(t *testing.T) {
-	c := &Command{Use: "c", RunE: emptyRun}
-	c.Flags().String("foo1", "", "", FlagOptRequired())
-	c.Flags().String("foo2", "", "", FlagOptRequired())
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
+	c.Flags().String("foo1", "", "", zulu.FlagOptRequired())
+	c.Flags().String("foo2", "", "", zulu.FlagOptRequired())
 	c.Flags().String("bar", "", "")
 	expected := fmt.Sprintf("required flag(s) %q, %q not set", "foo1", "foo2")
 
@@ -794,10 +795,10 @@ func TestRequiredFlags(t *testing.T) {
 }
 
 func TestRequiredFlagsWithCustomFlagErrorFunc(t *testing.T) {
-	c := &Command{Use: "c", RunE: emptyRun}
-	c.Flags().String("foo1", "", "", FlagOptRequired())
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
+	c.Flags().String("foo1", "", "", zulu.FlagOptRequired())
 	silentError := "failed flag parsing"
-	c.SetFlagErrorFunc(func(c *Command, err error) error {
+	c.SetFlagErrorFunc(func(c *zulu.Command, err error) error {
 		c.Println(err)
 		c.Println(c.UsageString())
 		return errors.New(silentError)
@@ -815,14 +816,14 @@ func TestRequiredFlagsWithCustomFlagErrorFunc(t *testing.T) {
 }
 
 func TestPersistentRequiredFlags(t *testing.T) {
-	parent := &Command{Use: "parent", RunE: emptyRun}
-	parent.PersistentFlags().String("foo1", "", "", FlagOptRequired())
-	parent.PersistentFlags().String("foo2", "", "", FlagOptRequired())
+	parent := &zulu.Command{Use: "parent", RunE: emptyRun}
+	parent.PersistentFlags().String("foo1", "", "", zulu.FlagOptRequired())
+	parent.PersistentFlags().String("foo2", "", "", zulu.FlagOptRequired())
 	parent.Flags().String("foo3", "", "")
 
-	child := &Command{Use: "child", RunE: emptyRun}
-	child.Flags().String("bar1", "", "", FlagOptRequired())
-	child.Flags().String("bar2", "", "", FlagOptRequired())
+	child := &zulu.Command{Use: "child", RunE: emptyRun}
+	child.Flags().String("bar1", "", "", zulu.FlagOptRequired())
+	child.Flags().String("bar2", "", "", zulu.FlagOptRequired())
 	child.Flags().String("bar3", "", "")
 
 	parent.AddCommand(child)
@@ -839,11 +840,11 @@ func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 	// Make sure a required persistent flag does not break
 	// commands that disable flag parsing
 
-	parent := &Command{Use: "parent", RunE: emptyRun}
-	parent.PersistentFlags().Bool("foo", false, "", FlagOptRequired())
+	parent := &zulu.Command{Use: "parent", RunE: emptyRun}
+	parent.PersistentFlags().Bool("foo", false, "", zulu.FlagOptRequired())
 	flag := parent.PersistentFlags().Lookup("foo")
 
-	child := &Command{Use: "child", RunE: emptyRun}
+	child := &zulu.Command{Use: "child", RunE: emptyRun}
 	child.DisableFlagParsing = true
 
 	parent.AddCommand(child)
@@ -867,9 +868,9 @@ func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 
 func TestInitHelpFlagMergesFlags(t *testing.T) {
 	usage := "custom flag"
-	rootCmd := &Command{Use: "root"}
+	rootCmd := &zulu.Command{Use: "root"}
 	rootCmd.PersistentFlags().Bool("help", false, "custom flag")
-	childCmd := &Command{Use: "child"}
+	childCmd := &zulu.Command{Use: "child"}
 	rootCmd.AddCommand(childCmd)
 
 	childCmd.InitDefaultHelpFlag()
@@ -880,8 +881,8 @@ func TestInitHelpFlagMergesFlags(t *testing.T) {
 }
 
 func TestHelpCommandExecuted(t *testing.T) {
-	rootCmd := &Command{Use: "root", Long: "Long description", RunE: emptyRun}
-	rootCmd.AddCommand(&Command{Use: "child", RunE: emptyRun})
+	rootCmd := &zulu.Command{Use: "root", Long: "Long description", RunE: emptyRun}
+	rootCmd.AddCommand(&zulu.Command{Use: "child", RunE: emptyRun})
 
 	output, err := executeCommand(rootCmd, "help")
 	if err != nil {
@@ -892,8 +893,8 @@ func TestHelpCommandExecuted(t *testing.T) {
 }
 
 func TestHelpCommandExecutedOnChild(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", Long: "Long description", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", Long: "Long description", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, "help", "child")
@@ -905,16 +906,16 @@ func TestHelpCommandExecutedOnChild(t *testing.T) {
 }
 
 func TestSetHelpCommand(t *testing.T) {
-	c := &Command{Use: "c", RunE: emptyRun}
-	c.AddCommand(&Command{Use: "empty", RunE: emptyRun})
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
+	c.AddCommand(&zulu.Command{Use: "empty", RunE: emptyRun})
 
 	expected := "WORKS"
-	c.SetHelpCommand(&Command{
+	c.SetHelpCommand(&zulu.Command{
 		Use:   "help [command]",
 		Short: "Help about any command",
 		Long: `Help provides help for any command in the application.
 	Simply type ` + c.Name() + ` help [path to command] for full details.`,
-		RunE: func(c *Command, _ []string) error { c.Print(expected); return nil },
+		RunE: func(c *zulu.Command, _ []string) error { c.Print(expected); return nil },
 	})
 
 	got, err := executeCommand(c, "help")
@@ -928,7 +929,7 @@ func TestSetHelpCommand(t *testing.T) {
 }
 
 func TestHelpFlagExecuted(t *testing.T) {
-	rootCmd := &Command{Use: "root", Long: "Long description", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Long: "Long description", RunE: emptyRun}
 
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
@@ -939,8 +940,8 @@ func TestHelpFlagExecuted(t *testing.T) {
 }
 
 func TestHelpFlagExecutedOnChild(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", Long: "Long description", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", Long: "Long description", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, "child", "--help")
@@ -956,9 +957,9 @@ func TestHelpFlagExecutedOnChild(t *testing.T) {
 // that has no other flags.
 // Related to https://github.com/spf13/cobra/issues/302.
 func TestHelpFlagInHelp(t *testing.T) {
-	parentCmd := &Command{Use: "parent", RunE: func(*Command, []string) error { return nil }}
+	parentCmd := &zulu.Command{Use: "parent", RunE: func(*zulu.Command, []string) error { return nil }}
 
-	childCmd := &Command{Use: "child", RunE: func(*Command, []string) error { return nil }}
+	childCmd := &zulu.Command{Use: "child", RunE: func(*zulu.Command, []string) error { return nil }}
 	parentCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(parentCmd, "help", "child")
@@ -970,7 +971,7 @@ func TestHelpFlagInHelp(t *testing.T) {
 }
 
 func TestFlagsInUsage(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: func(*Command, []string) error { return nil }}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: func(*zulu.Command, []string) error { return nil }}
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
@@ -980,8 +981,8 @@ func TestFlagsInUsage(t *testing.T) {
 }
 
 func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", Long: "Long description"}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", Long: "Long description"}
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, "child")
@@ -993,7 +994,7 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 }
 
 func TestVersionFlagExecuted(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
 
 	output, err := executeCommand(rootCmd, "--version", "arg1")
 	if err != nil {
@@ -1004,7 +1005,7 @@ func TestVersionFlagExecuted(t *testing.T) {
 }
 
 func TestVersionFlagExecutedWithNoName(t *testing.T) {
-	rootCmd := &Command{Version: "1.0.0", RunE: emptyRun}
+	rootCmd := &zulu.Command{Version: "1.0.0", RunE: emptyRun}
 
 	output, err := executeCommand(rootCmd, "--version", "arg1")
 	if err != nil {
@@ -1015,7 +1016,7 @@ func TestVersionFlagExecutedWithNoName(t *testing.T) {
 }
 
 func TestShortAndLongVersionFlagInHelp(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
 
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
@@ -1026,7 +1027,7 @@ func TestShortAndLongVersionFlagInHelp(t *testing.T) {
 }
 
 func TestLongVersionFlagOnlyInHelpWhenShortPredefined(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
 	rootCmd.Flags().String("foo", "", "not a version flag", zflag.OptShorthand('v'))
 
 	output, err := executeCommand(rootCmd, "--help")
@@ -1039,7 +1040,7 @@ func TestLongVersionFlagOnlyInHelpWhenShortPredefined(t *testing.T) {
 }
 
 func TestShorthandVersionFlagExecuted(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
 
 	output, err := executeCommand(rootCmd, "-v", "arg1")
 	if err != nil {
@@ -1050,7 +1051,7 @@ func TestShorthandVersionFlagExecuted(t *testing.T) {
 }
 
 func TestVersionTemplate(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
 	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
 
 	output, err := executeCommand(rootCmd, "--version", "arg1")
@@ -1062,7 +1063,7 @@ func TestVersionTemplate(t *testing.T) {
 }
 
 func TestShorthandVersionTemplate(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
 	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
 
 	output, err := executeCommand(rootCmd, "-v", "arg1")
@@ -1074,8 +1075,8 @@ func TestShorthandVersionTemplate(t *testing.T) {
 }
 
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0"}
-	rootCmd.AddCommand(&Command{Use: "sub", RunE: emptyRun})
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0"}
+	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: emptyRun})
 
 	output, err := executeCommand(rootCmd, "--version", "sub")
 	if err != nil {
@@ -1086,8 +1087,8 @@ func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 }
 
 func TestShorthandVersionFlagExecutedOnSubcommand(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0"}
-	rootCmd.AddCommand(&Command{Use: "sub", RunE: emptyRun})
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0"}
+	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: emptyRun})
 
 	output, err := executeCommand(rootCmd, "-v", "sub")
 	if err != nil {
@@ -1098,8 +1099,8 @@ func TestShorthandVersionFlagExecutedOnSubcommand(t *testing.T) {
 }
 
 func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
-	rootCmd.AddCommand(&Command{Use: "sub", RunE: emptyRun})
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
+	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: emptyRun})
 
 	_, err := executeCommand(rootCmd, "sub", "--version")
 	if err == nil {
@@ -1110,8 +1111,8 @@ func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
 }
 
 func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
-	rootCmd := &Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
-	rootCmd.AddCommand(&Command{Use: "sub", RunE: emptyRun})
+	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: emptyRun}
+	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: emptyRun})
 
 	_, err := executeCommand(rootCmd, "sub", "-v")
 	if err == nil {
@@ -1122,7 +1123,7 @@ func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
 }
 
 func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
 
 	_, err := executeCommand(rootCmd, "--version")
 	if err == nil {
@@ -1132,7 +1133,7 @@ func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 }
 
 func TestShorthandVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
 
 	_, err := executeCommand(rootCmd, "-v")
 	if err == nil {
@@ -1142,7 +1143,7 @@ func TestShorthandVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 }
 
 func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun, Version: "1.2.3"}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun, Version: "1.2.3"}
 	rootCmd.Flags().String("notversion", "", "not a version flag", zflag.OptShorthand('v'))
 
 	_, err := executeCommand(rootCmd, "-v")
@@ -1154,7 +1155,7 @@ func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
 }
 
 func TestShorthandVersionFlagOnlyAddedIfVersionNotDefined(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun, Version: "1.2.3"}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun, Version: "1.2.3"}
 	rootCmd.Flags().Bool("version", false, "a different kind of version flag")
 
 	_, err := executeCommand(rootCmd, "-v")
@@ -1165,8 +1166,8 @@ func TestShorthandVersionFlagOnlyAddedIfVersionNotDefined(t *testing.T) {
 }
 
 func TestUsageIsNotPrintedTwice(t *testing.T) {
-	var cmd = &Command{Use: "root"}
-	var sub = &Command{Use: "sub"}
+	var cmd = &zulu.Command{Use: "root"}
+	var sub = &zulu.Command{Use: "sub"}
 	cmd.AddCommand(sub)
 
 	output, _ := executeCommand(cmd, "")
@@ -1176,14 +1177,14 @@ func TestUsageIsNotPrintedTwice(t *testing.T) {
 }
 
 func TestVisitParents(t *testing.T) {
-	c := &Command{Use: "app"}
-	sub := &Command{Use: "sub"}
-	dsub := &Command{Use: "dsub"}
+	c := &zulu.Command{Use: "app"}
+	sub := &zulu.Command{Use: "sub"}
+	dsub := &zulu.Command{Use: "dsub"}
 	sub.AddCommand(dsub)
 	c.AddCommand(sub)
 
 	total := 0
-	add := func(x *Command) {
+	add := func(x *zulu.Command) {
 		total++
 	}
 	sub.VisitParents(add)
@@ -1205,8 +1206,8 @@ func TestVisitParents(t *testing.T) {
 }
 
 func TestSuggestions(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	timesCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	timesCmd := &zulu.Command{
 		Use:        "times",
 		SuggestFor: []string{"counts"},
 		RunE:       emptyRun,
@@ -1252,8 +1253,8 @@ func TestSuggestions(t *testing.T) {
 }
 
 func TestRemoveCommand(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	childCmd := &Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 	rootCmd.RemoveCommand(childCmd)
 
@@ -1265,14 +1266,14 @@ func TestRemoveCommand(t *testing.T) {
 
 func TestReplaceCommandWithRemove(t *testing.T) {
 	childUsed := 0
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	child1Cmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	child1Cmd := &zulu.Command{
 		Use:  "child",
-		RunE: func(*Command, []string) error { childUsed = 1; return nil },
+		RunE: func(*zulu.Command, []string) error { childUsed = 1; return nil },
 	}
-	child2Cmd := &Command{
+	child2Cmd := &zulu.Command{
 		Use:  "child",
-		RunE: func(*Command, []string) error { childUsed = 2; return nil },
+		RunE: func(*zulu.Command, []string) error { childUsed = 2; return nil },
 	}
 	rootCmd.AddCommand(child1Cmd)
 	rootCmd.RemoveCommand(child1Cmd)
@@ -1295,8 +1296,8 @@ func TestReplaceCommandWithRemove(t *testing.T) {
 }
 
 func TestDeprecatedCommand(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	deprecatedCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	deprecatedCmd := &zulu.Command{
 		Use:        "deprecated",
 		Deprecated: "This command is deprecated",
 		RunE:       emptyRun,
@@ -1320,25 +1321,25 @@ func TestHooks(t *testing.T) {
 		persPostArgs string
 	)
 
-	c := &Command{
+	c := &zulu.Command{
 		Use: "c",
-		PersistentPreRunE: func(_ *Command, args []string) error {
+		PersistentPreRunE: func(_ *zulu.Command, args []string) error {
 			persPreArgs = strings.Join(args, " ")
 			return nil
 		},
-		PreRunE: func(_ *Command, args []string) error {
+		PreRunE: func(_ *zulu.Command, args []string) error {
 			preArgs = strings.Join(args, " ")
 			return nil
 		},
-		RunE: func(_ *Command, args []string) error {
+		RunE: func(_ *zulu.Command, args []string) error {
 			runArgs = strings.Join(args, " ")
 			return nil
 		},
-		PostRunE: func(_ *Command, args []string) error {
+		PostRunE: func(_ *zulu.Command, args []string) error {
 			postArgs = strings.Join(args, " ")
 			return nil
 		},
-		PersistentPostRunE: func(_ *Command, args []string) error {
+		PersistentPostRunE: func(_ *zulu.Command, args []string) error {
 			persPostArgs = strings.Join(args, " ")
 			return nil
 		},
@@ -1371,13 +1372,13 @@ func TestHooks(t *testing.T) {
 func TestPersistentHooks(t *testing.T) {
 	hooksArgs := map[string]string{}
 
-	getTestHookFn := func(key string, extras ...string) HookFuncE {
-		return func(cmd *Command, args []string) error {
+	getTestHookFn := func(key string, extras ...string) zulu.HookFuncE {
+		return func(cmd *zulu.Command, args []string) error {
 			hooksArgs[key] = strings.Join(args, " ") + strings.Join(extras, "")
 			return nil
 		}
 	}
-	parentCmd := &Command{
+	parentCmd := &zulu.Command{
 		Use:                   "parent",
 		PersistentInitializeE: getTestHookFn("parentPersInitArgs"),
 		InitializeE:           getTestHookFn("parentInitArgs"),
@@ -1390,7 +1391,7 @@ func TestPersistentHooks(t *testing.T) {
 		PersistentFinalizeE:   getTestHookFn("parentPersFinArgs"),
 	}
 
-	childCmd := &Command{
+	childCmd := &zulu.Command{
 		Use:                   "child",
 		PersistentInitializeE: getTestHookFn("childPersInitArgs"),
 		InitializeE:           getTestHookFn("childInitArgs"),
@@ -1494,8 +1495,8 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 		return zflag.NormalizedName(name)
 	}
 
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
 	rootCmd.AddCommand(childCmd)
 
 	rootCmd.SetGlobalNormalizationFunc(normFunc)
@@ -1514,7 +1515,7 @@ func TestNormPassedOnLocal(t *testing.T) {
 		return zflag.NormalizedName(strings.ToUpper(name))
 	}
 
-	c := &Command{}
+	c := &zulu.Command{}
 	c.Flags().Bool("flagname", true, "this is a dummy flag")
 	c.SetGlobalNormalizationFunc(toUpper)
 	if c.LocalFlags().Lookup("flagname") != c.LocalFlags().Lookup("FLAGNAME") {
@@ -1528,15 +1529,15 @@ func TestNormPassedOnInherited(t *testing.T) {
 		return zflag.NormalizedName(strings.ToUpper(name))
 	}
 
-	c := &Command{}
+	c := &zulu.Command{}
 	c.SetGlobalNormalizationFunc(toUpper)
 
-	child1 := &Command{}
+	child1 := &zulu.Command{}
 	c.AddCommand(child1)
 
 	c.PersistentFlags().Bool("flagname", true, "")
 
-	child2 := &Command{}
+	child2 := &zulu.Command{}
 	c.AddCommand(child2)
 
 	inherited := child1.InheritedFlags()
@@ -1559,7 +1560,7 @@ func TestConsistentNormalizedName(t *testing.T) {
 		return zflag.NormalizedName(name)
 	}
 
-	c := &Command{}
+	c := &zulu.Command{}
 	c.Flags().Bool("flagname", true, "")
 	c.SetGlobalNormalizationFunc(toUpper)
 	c.SetGlobalNormalizationFunc(n)
@@ -1573,8 +1574,8 @@ func TestFlagOnZflagCommandLine(t *testing.T) {
 	flagName := "flagOnCommandLine"
 	zflag.String(flagName, "", "about my flag")
 
-	c := &Command{Use: "c", RunE: emptyRun}
-	c.AddCommand(&Command{Use: "child", RunE: emptyRun})
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
+	c.AddCommand(&zulu.Command{Use: "child", RunE: emptyRun})
 
 	output, _ := executeCommand(c, "--help")
 	checkStringContains(t, output, flagName)
@@ -1586,10 +1587,10 @@ func TestFlagOnZflagCommandLine(t *testing.T) {
 // if hidden commands run as intended.
 func TestHiddenCommandExecutes(t *testing.T) {
 	executed := false
-	c := &Command{
+	c := &zulu.Command{
 		Use:    "c",
 		Hidden: true,
-		RunE:   func(*Command, []string) error { executed = true; return nil },
+		RunE:   func(*zulu.Command, []string) error { executed = true; return nil },
 	}
 
 	output, err := executeCommand(c)
@@ -1607,22 +1608,22 @@ func TestHiddenCommandExecutes(t *testing.T) {
 
 // test to ensure hidden commands do not show up in usage/help text
 func TestHiddenCommandIsHidden(t *testing.T) {
-	c := &Command{Use: "c", Hidden: true, RunE: emptyRun}
+	c := &zulu.Command{Use: "c", Hidden: true, RunE: emptyRun}
 	if c.IsAvailableCommand() {
 		t.Errorf("Hidden command should be unavailable")
 	}
 }
 
 func TestCommandsAreSorted(t *testing.T) {
-	EnableCommandSorting = true
+	zulu.EnableCommandSorting = true
 
 	originalNames := []string{"middle", "zlast", "afirst"}
 	expectedNames := []string{"afirst", "middle", "zlast"}
 
-	var rootCmd = &Command{Use: "root"}
+	var rootCmd = &zulu.Command{Use: "root"}
 
 	for _, name := range originalNames {
-		rootCmd.AddCommand(&Command{Use: name})
+		rootCmd.AddCommand(&zulu.Command{Use: name})
 	}
 
 	for i, c := range rootCmd.Commands() {
@@ -1632,18 +1633,18 @@ func TestCommandsAreSorted(t *testing.T) {
 		}
 	}
 
-	EnableCommandSorting = true
+	zulu.EnableCommandSorting = true
 }
 
 func TestEnableCommandSortingIsDisabled(t *testing.T) {
-	EnableCommandSorting = false
+	zulu.EnableCommandSorting = false
 
 	originalNames := []string{"middle", "zlast", "afirst"}
 
-	var rootCmd = &Command{Use: "root"}
+	var rootCmd = &zulu.Command{Use: "root"}
 
 	for _, name := range originalNames {
-		rootCmd.AddCommand(&Command{Use: name})
+		rootCmd.AddCommand(&zulu.Command{Use: name})
 	}
 
 	for i, c := range rootCmd.Commands() {
@@ -1653,14 +1654,14 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 		}
 	}
 
-	EnableCommandSorting = true
+	zulu.EnableCommandSorting = true
 }
 
 func TestUsageWithGroup(t *testing.T) {
-	var rootCmd = &Command{Use: "root", Short: "test", CompletionOptions: CompletionOptions{DisableDefaultCmd: true}, RunE: emptyRun}
+	var rootCmd = &zulu.Command{Use: "root", Short: "test", CompletionOptions: zulu.CompletionOptions{DisableDefaultCmd: true}, RunE: emptyRun}
 
-	rootCmd.AddCommand(&Command{Use: "cmd1", Group: "group1", RunE: emptyRun})
-	rootCmd.AddCommand(&Command{Use: "cmd2", Group: "group2", RunE: emptyRun})
+	rootCmd.AddCommand(&zulu.Command{Use: "cmd1", Group: "group1", RunE: emptyRun})
+	rootCmd.AddCommand(&zulu.Command{Use: "cmd2", Group: "group2", RunE: emptyRun})
 
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
@@ -1674,9 +1675,9 @@ func TestUsageWithGroup(t *testing.T) {
 }
 
 func TestUsageHelpGroup(t *testing.T) {
-	var rootCmd = &Command{Use: "root", Short: "test", CompletionOptions: CompletionOptions{DisableDefaultCmd: true}, RunE: emptyRun}
+	var rootCmd = &zulu.Command{Use: "root", Short: "test", CompletionOptions: zulu.CompletionOptions{DisableDefaultCmd: true}, RunE: emptyRun}
 
-	rootCmd.AddCommand(&Command{Use: "xxx", Group: "group", RunE: emptyRun})
+	rootCmd.AddCommand(&zulu.Command{Use: "xxx", Group: "group", RunE: emptyRun})
 	rootCmd.SetHelpCommandGroup("group")
 
 	output, err := executeCommand(rootCmd, "--help")
@@ -1690,10 +1691,10 @@ func TestUsageHelpGroup(t *testing.T) {
 }
 
 func TestAddGroup(t *testing.T) {
-	var rootCmd = &Command{Use: "root", Short: "test", RunE: emptyRun}
+	var rootCmd = &zulu.Command{Use: "root", Short: "test", RunE: emptyRun}
 
-	rootCmd.AddGroup(&Group{Group: "group", Title: "Test group"})
-	rootCmd.AddCommand(&Command{Use: "cmd", Group: "group", RunE: emptyRun})
+	rootCmd.AddGroup(&zulu.Group{Group: "group", Title: "Test group"})
+	rootCmd.AddCommand(&zulu.Command{Use: "cmd", Group: "group", RunE: emptyRun})
 
 	output, err := executeCommand(rootCmd, "--help")
 	if err != nil {
@@ -1704,7 +1705,7 @@ func TestAddGroup(t *testing.T) {
 }
 
 func TestSetOut(t *testing.T) {
-	c := &Command{}
+	c := &zulu.Command{}
 	c.SetOut(nil)
 	if out := c.OutOrStdout(); out != os.Stdout {
 		t.Errorf("Expected setting output to nil to revert back to stdout")
@@ -1712,7 +1713,7 @@ func TestSetOut(t *testing.T) {
 }
 
 func TestSetErr(t *testing.T) {
-	c := &Command{}
+	c := &zulu.Command{}
 	c.SetErr(nil)
 	if out := c.ErrOrStderr(); out != os.Stderr {
 		t.Errorf("Expected setting error to nil to revert back to stderr")
@@ -1720,7 +1721,7 @@ func TestSetErr(t *testing.T) {
 }
 
 func TestSetIn(t *testing.T) {
-	c := &Command{}
+	c := &zulu.Command{}
 	c.SetIn(nil)
 	if out := c.InOrStdin(); out != os.Stdin {
 		t.Errorf("Expected setting input to nil to revert back to stdin")
@@ -1728,14 +1729,14 @@ func TestSetIn(t *testing.T) {
 }
 
 func TestUsageStringRedirected(t *testing.T) {
-	c := &Command{}
+	c := &zulu.Command{}
 
-	c.usageFunc = func(cmd *Command) error {
+	c.SetUsageFunc(func(cmd *zulu.Command) error {
 		cmd.Print("[stdout1]")
 		cmd.PrintErr("[stderr2]")
 		cmd.Print("[stdout3]")
 		return nil
-	}
+	})
 
 	expected := "[stdout1][stderr2][stdout3]"
 	if got := c.UsageString(); got != expected {
@@ -1745,8 +1746,8 @@ func TestUsageStringRedirected(t *testing.T) {
 
 func TestCommandPrintRedirection(t *testing.T) {
 	errBuff, outBuff := bytes.NewBuffer(nil), bytes.NewBuffer(nil)
-	root := &Command{
-		RunE: func(cmd *Command, args []string) error {
+	root := &zulu.Command{
+		RunE: func(cmd *zulu.Command, args []string) error {
 
 			cmd.PrintErr("PrintErr")
 			cmd.PrintErrln("PrintErr", "line")
@@ -1786,10 +1787,10 @@ func TestCommandPrintRedirection(t *testing.T) {
 }
 
 func TestFlagErrorFunc(t *testing.T) {
-	c := &Command{Use: "c", RunE: emptyRun}
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
 
 	expectedFmt := "This is expected: %v"
-	c.SetFlagErrorFunc(func(_ *Command, err error) error {
+	c.SetFlagErrorFunc(func(_ *zulu.Command, err error) error {
 		return fmt.Errorf(expectedFmt, err)
 	})
 
@@ -1806,7 +1807,7 @@ func TestFlagErrorFunc(t *testing.T) {
 // if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
 // Related to https://github.com/spf13/cobra/issues/404.
 func TestSortedFlags(t *testing.T) {
-	c := &Command{}
+	c := &zulu.Command{}
 	c.Flags().SortFlags = false
 	names := []string{"C", "B", "A", "D"}
 	for _, name := range names {
@@ -1818,7 +1819,7 @@ func TestSortedFlags(t *testing.T) {
 		if i == len(names) {
 			return
 		}
-		if stringInSlice(f.Name, names) {
+		if zulu.StringInSlice(f.Name, names) {
 			if names[i] != f.Name {
 				t.Errorf("Incorrect order. Expected %v, got %v", names[i], f.Name)
 			}
@@ -1833,8 +1834,10 @@ func TestSortedFlags(t *testing.T) {
 // Related to https://github.com/spf13/cobra/issues/443.
 func TestMergeCommandLineToFlags(t *testing.T) {
 	zflag.Bool("boolflag", false, "")
-	c := &Command{Use: "c", RunE: emptyRun}
-	c.mergePersistentFlags()
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
+	// help flag is not actually needed here, it's a way to enforce
+	// zulu.Command.mergePersistentFlags is called.
+	c.InitDefaultHelpFlag()
 	if c.Flags().Lookup("boolflag") == nil {
 		t.Fatal("Expecting to have flag from CommandLine in c.Flags()")
 	}
@@ -1846,7 +1849,7 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 // if zulu.Execute() prints a message, if a deprecated flag is used.
 // Related to https://github.com/spf13/cobra/issues/463.
 func TestUseDeprecatedFlags(t *testing.T) {
-	c := &Command{Use: "c", RunE: emptyRun}
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
 	c.Flags().Bool("deprecated", false, "deprecated flag", zflag.OptShorthand('d'), zflag.OptDeprecated("This flag is deprecated"))
 
 	output, err := executeCommand(c, "c", "-d")
@@ -1857,11 +1860,11 @@ func TestUseDeprecatedFlags(t *testing.T) {
 }
 
 func TestTraverseWithParentFlags(t *testing.T) {
-	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd := &zulu.Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("str", "", "")
 	rootCmd.Flags().Bool("bool", false, "", zflag.OptShorthand('b'))
 
-	childCmd := &Command{Use: "child"}
+	childCmd := &zulu.Command{Use: "child"}
 	childCmd.Flags().Int("int", -1, "")
 
 	rootCmd.AddCommand(childCmd)
@@ -1879,10 +1882,10 @@ func TestTraverseWithParentFlags(t *testing.T) {
 }
 
 func TestTraverseNoParentFlags(t *testing.T) {
-	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd := &zulu.Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("foo", "", "foo things")
 
-	childCmd := &Command{Use: "child"}
+	childCmd := &zulu.Command{Use: "child"}
 	childCmd.Flags().String("str", "", "")
 	rootCmd.AddCommand(childCmd)
 
@@ -1899,9 +1902,9 @@ func TestTraverseNoParentFlags(t *testing.T) {
 }
 
 func TestTraverseWithBadParentFlags(t *testing.T) {
-	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd := &zulu.Command{Use: "root", TraverseChildren: true}
 
-	childCmd := &Command{Use: "child"}
+	childCmd := &zulu.Command{Use: "child"}
 	childCmd.Flags().String("str", "", "")
 	rootCmd.AddCommand(childCmd)
 
@@ -1917,10 +1920,10 @@ func TestTraverseWithBadParentFlags(t *testing.T) {
 }
 
 func TestTraverseWithBadChildFlag(t *testing.T) {
-	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd := &zulu.Command{Use: "root", TraverseChildren: true}
 	rootCmd.Flags().String("str", "", "")
 
-	childCmd := &Command{Use: "child"}
+	childCmd := &zulu.Command{Use: "child"}
 	rootCmd.AddCommand(childCmd)
 
 	// Expect no error because the last commands args shouldn't be parsed in
@@ -1938,12 +1941,12 @@ func TestTraverseWithBadChildFlag(t *testing.T) {
 }
 
 func TestTraverseWithTwoSubcommands(t *testing.T) {
-	rootCmd := &Command{Use: "root", TraverseChildren: true}
+	rootCmd := &zulu.Command{Use: "root", TraverseChildren: true}
 
-	subCmd := &Command{Use: "sub", TraverseChildren: true}
+	subCmd := &zulu.Command{Use: "sub", TraverseChildren: true}
 	rootCmd.AddCommand(subCmd)
 
-	subsubCmd := &Command{
+	subsubCmd := &zulu.Command{
 		Use: "subsub",
 	}
 	subCmd.AddCommand(subsubCmd)
@@ -1960,7 +1963,7 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 // TestUpdateName checks if c.Name() updates on changed c.Use.
 // Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {
-	c := &Command{Use: "name xyz"}
+	c := &zulu.Command{Use: "name xyz"}
 	originalName := c.Name()
 
 	c.Use = "changedName abc"
@@ -1977,15 +1980,15 @@ type calledAsTestcase struct {
 }
 
 func (tc *calledAsTestcase) test(t *testing.T) {
-	defer func(ov bool) { EnablePrefixMatching = ov }(EnablePrefixMatching)
-	EnablePrefixMatching = tc.epm
+	defer func(ov bool) { zulu.EnablePrefixMatching = ov }(zulu.EnablePrefixMatching)
+	zulu.EnablePrefixMatching = tc.epm
 
-	var called *Command
-	run := func(c *Command, _ []string) error { t.Logf("called: %q", c.Name()); called = c; return nil }
+	var called *zulu.Command
+	run := func(c *zulu.Command, _ []string) error { t.Logf("called: %q", c.Name()); called = c; return nil }
 
-	parent := &Command{Use: "parent", RunE: run}
-	child1 := &Command{Use: "child1", RunE: run, Aliases: []string{"this"}}
-	child2 := &Command{Use: "child2", RunE: run, Aliases: []string{"that"}}
+	parent := &zulu.Command{Use: "parent", RunE: run}
+	child1 := &zulu.Command{Use: "child1", RunE: run, Aliases: []string{"this"}}
+	child2 := &zulu.Command{Use: "child2", RunE: run, Aliases: []string{"that"}}
 
 	parent.AddCommand(child1)
 	parent.AddCommand(child2)
@@ -2033,7 +2036,7 @@ func TestCalledAs(t *testing.T) {
 }
 
 func TestFParseErrWhitelistBackwardCompatibility(t *testing.T) {
-	c := &Command{Use: "c", RunE: emptyRun}
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
 	c.Flags().Bool("boola", false, "a boolean flag", zflag.OptShorthand('a'))
 
 	output, err := executeCommand(c, "c", "-a", "--unknown", "flag")
@@ -2044,10 +2047,10 @@ func TestFParseErrWhitelistBackwardCompatibility(t *testing.T) {
 }
 
 func TestFParseErrWhitelistSameCommand(t *testing.T) {
-	c := &Command{
+	c := &zulu.Command{
 		Use:  "c",
 		RunE: emptyRun,
-		FParseErrAllowList: FParseErrAllowList{
+		FParseErrAllowList: zulu.FParseErrAllowList{
 			UnknownFlags: true,
 		},
 	}
@@ -2060,15 +2063,15 @@ func TestFParseErrWhitelistSameCommand(t *testing.T) {
 }
 
 func TestFParseErrWhitelistParentCommand(t *testing.T) {
-	root := &Command{
+	root := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
-		FParseErrAllowList: FParseErrAllowList{
+		FParseErrAllowList: zulu.FParseErrAllowList{
 			UnknownFlags: true,
 		},
 	}
 
-	c := &Command{
+	c := &zulu.Command{
 		Use:  "child",
 		RunE: emptyRun,
 	}
@@ -2084,15 +2087,15 @@ func TestFParseErrWhitelistParentCommand(t *testing.T) {
 }
 
 func TestFParseErrWhitelistChildCommand(t *testing.T) {
-	root := &Command{
+	root := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
 
-	c := &Command{
+	c := &zulu.Command{
 		Use:  "child",
 		RunE: emptyRun,
-		FParseErrAllowList: FParseErrAllowList{
+		FParseErrAllowList: zulu.FParseErrAllowList{
 			UnknownFlags: true,
 		},
 	}
@@ -2107,21 +2110,21 @@ func TestFParseErrWhitelistChildCommand(t *testing.T) {
 }
 
 func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
-	root := &Command{
+	root := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
 
-	c := &Command{
+	c := &zulu.Command{
 		Use:  "child",
 		RunE: emptyRun,
-		FParseErrAllowList: FParseErrAllowList{
+		FParseErrAllowList: zulu.FParseErrAllowList{
 			UnknownFlags: true,
 		},
 	}
 	c.Flags().Bool("boola", false, "a boolean flag", zflag.OptShorthand('a'))
 
-	s := &Command{
+	s := &zulu.Command{
 		Use:  "sibling",
 		RunE: emptyRun,
 	}
@@ -2138,7 +2141,7 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 }
 
 func TestContext(t *testing.T) {
-	root := &Command{}
+	root := &zulu.Command{}
 	if root.Context() == nil {
 		t.Error("expected root.Context() != nil")
 	}
@@ -2146,9 +2149,9 @@ func TestContext(t *testing.T) {
 
 func TestSetContext(t *testing.T) {
 	key, val := "foo", "bar"
-	root := &Command{
+	root := &zulu.Command{
 		Use: "root",
-		RunE: func(cmd *Command, args []string) error {
+		RunE: func(cmd *zulu.Command, args []string) error {
 			key := cmd.Context().Value(key)
 			got, ok := key.(string)
 			if !ok {
@@ -2170,14 +2173,14 @@ func TestSetContext(t *testing.T) {
 
 func TestSetContextPreRun(t *testing.T) {
 	key, val := "foo", "bar"
-	root := &Command{
+	root := &zulu.Command{
 		Use: "root",
-		PreRunE: func(cmd *Command, args []string) error {
+		PreRunE: func(cmd *zulu.Command, args []string) error {
 			ctx := context.WithValue(cmd.Context(), key, val)
 			cmd.SetContext(ctx)
 			return nil
 		},
-		RunE: func(cmd *Command, args []string) error {
+		RunE: func(cmd *zulu.Command, args []string) error {
 			key := cmd.Context().Value(key)
 			got, ok := key.(string)
 			if !ok {
@@ -2197,9 +2200,9 @@ func TestSetContextPreRun(t *testing.T) {
 
 func TestSetContextPreRunOverwrite(t *testing.T) {
 	key, val := "foo", "bar"
-	root := &Command{
+	root := &zulu.Command{
 		Use: "root",
-		RunE: func(cmd *Command, args []string) error {
+		RunE: func(cmd *zulu.Command, args []string) error {
 			key := cmd.Context().Value(key)
 			_, ok := key.(string)
 			if ok {
@@ -2218,17 +2221,17 @@ func TestSetContextPreRunOverwrite(t *testing.T) {
 
 func TestSetContextPersistentPreRun(t *testing.T) {
 	key, val := "foo", "bar"
-	root := &Command{
+	root := &zulu.Command{
 		Use: "root",
-		PersistentPreRunE: func(cmd *Command, args []string) error {
+		PersistentPreRunE: func(cmd *zulu.Command, args []string) error {
 			ctx := context.WithValue(cmd.Context(), key, val)
 			cmd.SetContext(ctx)
 			return nil
 		},
 	}
-	child := &Command{
+	child := &zulu.Command{
 		Use: "child",
-		RunE: func(cmd *Command, args []string) error {
+		RunE: func(cmd *zulu.Command, args []string) error {
 			key := cmd.Context().Value(key)
 			got, ok := key.(string)
 			if !ok {
@@ -2249,13 +2252,13 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 }
 
 func TestUsageTemplate(t *testing.T) {
-	createCmd := func() (*Command, *Command) {
-		root := &Command{
+	createCmd := func() (*zulu.Command, *zulu.Command) {
+		root := &zulu.Command{
 			Use: "root",
 		}
-		child := &Command{
+		child := &zulu.Command{
 			Use:  "child",
-			RunE: func(cmd *Command, args []string) error { return nil },
+			RunE: func(cmd *zulu.Command, args []string) error { return nil },
 		}
 		root.AddCommand(child)
 		return root, child
@@ -2264,7 +2267,7 @@ func TestUsageTemplate(t *testing.T) {
 	tests := []struct {
 		name          string
 		expectedUsage string
-		testCmd       func(newOut io.Writer) *Command
+		testCmd       func(newOut io.Writer) *zulu.Command
 	}{
 		{
 			name: "basic test",
@@ -2276,7 +2279,7 @@ Available Commands:
 
 Use "root [command] --help" for more information about a command.
 `,
-			testCmd: func(newOut io.Writer) *Command {
+			testCmd: func(newOut io.Writer) *zulu.Command {
 				root, child := createCmd()
 				child.Short = "child I AM THE CHILD NOW"
 				root.SetOut(newOut)
@@ -2288,7 +2291,7 @@ Use "root [command] --help" for more information about a command.
 			expectedUsage: `Usage:
   root child
 `,
-			testCmd: func(newOut io.Writer) *Command {
+			testCmd: func(newOut io.Writer) *zulu.Command {
 				root, child := createCmd()
 				root.SetOut(newOut)
 				return child
@@ -2302,7 +2305,7 @@ Use "root [command] --help" for more information about a command.
 Aliases:
   child, c
 `,
-			testCmd: func(newOut io.Writer) *Command {
+			testCmd: func(newOut io.Writer) *zulu.Command {
 				root, child := createCmd()
 				root.SetOut(newOut)
 
@@ -2318,7 +2321,7 @@ Aliases:
 Examples:
   child sub --int 0
 `,
-			testCmd: func(newOut io.Writer) *Command {
+			testCmd: func(newOut io.Writer) *zulu.Command {
 				root, child := createCmd()
 				root.SetOut(newOut)
 				child.Example = "child sub --int 0"
@@ -2372,7 +2375,7 @@ Additional help topics:
 
 Use "root child [command] --help" for more information about a command.
 `,
-			testCmd: func(newOut io.Writer) *Command {
+			testCmd: func(newOut io.Writer) *zulu.Command {
 				root, child := createCmd()
 				root.SetOut(newOut)
 
@@ -2380,60 +2383,60 @@ Use "root child [command] --help" for more information about a command.
 				child.Example = "child sub --int 0"
 
 				pfs := root.PersistentFlags()
-				pfs.Int("pint", 1, "persistent int usage", zflag.OptShorthand('q'), zflag.OptGroup("group1"), FlagOptRequired())
+				pfs.Int("pint", 1, "persistent int usage", zflag.OptShorthand('q'), zflag.OptGroup("group1"), zulu.FlagOptRequired())
 				pfs.Bool("pbool", false, "persistent bool usage", zflag.OptShorthand('c'), zflag.OptGroup("group2"))
 
 				fs := child.Flags()
 				fs.String("string1", "some", "string1 usage", zflag.OptShorthand('s'))
 				fs.Bool("bool1", false, "bool1 usage", zflag.OptShorthand('b'))
 
-				fs.String("string2", "some", "string2 usage in group1", zflag.OptGroup("group1"), FlagOptRequired())
+				fs.String("string2", "some", "string2 usage in group1", zflag.OptGroup("group1"), zulu.FlagOptRequired())
 				fs.Bool("bool2", false, "bool2 usage in group1", zflag.OptGroup("group1"))
 
 				fs.String("string3", "some", "string3 usage in group2", zflag.OptGroup("group2"))
-				fs.Bool("bool3", false, "bool3 usage in group2", zflag.OptGroup("group2"), FlagOptRequired())
+				fs.Bool("bool3", false, "bool3 usage in group2", zflag.OptGroup("group2"), zulu.FlagOptRequired())
 
-				sub1 := &Command{
+				sub1 := &zulu.Command{
 					Use:   "sub1",
 					Short: "sub1 short",
-					RunE:  func(cmd *Command, args []string) error { return nil },
+					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
 				}
 
-				sub2 := &Command{
+				sub2 := &zulu.Command{
 					Use:   "sub2",
 					Short: "sub2 short",
-					RunE:  func(cmd *Command, args []string) error { return nil },
+					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
 				}
 
-				sub3 := &Command{
+				sub3 := &zulu.Command{
 					Use:   "sub3",
 					Short: "sub3 short in group1",
 					Group: "group1",
-					RunE:  func(cmd *Command, args []string) error { return nil },
+					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
 				}
 
-				sub4 := &Command{
+				sub4 := &zulu.Command{
 					Use:   "sub4",
 					Short: "sub4 short in group1",
 					Group: "group1",
-					RunE:  func(cmd *Command, args []string) error { return nil },
+					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
 				}
 
-				sub5 := &Command{
+				sub5 := &zulu.Command{
 					Use:   "sub5",
 					Short: "sub5 short in group2",
 					Group: "group2",
-					RunE:  func(cmd *Command, args []string) error { return nil },
+					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
 				}
 
-				sub6 := &Command{
+				sub6 := &zulu.Command{
 					Use:   "sub6",
 					Short: "sub6 short in group2",
 					Group: "group2",
-					RunE:  func(cmd *Command, args []string) error { return nil },
+					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
 				}
 
-				sub7 := &Command{
+				sub7 := &zulu.Command{
 					Use:   "sub7",
 					Short: "short",
 				}

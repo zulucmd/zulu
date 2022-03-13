@@ -1,4 +1,4 @@
-package doc
+package doc_test
 
 import (
 	"bufio"
@@ -13,6 +13,7 @@ import (
 	"github.com/gowarden/zflag"
 
 	"github.com/gowarden/zulu"
+	"github.com/gowarden/zulu/doc"
 )
 
 func assertNoErr(t *testing.T, e error) {
@@ -26,14 +27,14 @@ func translate(in string) string {
 }
 
 func TestGenManDoc(t *testing.T) {
-	header := &GenManHeader{
+	header := &doc.GenManHeader{
 		Title:   "Project",
 		Section: "2",
 	}
 
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -56,7 +57,7 @@ func TestGenManDoc(t *testing.T) {
 }
 
 func TestGenManNoHiddenParents(t *testing.T) {
-	header := &GenManHeader{
+	header := &doc.GenManHeader{
 		Title:   "Project",
 		Section: "2",
 	}
@@ -68,7 +69,7 @@ func TestGenManNoHiddenParents(t *testing.T) {
 		defer func() { f.Hidden = false }()
 	}
 	buf := new(bytes.Buffer)
-	if err := GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -95,14 +96,14 @@ func TestGenManNoGenTag(t *testing.T) {
 	echoCmd.DisableAutoGenTag = true
 	defer func() { echoCmd.DisableAutoGenTag = false }()
 
-	header := &GenManHeader{
+	header := &doc.GenManHeader{
 		Title:   "Project",
 		Section: "2",
 	}
 
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -121,14 +122,14 @@ func TestGenManNoGenTagWithDisabledParent(t *testing.T) {
 		rootCmd.DisableAutoGenTag = false
 	}()
 
-	header := &GenManHeader{
+	header := &doc.GenManHeader{
 		Title:   "Project",
 		Section: "2",
 	}
 
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -147,8 +148,8 @@ func TestGenManSeeAlso(t *testing.T) {
 	rootCmd.AddCommand(aCmd, bCmd, cCmd)
 
 	buf := new(bytes.Buffer)
-	header := &GenManHeader{}
-	if err := GenMan(rootCmd, header, buf); err != nil {
+	header := &doc.GenManHeader{}
+	if err := doc.GenMan(rootCmd, header, buf); err != nil {
 		t.Fatal(err)
 	}
 	scanner := bufio.NewScanner(buf)
@@ -164,12 +165,12 @@ func TestGenManSeeAlso(t *testing.T) {
 	}
 }
 
-func TestManPrintFlagsHidesShortDeperecated(t *testing.T) {
+func TestManPrintFlagsHidesShortDeprecated(t *testing.T) {
 	c := &zulu.Command{}
 	c.Flags().String("foo", "default", "Foo flag", zflag.OptShorthand('f'), zflag.OptShorthandDeprecated("don't use it no more"))
 
 	buf := new(bytes.Buffer)
-	manPrintFlags(buf, c.Flags())
+	doc.ManPrintFlags(buf, c.Flags())
 
 	got := buf.String()
 	expected := "**--foo**=\"default\"\n\tFoo flag\n\n"
@@ -179,14 +180,14 @@ func TestManPrintFlagsHidesShortDeperecated(t *testing.T) {
 }
 
 func TestGenManCommands(t *testing.T) {
-	header := &GenManHeader{
+	header := &doc.GenManHeader{
 		Title:   "Project",
 		Section: "2",
 	}
 
 	// Root command
 	buf := new(bytes.Buffer)
-	if err := GenMan(rootCmd, header, buf); err != nil {
+	if err := doc.GenMan(rootCmd, header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -197,7 +198,7 @@ func TestGenManCommands(t *testing.T) {
 
 	// Echo command
 	buf = new(bytes.Buffer)
-	if err := GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output = buf.String()
@@ -209,7 +210,7 @@ func TestGenManCommands(t *testing.T) {
 
 	// Time command as echo's subcommand
 	buf = new(bytes.Buffer)
-	if err := GenMan(timesCmd, header, buf); err != nil {
+	if err := doc.GenMan(timesCmd, header, buf); err != nil {
 		t.Fatal(err)
 	}
 	output = buf.String()
@@ -219,14 +220,14 @@ func TestGenManCommands(t *testing.T) {
 
 func TestGenManTree(t *testing.T) {
 	c := &zulu.Command{Use: "do [OPTIONS] arg1 arg2"}
-	header := &GenManHeader{Section: "2"}
+	header := &doc.GenManHeader{Section: "2"}
 	tmpdir, err := ioutil.TempDir("", "test-gen-man-tree")
 	if err != nil {
 		t.Fatalf("Failed to create tmpdir: %s", err.Error())
 	}
 	defer os.RemoveAll(tmpdir)
 
-	if err := GenManTree(c, header, tmpdir); err != nil {
+	if err := doc.GenManTree(c, header, tmpdir); err != nil {
 		t.Fatalf("GenManTree failed: %s", err.Error())
 	}
 
@@ -280,7 +281,7 @@ func BenchmarkGenManToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := GenMan(rootCmd, nil, file); err != nil {
+		if err := doc.GenMan(rootCmd, nil, file); err != nil {
 			b.Fatal(err)
 		}
 	}

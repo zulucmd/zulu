@@ -1,4 +1,4 @@
-package zulu
+package zulu_test
 
 import (
 	"bytes"
@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/gowarden/zflag"
+	"github.com/gowarden/zulu"
 )
 
-func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+func validArgsFunc(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 	if len(args) != 0 {
-		return nil, ShellCompDirectiveNoFileComp
+		return nil, zulu.ShellCompDirectiveNoFileComp
 	}
 
 	var completions []string
@@ -20,12 +21,12 @@ func validArgsFunc(cmd *Command, args []string, toComplete string) ([]string, Sh
 			completions = append(completions, comp)
 		}
 	}
-	return completions, ShellCompDirectiveDefault
+	return completions, zulu.ShellCompDirectiveDefault
 }
 
-func validArgsFunc2(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+func validArgsFunc2(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 	if len(args) != 0 {
-		return nil, ShellCompDirectiveNoFileComp
+		return nil, zulu.ShellCompDirectiveNoFileComp
 	}
 
 	var completions []string
@@ -34,34 +35,34 @@ func validArgsFunc2(cmd *Command, args []string, toComplete string) ([]string, S
 			completions = append(completions, comp)
 		}
 	}
-	return completions, ShellCompDirectiveDefault
+	return completions, zulu.ShellCompDirectiveDefault
 }
 
 func TestCmdNameCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
-	childCmd1 := &Command{
+	childCmd1 := &zulu.Command{
 		Use:   "firstChild",
 		Short: "First command",
 		RunE:  emptyRun,
 	}
-	childCmd2 := &Command{
+	childCmd2 := &zulu.Command{
 		Use:  "secondChild",
 		RunE: emptyRun,
 	}
-	hiddenCmd := &Command{
+	hiddenCmd := &zulu.Command{
 		Use:    "testHidden",
 		Hidden: true, // Not completed
 		RunE:   emptyRun,
 	}
-	deprecatedCmd := &Command{
+	deprecatedCmd := &zulu.Command{
 		Use:        "testDeprecated",
 		Deprecated: "deprecated", // Not completed
 		RunE:       emptyRun,
 	}
-	aliasedCmd := &Command{
+	aliasedCmd := &zulu.Command{
 		Use:     "aliased",
 		Short:   "A command with aliases",
 		Aliases: []string{"testAlias", "testSynonym"}, // Not completed
@@ -71,7 +72,7 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 	rootCmd.AddCommand(childCmd1, childCmd2, hiddenCmd, deprecatedCmd, aliasedCmd)
 
 	// Test that sub-command names are completed
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -90,7 +91,7 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that sub-command names are completed with prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "s")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "s")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -106,7 +107,7 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 
 	// Test that even with no valid sub-command matches, hidden, deprecated and
 	// aliases are not completed
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "test")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "test")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -120,7 +121,7 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that sub-command names are completed with description
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -140,16 +141,16 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 }
 
 func TestNoCmdNameCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
 	rootCmd.Flags().String("localroot", "", "local root flag")
 
-	childCmd1 := &Command{
+	childCmd1 := &zulu.Command{
 		Use:   "childCmd1",
 		Short: "First command",
-		Args:  MinimumNArgs(0),
+		Args:  zulu.MinimumNArgs(0),
 		RunE:  emptyRun,
 	}
 	rootCmd.AddCommand(childCmd1)
@@ -158,14 +159,14 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	childCmd1.Flags().String("nonPersistent", "", "non-persistent flag", zflag.OptShorthand('n'))
 	nonPersistentFlag := childCmd1.Flags().Lookup("nonPersistent")
 
-	childCmd2 := &Command{
+	childCmd2 := &zulu.Command{
 		Use:  "childCmd2",
 		RunE: emptyRun,
 	}
 	childCmd1.AddCommand(childCmd2)
 
 	// Test that sub-command names are not completed if there is an argument already
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "arg1", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "arg1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -179,7 +180,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that sub-command names are not completed if a local non-persistent flag is present
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "--nonPersistent", "value", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "--nonPersistent", "value", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -198,7 +199,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	// set TraverseChildren to true on the root cmd
 	rootCmd.TraverseChildren = true
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--localroot", "value", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--localroot", "value", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -220,7 +221,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	// and TraverseChildren is set to true on the root cmd
 	rootCmd.TraverseChildren = true
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--localroot", "value", "childCmd1", "--nonPersistent", "value", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--localroot", "value", "childCmd1", "--nonPersistent", "value", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -240,7 +241,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 
 	// Test that we don't use Traverse when we shouldn't.
 	// This command should not return a completion since the command line is invalid without TraverseChildren.
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--localroot", "value", "childCmd1", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--localroot", "value", "childCmd1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -254,7 +255,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that sub-command names are not completed if a local non-persistent short flag is present
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "-n", "value", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "-n", "value", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -270,7 +271,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that sub-command names are completed with a persistent flag
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "--persistent", "value", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "--persistent", "value", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -287,7 +288,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that sub-command names are completed with a persistent short flag
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd1", "-p", "value", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "-p", "value", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -305,14 +306,14 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 }
 
 func TestValidArgsCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:       "root",
 		ValidArgs: []string{"one", "two", "three"},
-		Args:      MinimumNArgs(1),
+		Args:      zulu.MinimumNArgs(1),
 	}
 
 	// Test that validArgs are completed
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -329,7 +330,7 @@ func TestValidArgsCompletionInGo(t *testing.T) {
 	}
 
 	// Test that validArgs are completed with prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "o")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "o")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -344,7 +345,7 @@ func TestValidArgsCompletionInGo(t *testing.T) {
 	}
 
 	// Test that validArgs don't repeat
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "one", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "one", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -359,13 +360,13 @@ func TestValidArgsCompletionInGo(t *testing.T) {
 }
 
 func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:       "root",
 		ValidArgs: []string{"one", "two"},
 		RunE:      emptyRun,
 	}
 
-	childCmd := &Command{
+	childCmd := &zulu.Command{
 		Use:  "thechild",
 		RunE: emptyRun,
 	}
@@ -373,7 +374,7 @@ func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	// Test that both sub-commands and validArgs are completed
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -392,7 +393,7 @@ func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 	}
 
 	// Test that both sub-commands and validArgs are completed with prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -409,13 +410,13 @@ func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 }
 
 func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:               "root",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
 	}
 
-	childCmd := &Command{
+	childCmd := &zulu.Command{
 		Use:   "thechild",
 		Short: "The child command",
 		RunE:  emptyRun,
@@ -424,7 +425,7 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	// Test that both sub-commands and validArgsFunction are completed
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -443,7 +444,7 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 	}
 
 	// Test that both sub-commands and validArgs are completed with prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -459,7 +460,7 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 	}
 
 	// Test that both sub-commands and validArgs are completed with description
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -476,11 +477,11 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 }
 
 func TestFlagNameCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
-	childCmd := &Command{
+	childCmd := &zulu.Command{
 		Use:  "childCmd",
 		RunE: emptyRun,
 	}
@@ -491,7 +492,7 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 	childCmd.Flags().String("subFlag", "", "sub flag")
 
 	// Test that flag names are not shown if the user has not given the '-' prefix
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -508,7 +509,7 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that flag names are completed
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -526,7 +527,7 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that flag names are completed when a prefix is given
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--f")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--f")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -541,7 +542,7 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that flag names are completed in a sub-cmd
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd", "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -559,11 +560,11 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 }
 
 func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
-	childCmd := &Command{
+	childCmd := &zulu.Command{
 		Use:   "childCmd",
 		Short: "first command",
 		RunE:  emptyRun,
@@ -575,7 +576,7 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	childCmd.Flags().String("subFlag", "", "sub flag")
 
 	// Test that flag names are not shown if the user has not given the '-' prefix
-	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -592,7 +593,7 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	}
 
 	// Test that flag names are completed
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -610,7 +611,7 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	}
 
 	// Test that flag names are completed when a prefix is given
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "--f")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--f")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -625,7 +626,7 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	}
 
 	// Test that flag names are completed in a sub-cmd
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "childCmd", "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "childCmd", "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -643,11 +644,11 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 }
 
 func TestFlagNameCompletionRepeat(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
-	childCmd := &Command{
+	childCmd := &zulu.Command{
 		Use:   "childCmd",
 		Short: "first command",
 		RunE:  emptyRun,
@@ -664,7 +665,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	bsliceFlag := rootCmd.Flags().Lookup("bslice")
 
 	// Test that flag names are not repeated unless they are an array or slice
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--first", "1", "--")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -683,7 +684,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	}
 
 	// Test that flag names are not repeated unless they are an array or slice
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--first", "1", "--second=false", "--")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--first", "1", "--second=false", "--")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -702,7 +703,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	}
 
 	// Test that flag names are not repeated unless they are an array or slice
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--bslice", "true", "--")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--bslice", "true", "--")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -723,7 +724,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	}
 
 	// Test that flag names are not repeated unless they are an array or slice, using shortname
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -747,7 +748,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	}
 
 	// Test that flag names are not repeated unless they are an array or slice, using shortname with prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-a")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-a")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -764,33 +765,33 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 }
 
 func TestRequiredFlagNameCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:       "root",
 		ValidArgs: []string{"realArg"},
 		RunE:      emptyRun,
 	}
-	childCmd := &Command{
+	childCmd := &zulu.Command{
 		Use: "childCmd",
-		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-			return []string{"subArg"}, ShellCompDirectiveNoFileComp
+		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{"subArg"}, zulu.ShellCompDirectiveNoFileComp
 		},
 		RunE: emptyRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
-	rootCmd.Flags().Int("requiredFlag", -1, "required flag", zflag.OptShorthand('r'), FlagOptRequired())
+	rootCmd.Flags().Int("requiredFlag", -1, "required flag", zflag.OptShorthand('r'), zulu.FlagOptRequired())
 	requiredFlag := rootCmd.Flags().Lookup("requiredFlag")
 
-	rootCmd.PersistentFlags().Int("requiredPersistent", -1, "required persistent", zflag.OptShorthand('p'), FlagOptRequired())
+	rootCmd.PersistentFlags().Int("requiredPersistent", -1, "required persistent", zflag.OptShorthand('p'), zulu.FlagOptRequired())
 	requiredPersistent := rootCmd.PersistentFlags().Lookup("requiredPersistent")
 
 	rootCmd.Flags().String("release", "", "Release name", zflag.OptShorthand('R'))
 
-	childCmd.Flags().Bool("subRequired", false, "sub required flag", zflag.OptShorthand('s'), FlagOptRequired())
+	childCmd.Flags().Bool("subRequired", false, "sub required flag", zflag.OptShorthand('s'), zulu.FlagOptRequired())
 	childCmd.Flags().Bool("subNotRequired", false, "sub not required flag", zflag.OptShorthand('n'))
 
 	// Test that a required flag is suggested even without the - prefix
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -812,7 +813,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that a required flag is suggested without other flags when using the '-' prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -830,7 +831,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that if no required flag matches, the normal flags are suggested
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--relea")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--relea")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -845,7 +846,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test required flags for sub-commands
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -863,7 +864,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd", "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -880,7 +881,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "childCmd", "--subNot")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "--subNot")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -895,7 +896,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that when a required flag is present, it is not suggested anymore
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredFlag", "1", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--requiredFlag", "1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -914,7 +915,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that when a persistent required flag is present, it is not suggested anymore
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredPersistent", "1", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--requiredPersistent", "1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -936,7 +937,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 
 	// Test that when all required flags are present, normal completion is done
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--requiredFlag", "1", "--requiredPersistent", "1", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--requiredFlag", "1", "--requiredPersistent", "1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -955,26 +956,26 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 }
 
 func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
 
 	// No extensions.  Should be ignored.
-	rootCmd.Flags().String("file", "", "file flag", zflag.OptShorthand('f'), FlagOptFilename())
+	rootCmd.Flags().String("file", "", "file flag", zflag.OptShorthand('f'), zulu.FlagOptFilename())
 
 	// Single extension
-	rootCmd.Flags().String("log", "", "log flag", zflag.OptShorthand('l'), FlagOptFilename("log"))
+	rootCmd.Flags().String("log", "", "log flag", zflag.OptShorthand('l'), zulu.FlagOptFilename("log"))
 
 	// Multiple extensions
-	rootCmd.Flags().String("yaml", "", "yaml flag", zflag.OptShorthand('y'), FlagOptFilename("yaml", "yml"))
+	rootCmd.Flags().String("yaml", "", "yaml flag", zflag.OptShorthand('y'), zulu.FlagOptFilename("yaml", "yml"))
 
 	// Directly using annotation
-	rootCmd.Flags().String("text", "", "text flag", zflag.OptShorthand('t'), zflag.OptAnnotation(BashCompFilenameExt, []string{"txt"}))
+	rootCmd.Flags().String("text", "", "text flag", zflag.OptShorthand('t'), zflag.OptAnnotation(zulu.BashCompFilenameExt, []string{"txt"}))
 
 	// Test that the completion logic returns the proper info for the completion
 	// script to handle the file filtering
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--file", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--file", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -987,7 +988,7 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--log", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--log", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1001,7 +1002,7 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--yaml", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--yaml", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1015,7 +1016,7 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--yaml=")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--yaml=")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1029,7 +1030,7 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-y", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-y", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1043,7 +1044,7 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-y=")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-y=")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1057,7 +1058,7 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--text", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--text", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1073,23 +1074,23 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 }
 
 func TestFlagDirFilterCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
 
 	// Filter directories
-	rootCmd.Flags().String("dir", "", "dir flag", zflag.OptShorthand('d'), FlagOptDirname())
+	rootCmd.Flags().String("dir", "", "dir flag", zflag.OptShorthand('d'), zulu.FlagOptDirname())
 
 	// Filter directories within a directory
-	rootCmd.Flags().String("subdir", "", "subdir", zflag.OptShorthand('s'), FlagOptDirname("themes"))
+	rootCmd.Flags().String("subdir", "", "subdir", zflag.OptShorthand('s'), zulu.FlagOptDirname("themes"))
 
 	// Multiple directory specification get ignored
-	rootCmd.Flags().String("manydir", "", "manydir", zflag.OptShorthand('m'), zflag.OptAnnotation(BashCompSubdirsInDir, []string{"themes", "colors"}))
+	rootCmd.Flags().String("manydir", "", "manydir", zflag.OptShorthand('m'), zflag.OptAnnotation(zulu.BashCompSubdirsInDir, []string{"themes", "colors"}))
 
 	// Test that the completion logic returns the proper info for the completion
 	// script to handle the directory filtering
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--dir", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--dir", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1102,7 +1103,7 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-d", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-d", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1115,21 +1116,7 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--subdir", "")
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-
-	expected = strings.Join([]string{
-		"themes",
-		":16",
-		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
-
-	if output != expected {
-		t.Errorf("expected: %q, got: %q", expected, output)
-	}
-
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--subdir=")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--subdir", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1143,7 +1130,7 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-s", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--subdir=")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1157,7 +1144,7 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-s=")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-s", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1171,7 +1158,21 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--manydir", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-s=")
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	expected = strings.Join([]string{
+		"themes",
+		":16",
+		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
+
+	if output != expected {
+		t.Errorf("expected: %q, got: %q", expected, output)
+	}
+
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--manydir", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1186,7 +1187,7 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 }
 
 func TestValidArgsFuncCmdContext(t *testing.T) {
-	validArgsFunc := func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+	validArgsFunc := func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 		ctx := cmd.Context()
 
 		if ctx == nil {
@@ -1195,14 +1196,14 @@ func TestValidArgsFuncCmdContext(t *testing.T) {
 			t.Error("Received invalid context")
 		}
 
-		return nil, ShellCompDirectiveDefault
+		return nil, zulu.ShellCompDirectiveDefault
 	}
 
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
-	childCmd := &Command{
+	childCmd := &zulu.Command{
 		Use:               "childCmd",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
@@ -1213,7 +1214,7 @@ func TestValidArgsFuncCmdContext(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "testKey", "123")
 
 	// Test completing an empty string on the childCmd
-	_, output, err := executeCommandWithContextC(ctx, rootCmd, ShellCompNoDescRequestCmd, "childCmd", "")
+	_, output, err := executeCommandWithContextC(ctx, rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1228,14 +1229,14 @@ func TestValidArgsFuncCmdContext(t *testing.T) {
 }
 
 func TestValidArgsFuncSingleCmd(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:               "root",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
 	}
 
 	// Test completing an empty string
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1251,7 +1252,7 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 	}
 
 	// Check completing with a prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1267,19 +1268,19 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 }
 
 func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use: "root",
 		// If we don't specify a value for Args, this test fails.
 		// This is only true for a root command without any subcommands, and is caused
 		// by the fact that the __complete command becomes a subcommand when there should not be one.
 		// The problem is in the implementation of legacyArgs().
-		Args:              MinimumNArgs(1),
+		Args:              zulu.MinimumNArgs(1),
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
 	}
 
 	// Check completing with wrong number of args
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "unexpectedArg", "t")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1294,13 +1295,13 @@ func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
 }
 
 func TestValidArgsFuncChildCmds(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child1Cmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child1Cmd := &zulu.Command{
 		Use:               "child1",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
 	}
-	child2Cmd := &Command{
+	child2Cmd := &zulu.Command{
 		Use:               "child2",
 		ValidArgsFunction: validArgsFunc2,
 		RunE:              emptyRun,
@@ -1308,7 +1309,7 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
 	// Test completion of first sub-command with empty argument
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child1", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1324,7 +1325,7 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 	}
 
 	// Test completion of first sub-command with a prefix to complete
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child1", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child1", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1339,7 +1340,7 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 	}
 
 	// Check completing with wrong number of args
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child1", "unexpectedArg", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child1", "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1353,7 +1354,7 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 	}
 
 	// Test completion of second sub-command with empty argument
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child2", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child2", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1368,7 +1369,7 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child2", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child2", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1383,7 +1384,7 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 	}
 
 	// Check completing with wrong number of args
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child2", "unexpectedArg", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child2", "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1398,8 +1399,8 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 }
 
 func TestValidArgsFuncAliases(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child := &zulu.Command{
 		Use:               "child",
 		Aliases:           []string{"son", "daughter"},
 		ValidArgsFunction: validArgsFunc,
@@ -1408,7 +1409,7 @@ func TestValidArgsFuncAliases(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	// Test completion of first sub-command with empty argument
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "son", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "son", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1424,7 +1425,7 @@ func TestValidArgsFuncAliases(t *testing.T) {
 	}
 
 	// Test completion of first sub-command with a prefix to complete
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "daughter", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "daughter", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1439,7 +1440,7 @@ func TestValidArgsFuncAliases(t *testing.T) {
 	}
 
 	// Check completing with wrong number of args
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "son", "unexpectedArg", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "son", "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1454,8 +1455,8 @@ func TestValidArgsFuncAliases(t *testing.T) {
 }
 
 func TestCompleteNoDesCmdInZshScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
@@ -1466,12 +1467,12 @@ func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenZshCompletionNoDesc(buf))
 	output := buf.String()
 
-	check(t, output, ShellCompNoDescRequestCmd)
+	check(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestCompleteCmdInZshScript(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
@@ -1482,40 +1483,40 @@ func TestCompleteCmdInZshScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenZshCompletion(buf))
 	output := buf.String()
 
-	check(t, output, ShellCompRequestCmd)
-	checkOmit(t, output, ShellCompNoDescRequestCmd)
+	check(t, output, zulu.ShellCompRequestCmd)
+	checkOmit(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestFlagCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
 	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
-		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 			completions := make([]string, 0)
 			for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
 				if strings.HasPrefix(comp, toComplete) {
 					completions = append(completions, comp)
 				}
 			}
-			return completions, ShellCompDirectiveDefault
+			return completions, zulu.ShellCompDirectiveDefault
 		}),
 	)
 	rootCmd.Flags().String("filename", "", "Enter a filename",
-		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 			completions := make([]string, 0)
 			for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
 				if strings.HasPrefix(comp, toComplete) {
 					completions = append(completions, comp)
 				}
 			}
-			return completions, ShellCompDirectiveNoSpace | ShellCompDirectiveNoFileComp
+			return completions, zulu.ShellCompDirectiveNoSpace | zulu.ShellCompDirectiveNoFileComp
 		}),
 	)
 
 	// Test completing an empty string
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--introot", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--introot", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1532,7 +1533,7 @@ func TestFlagCompletionInGo(t *testing.T) {
 	}
 
 	// Check completing with a prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--introot", "1")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--introot", "1")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1548,7 +1549,7 @@ func TestFlagCompletionInGo(t *testing.T) {
 	}
 
 	// Test completing an empty string
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--filename", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--filename", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1565,7 +1566,7 @@ func TestFlagCompletionInGo(t *testing.T) {
 	}
 
 	// Check completing with a prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "--filename", "f")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--filename", "f")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1582,13 +1583,13 @@ func TestFlagCompletionInGo(t *testing.T) {
 }
 
 func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child1Cmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child1Cmd := &zulu.Command{
 		Use:               "child1",
 		ValidArgsFunction: validArgsFunc,
 		RunE:              emptyRun,
 	}
-	child2Cmd := &Command{
+	child2Cmd := &zulu.Command{
 		Use:               "child2",
 		ValidArgsFunction: validArgsFunc2,
 		RunE:              emptyRun,
@@ -1596,7 +1597,7 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
 	// Test completion of first sub-command with empty argument
-	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child1", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1612,7 +1613,7 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 	}
 
 	// Test completion of first sub-command with a prefix to complete
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child1", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child1", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1627,7 +1628,7 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 	}
 
 	// Check completing with wrong number of args
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child1", "unexpectedArg", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child1", "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1641,7 +1642,7 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 	}
 
 	// Test completion of second sub-command with empty argument
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child2", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child2", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1656,7 +1657,7 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 		t.Errorf("expected: %q, got: %q", expected, output)
 	}
 
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child2", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child2", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1671,7 +1672,7 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 	}
 
 	// Check completing with wrong number of args
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child2", "unexpectedArg", "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child2", "unexpectedArg", "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1686,15 +1687,15 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 }
 
 func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{
 		Use:  "child",
 		RunE: emptyRun,
-		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-			return []string{"--validarg", "test"}, ShellCompDirectiveDefault
+		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{"--validarg", "test"}, zulu.ShellCompDirectiveDefault
 		},
 	}
-	childCmd2 := &Command{
+	childCmd2 := &zulu.Command{
 		Use:       "child2",
 		RunE:      emptyRun,
 		ValidArgs: []string{"arg1", "arg2"},
@@ -1702,13 +1703,13 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	rootCmd.AddCommand(childCmd, childCmd2)
 	childCmd.Flags().Bool("bool", false, "test bool flag")
 	childCmd.Flags().String("string", "", "test string flag",
-		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-			return []string{"myval"}, ShellCompDirectiveDefault
+		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{"myval"}, zulu.ShellCompDirectiveDefault
 		}),
 	)
 
 	// Test flag completion with no argument
-	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child", "--")
+	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1724,7 +1725,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Test that no flags are completed after the -- arg
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1740,7 +1741,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Test that no flags are completed after the -- arg with a flag set
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--bool", "--", "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--bool", "--", "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1759,7 +1760,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	childCmd.Flags().SetInterspersed(false)
 
 	// Test that no flags are completed after the first arg
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "arg", "--")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "arg", "--")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1775,7 +1776,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Test that no flags are completed after the fist arg with a flag set
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--string", "t", "arg", "--")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--string", "t", "arg", "--")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1791,7 +1792,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Check that args are still completed after --
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1807,7 +1808,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Check that args are still completed even if flagname with ValidArgsFunction exists
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "--string", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "--string", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1823,7 +1824,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Check that args are still completed even if flagname with ValidArgsFunction exists
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child2", "--", "a")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child2", "--", "a")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1839,7 +1840,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Check that --validarg is not parsed as flag after --
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "--validarg", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "--validarg", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1855,7 +1856,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Check that --validarg is not parsed as flag after an arg
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "arg", "--validarg", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "arg", "--validarg", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1871,10 +1872,10 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Check that --validarg is added to args for the ValidArgsFunction
-	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		return args, ShellCompDirectiveDefault
+	childCmd.ValidArgsFunction = func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+		return args, zulu.ShellCompDirectiveDefault
 	}
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "--validarg", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "--validarg", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1889,10 +1890,10 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	}
 
 	// Check that --validarg is added to args for the ValidArgsFunction and toComplete is also set correctly
-	childCmd.ValidArgsFunction = func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		return append(args, toComplete), ShellCompDirectiveDefault
+	childCmd.ValidArgsFunction = func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+		return append(args, toComplete), zulu.ShellCompDirectiveDefault
 	}
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "child", "--", "--validarg", "--toComp=ab")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "--validarg", "--toComp=ab")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1909,18 +1910,18 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 }
 
 func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
-	rootCmd := &Command{Use: "root", RunE: emptyRun}
-	childCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	childCmd := &zulu.Command{
 		Use:  "child",
 		RunE: emptyRun,
-		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-			return []string{"--validarg", "test"}, ShellCompDirectiveDefault
+		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{"--validarg", "test"}, zulu.ShellCompDirectiveDefault
 		},
 	}
 	childCmd.Flags().Bool("bool", false, "test bool flag")
 	childCmd.Flags().String("string", "", "test string flag",
-		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-			return []string{"myval"}, ShellCompDirectiveDefault
+		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{"myval"}, zulu.ShellCompDirectiveDefault
 		}),
 	)
 
@@ -1929,7 +1930,7 @@ func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	// Test that flag completion works for the subcmd
-	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "child", "--string", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--string", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1945,35 +1946,35 @@ func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
 }
 
 func TestFlagCompletionInGoWithDesc(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		RunE: emptyRun,
 	}
 	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
-		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 			completions := []string{}
 			for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
 				if strings.HasPrefix(comp, toComplete) {
 					completions = append(completions, comp)
 				}
 			}
-			return completions, ShellCompDirectiveDefault
+			return completions, zulu.ShellCompDirectiveDefault
 		}),
 	)
 	rootCmd.Flags().String("filename", "", "Enter a filename",
-		FlagOptCompletionFunc(func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 			completions := []string{}
 			for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
 				if strings.HasPrefix(comp, toComplete) {
 					completions = append(completions, comp)
 				}
 			}
-			return completions, ShellCompDirectiveNoSpace | ShellCompDirectiveNoFileComp
+			return completions, zulu.ShellCompDirectiveNoSpace | zulu.ShellCompDirectiveNoFileComp
 		}),
 	)
 
 	// Test completing an empty string
-	output, err := executeCommand(rootCmd, ShellCompRequestCmd, "--introot", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--introot", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -1990,7 +1991,7 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	}
 
 	// Check completing with a prefix
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "--introot", "1")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--introot", "1")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2006,7 +2007,7 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	}
 
 	// Test completing an empty string
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "--filename", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--filename", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2023,7 +2024,7 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	}
 
 	// Check completing with a prefix
-	output, err = executeCommand(rootCmd, ShellCompRequestCmd, "--filename", "f")
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--filename", "f")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2040,18 +2041,18 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 }
 
 func TestValidArgsNotValidArgsFunc(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:       "root",
 		ValidArgs: []string{"one", "two"},
-		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-			return []string{"three", "four"}, ShellCompDirectiveNoFileComp
+		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{"three", "four"}, zulu.ShellCompDirectiveNoFileComp
 		},
 		RunE: emptyRun,
 	}
 
 	// Test that if both ValidArgs and ValidArgsFunction are present
 	// only ValidArgs is considered
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2067,7 +2068,7 @@ func TestValidArgsNotValidArgsFunc(t *testing.T) {
 	}
 
 	// Check completing with a prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2083,16 +2084,16 @@ func TestValidArgsNotValidArgsFunc(t *testing.T) {
 }
 
 func TestArgAliasesCompletionInGo(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:        "root",
-		Args:       ArbitraryArgs,
+		Args:       zulu.ArbitraryArgs,
 		ValidArgs:  []string{"one", "two", "three"},
 		ArgAliases: []string{"un", "deux", "trois"},
 		RunE:       emptyRun,
 	}
 
 	// Test that argaliases are not completed when there are validargs that match
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2109,7 +2110,7 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 	}
 
 	// Test that argaliases are not completed when there are validargs that match using a prefix
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "t")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2125,7 +2126,7 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 	}
 
 	// Test that argaliases are completed when there are no validargs that match
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "tr")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "tr")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2141,25 +2142,25 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 }
 
 func TestCompleteHelp(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	child1Cmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	child1Cmd := &zulu.Command{
 		Use:  "child1",
 		RunE: emptyRun,
 	}
-	child2Cmd := &Command{
+	child2Cmd := &zulu.Command{
 		Use:  "child2",
 		RunE: emptyRun,
 	}
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
-	child3Cmd := &Command{
+	child3Cmd := &zulu.Command{
 		Use:  "child3",
 		RunE: emptyRun,
 	}
 	child1Cmd.AddCommand(child3Cmd)
 
 	// Test that completion includes the help command
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2177,7 +2178,7 @@ func TestCompleteHelp(t *testing.T) {
 	}
 
 	// Test sub-commands are completed on first level of help command
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "help", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "help", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2195,7 +2196,7 @@ func TestCompleteHelp(t *testing.T) {
 	}
 
 	// Test sub-commands are completed on first level of help command
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "help", "child1", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "help", "child1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2210,10 +2211,10 @@ func TestCompleteHelp(t *testing.T) {
 	}
 }
 
-func removeCompCmd(rootCmd *Command) {
+func removeCompCmd(rootCmd *zulu.Command) {
 	// Remove completion command for the next test
-	for _, cmd := range rootCmd.commands {
-		if cmd.Name() == compCmdName {
+	for _, cmd := range rootCmd.Commands() {
+		if cmd.Name() == zulu.CompCmdName {
 			rootCmd.RemoveCommand(cmd)
 			return
 		}
@@ -2221,22 +2222,22 @@ func removeCompCmd(rootCmd *Command) {
 }
 
 func TestDefaultCompletionCmd(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
-		Args: NoArgs,
+		Args: zulu.NoArgs,
 		RunE: emptyRun,
 	}
 
 	// Test that no completion command is created if there are not other sub-commands
 	assertNoErr(t, rootCmd.Execute())
-	for _, cmd := range rootCmd.commands {
-		if cmd.Name() == compCmdName {
+	for _, cmd := range rootCmd.Commands() {
+		if cmd.Name() == zulu.CompCmdName {
 			t.Errorf("Should not have a 'completion' command when there are no other sub-commands of root")
 			break
 		}
 	}
 
-	subCmd := &Command{
+	subCmd := &zulu.Command{
 		Use:  "sub",
 		RunE: emptyRun,
 	}
@@ -2245,8 +2246,8 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	// Test that a completion command is created if there are other sub-commands
 	found := false
 	assertNoErr(t, rootCmd.Execute())
-	for _, cmd := range rootCmd.commands {
-		if cmd.Name() == compCmdName {
+	for _, cmd := range rootCmd.Commands() {
+		if cmd.Name() == zulu.CompCmdName {
 			found = true
 			break
 		}
@@ -2260,8 +2261,8 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	// Test that the default completion command can be disabled
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	assertNoErr(t, rootCmd.Execute())
-	for _, cmd := range rootCmd.commands {
-		if cmd.Name() == compCmdName {
+	for _, cmd := range rootCmd.Commands() {
+		if cmd.Name() == zulu.CompCmdName {
 			t.Errorf("Should not have a 'completion' command when the feature is disabled")
 			break
 		}
@@ -2270,38 +2271,38 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.CompletionOptions.DisableDefaultCmd = false
 
 	// Test that completion descriptions are enabled by default
-	output, err := executeCommand(rootCmd, compCmdName, "zsh")
+	output, err := executeCommand(rootCmd, zulu.CompCmdName, "zsh")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	check(t, output, ShellCompRequestCmd)
-	checkOmit(t, output, ShellCompNoDescRequestCmd)
+	check(t, output, zulu.ShellCompRequestCmd)
+	checkOmit(t, output, zulu.ShellCompNoDescRequestCmd)
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
 
 	// Test that completion descriptions can be disabled completely
 	rootCmd.CompletionOptions.DisableDescriptions = true
-	output, err = executeCommand(rootCmd, compCmdName, "zsh")
+	output, err = executeCommand(rootCmd, zulu.CompCmdName, "zsh")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	check(t, output, ShellCompNoDescRequestCmd)
+	check(t, output, zulu.ShellCompNoDescRequestCmd)
 	// Re-enable for next test
 	rootCmd.CompletionOptions.DisableDescriptions = false
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
 
-	var compCmd *Command
+	var compCmd *zulu.Command
 	// Test that the --no-descriptions flag is present on all shells
 	assertNoErr(t, rootCmd.Execute())
 	for _, shell := range []string{"bash", "fish", "powershell", "zsh"} {
-		if compCmd, _, err = rootCmd.Find([]string{compCmdName, shell}); err != nil {
+		if compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell}); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
-		if flag := compCmd.Flags().Lookup(compCmdNoDescFlagName); flag == nil {
-			t.Errorf("Missing --%s flag for %s shell", compCmdNoDescFlagName, shell)
+		if flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName); flag == nil {
+			t.Errorf("Missing --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
 		}
 	}
 	// Remove completion command for the next test
@@ -2311,11 +2312,11 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.CompletionOptions.DisableNoDescFlag = true
 	assertNoErr(t, rootCmd.Execute())
 	for _, shell := range []string{"fish", "zsh", "bash", "powershell"} {
-		if compCmd, _, err = rootCmd.Find([]string{compCmdName, shell}); err != nil {
+		if compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell}); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
-		if flag := compCmd.Flags().Lookup(compCmdNoDescFlagName); flag != nil {
-			t.Errorf("Unexpected --%s flag for %s shell", compCmdNoDescFlagName, shell)
+		if flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName); flag != nil {
+			t.Errorf("Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
 		}
 	}
 	// Re-enable for next test
@@ -2327,11 +2328,11 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.CompletionOptions.DisableDescriptions = true
 	assertNoErr(t, rootCmd.Execute())
 	for _, shell := range []string{"fish", "zsh", "bash", "powershell"} {
-		if compCmd, _, err = rootCmd.Find([]string{compCmdName, shell}); err != nil {
+		if compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell}); err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
-		if flag := compCmd.Flags().Lookup(compCmdNoDescFlagName); flag != nil {
-			t.Errorf("Unexpected --%s flag for %s shell", compCmdNoDescFlagName, shell)
+		if flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName); flag != nil {
+			t.Errorf("Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
 		}
 	}
 	// Re-enable for next test
@@ -2342,7 +2343,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	// Test that the 'completion' command can be hidden
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 	assertNoErr(t, rootCmd.Execute())
-	compCmd, _, err = rootCmd.Find([]string{compCmdName})
+	compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName})
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2356,15 +2357,15 @@ func TestDefaultCompletionCmd(t *testing.T) {
 }
 
 func TestCompleteCompletion(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	subCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	subCmd := &zulu.Command{
 		Use:  "sub",
 		RunE: emptyRun,
 	}
 	rootCmd.AddCommand(subCmd)
 
 	// Test sub-commands of the completion command
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "completion", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "completion", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2382,16 +2383,16 @@ func TestCompleteCompletion(t *testing.T) {
 	}
 
 	// Test there are no completions for the sub-commands of the completion command
-	var compCmd *Command
+	var compCmd *zulu.Command
 	for _, cmd := range rootCmd.Commands() {
-		if cmd.Name() == compCmdName {
+		if cmd.Name() == zulu.CompCmdName {
 			compCmd = cmd
 			break
 		}
 	}
 
 	for _, shell := range compCmd.Commands() {
-		output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, compCmdName, shell.Name(), "")
+		output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, zulu.CompCmdName, shell.Name(), "")
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -2407,7 +2408,7 @@ func TestCompleteCompletion(t *testing.T) {
 }
 
 func TestMultipleShorthandFlagCompletion(t *testing.T) {
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:       "root",
 		ValidArgs: []string{"foo", "bar"},
 		RunE:      emptyRun,
@@ -2416,13 +2417,13 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	f.Bool("short", false, "short flag 1", zflag.OptShorthand('s'))
 	f.Bool("short2", false, "short flag 2", zflag.OptShorthand('d'))
 	f.String("short3", "", "short flag 3", zflag.OptShorthand('f'),
-		FlagOptCompletionFunc(func(*Command, []string, string) ([]string, ShellCompDirective) {
-			return []string{"works"}, ShellCompDirectiveNoFileComp
+		zulu.FlagOptCompletionFunc(func(*zulu.Command, []string, string) ([]string, zulu.ShellCompDirective) {
+			return []string{"works"}, zulu.ShellCompDirectiveNoFileComp
 		}),
 	)
 
 	// Test that a single shorthand flag works
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-s", "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-s", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2438,7 +2439,7 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	}
 
 	// Test that multiple boolean shorthand flags work
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-sd", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-sd", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2454,7 +2455,7 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	}
 
 	// Test that multiple boolean + string shorthand flags work
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-sdf", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-sdf", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2469,7 +2470,7 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	}
 
 	// Test that multiple boolean + string with equal sign shorthand flags work
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-sdf=")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-sdf=")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2484,7 +2485,7 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	}
 
 	// Test that multiple boolean + string with equal sign with value shorthand flags work
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "-sdf=abc", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-sdf=abc", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2502,12 +2503,12 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 
 func TestCompleteWithDisableFlagParsing(t *testing.T) {
 
-	flagValidArgs := func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-		return []string{"--flag", "-f"}, ShellCompDirectiveNoFileComp
+	flagValidArgs := func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+		return []string{"--flag", "-f"}, zulu.ShellCompDirectiveNoFileComp
 	}
 
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
-	childCmd := &Command{
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	childCmd := &zulu.Command{
 		Use:                "child",
 		RunE:               emptyRun,
 		DisableFlagParsing: true,
@@ -2521,7 +2522,7 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 	// Test that when DisableFlagParsing==true, ValidArgsFunction is called to complete flag names,
 	// after Zulu tried to complete the flags it knows about.
 	childCmd.DisableFlagParsing = true
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "-")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child", "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2542,7 +2543,7 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 
 	// Test that when DisableFlagParsing==false, Zulu completes the flags itself and ValidArgsFunction is not called
 	childCmd.DisableFlagParsing = false
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "-")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child", "-")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2564,17 +2565,17 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 	// Test a lonely root command which uses legacyArgs().  In such a case, the root
 	// command should accept any number of arguments and completion should behave accordingly.
-	rootCmd := &Command{
+	rootCmd := &zulu.Command{
 		Use:  "root",
 		Args: nil, // Args must be nil to trigger the legacyArgs() function
 		RunE: emptyRun,
-		ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-			return []string{"arg1", "arg2"}, ShellCompDirectiveNoFileComp
+		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{"arg1", "arg2"}, zulu.ShellCompDirectiveNoFileComp
 		},
 	}
 
 	// Make sure the first arg is completed
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2590,7 +2591,7 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 	}
 
 	// Make sure the completion of arguments continues
-	output, err = executeCommand(rootCmd, ShellCompNoDescRequestCmd, "arg1", "")
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "arg1", "")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
@@ -2607,16 +2608,16 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 }
 
 func TestFixedCompletions(t *testing.T) {
-	rootCmd := &Command{Use: "root", Args: NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
 	choices := []string{"apple", "banana", "orange"}
-	childCmd := &Command{
+	childCmd := &zulu.Command{
 		Use:               "child",
-		ValidArgsFunction: FixedCompletions(choices, ShellCompDirectiveNoFileComp),
+		ValidArgsFunction: zulu.FixedCompletions(choices, zulu.ShellCompDirectiveNoFileComp),
 		RunE:              emptyRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
-	output, err := executeCommand(rootCmd, ShellCompNoDescRequestCmd, "child", "a")
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child", "a")
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}

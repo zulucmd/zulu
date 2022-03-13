@@ -1,4 +1,4 @@
-package doc
+package doc_test
 
 import (
 	"bytes"
@@ -8,12 +8,13 @@ import (
 	"testing"
 
 	"github.com/gowarden/zulu"
+	"github.com/gowarden/zulu/doc"
 )
 
 func TestGenAsciidoc(t *testing.T) {
 	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
-	if err := GenAsciidoc(echoCmd, buf); err != nil {
+	if err := doc.GenAsciidoc(echoCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -31,7 +32,7 @@ func TestGenAsciidoc(t *testing.T) {
 func TestGenAsciidocWithNoLongOrSynopsis(t *testing.T) {
 	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
-	if err := GenAsciidoc(dummyCmd, buf); err != nil {
+	if err := doc.GenAsciidoc(dummyCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -50,7 +51,7 @@ func TestGenAsciidocNoHiddenParents(t *testing.T) {
 		defer func() { f.Hidden = false }()
 	}
 	buf := new(bytes.Buffer)
-	if err := GenAsciidoc(echoCmd, buf); err != nil {
+	if err := doc.GenAsciidoc(echoCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -70,7 +71,7 @@ func TestGenAsciidocNoTag(t *testing.T) {
 	defer func() { rootCmd.DisableAutoGenTag = false }()
 
 	buf := new(bytes.Buffer)
-	if err := GenAsciidoc(rootCmd, buf); err != nil {
+	if err := doc.GenAsciidoc(rootCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -86,7 +87,7 @@ func TestGenAsciidocTree(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpdir)
 
-	if err := GenAsciidocTree(c, tmpdir); err != nil {
+	if err := doc.GenAsciidocTree(c, tmpdir); err != nil {
 		t.Fatalf("GenAsciidocTree failed: %v", err)
 	}
 
@@ -105,7 +106,7 @@ func BenchmarkGenAsciidocToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if err := GenAsciidoc(rootCmd, file); err != nil {
+		if err := doc.GenAsciidoc(rootCmd, file); err != nil {
 			b.Fatal(err)
 		}
 	}
