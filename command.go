@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	_ "embed"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -36,6 +37,9 @@ var defaultUsageTemplate string
 // FParseErrAllowList configures Flag parse errors to be ignored
 type FParseErrAllowList zflag.ParseErrorsAllowlist
 
+// ErrVersion is the error returned if the flag -version is invoked.
+var ErrVersion = errors.New("zulu: version requested")
+
 type HookFuncE func(cmd *Command, args []string) error
 type HookFunc func(cmd *Command, args []string)
 
@@ -51,7 +55,7 @@ type Group struct {
 // definition to ensure usability.
 type Command struct {
 	// Use is the one-line usage message.
-	// Recommended syntax is as follow:
+	// Recommended syntax is:
 	//   [ ] identifies an optional argument. Arguments that are not enclosed in brackets are required.
 	//   ... indicates that you can specify multiple values for the previous argument.
 	//   |   indicates mutually exclusive information. You can use the argument to the left of the separator or the
@@ -170,7 +174,7 @@ type Command struct {
 	persistentFinalizeHooks []HookFuncE
 
 	// groups for commands
-	commandGroups []*Group
+	commandGroups []Group
 
 	// args is actual args parsed from flags.
 	args []string
@@ -847,6 +851,11 @@ func (c *Command) execute(a []string) (err error) {
 		}
 	}()
 
+	for p := c; p != nil; p = p.Parent() {
+		prependHooks(&hooks, p.persistentInitializeHooks, p.PersistentInitializeE)
+	}
+	prependHooks(&hooks, c.initializeHooks, c.InitializeE)
+
 	// initialize help and version flag at the last point possible to allow for user
 	// overriding
 	hooks = append(hooks, func(cmd *Command, args []string) error {
@@ -855,11 +864,6 @@ func (c *Command) execute(a []string) (err error) {
 
 		return nil
 	})
-
-	for p := c; p != nil; p = p.Parent() {
-		prependHooks(&hooks, p.persistentInitializeHooks, p.PersistentInitializeE)
-	}
-	prependHooks(&hooks, c.initializeHooks, c.InitializeE)
 
 	hooks = append(hooks, func(cmd *Command, args []string) error {
 		err := c.ParseFlags(a)
@@ -889,8 +893,8 @@ func (c *Command) execute(a []string) (err error) {
 	})
 
 	// for back-compat, only add version flag behavior if version is defined
-	if c.Version != "" {
-		hooks = append(hooks, func(cmd *Command, args []string) error {
+	hooks = append(hooks, func(cmd *Command, args []string) error {
+		if c.Version != "" {
 			versionVal, err := c.Flags().GetBool("version")
 			if err != nil {
 				c.Println(`"version" flag declared as non-bool. Please correct your code`)
@@ -900,13 +904,14 @@ func (c *Command) execute(a []string) (err error) {
 				err := tmpl(c.OutOrStdout(), c.VersionTemplate(), c)
 				if err != nil {
 					c.Println(err)
+					return err
 				}
-				return err
-			}
 
-			return nil
-		})
-	}
+				return ErrVersion
+			}
+		}
+		return nil
+	})
 
 	hooks = append(hooks, func(cmd *Command, args []string) error {
 		argWoFlags = c.Flags().Args()
@@ -1105,6 +1110,12 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	err = cmd.execute(flags)
 	if err != nil {
+		// Exit without errors when version requested. At this point the
+		// version has already been printed.
+		if err == ErrVersion {
+			return cmd, nil
+		}
+
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
 		if err == zflag.ErrHelp {
@@ -1137,9 +1148,11 @@ func (c *Command) ValidateArgs(args []string) error {
 	if err := validateArgs(c, args); err != nil {
 		return err
 	}
+
 	if c.Args == nil {
 		return nil
 	}
+
 	return c.Args(c, args)
 }
 
@@ -1149,13 +1162,13 @@ func (c *Command) validateRequiredFlags() error {
 	}
 
 	flags := c.Flags()
-	missingFlagNames := []string{}
+	var missingFlagNames []string
 	flags.VisitAll(func(pflag *zflag.Flag) {
 		requiredAnnotation, found := pflag.Annotations[BashCompOneRequiredFlag]
 		if !found {
 			return
 		}
-		if (requiredAnnotation[0] == "true") && !pflag.Changed {
+		if requiredAnnotation[0] == "true" && !pflag.Changed {
 			missingFlagNames = append(missingFlagNames, pflag.Name)
 		}
 	})
@@ -1163,6 +1176,7 @@ func (c *Command) validateRequiredFlags() error {
 	if len(missingFlagNames) > 0 {
 		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
 	}
+
 	return nil
 }
 
@@ -1199,11 +1213,12 @@ func (c *Command) InitDefaultVersionFlag() {
 		} else {
 			usage += c.Name()
 		}
+
+		var opts []zflag.Opt
 		if c.Flags().ShorthandLookup('v') == nil {
-			c.Flags().Bool("version", false, usage, zflag.OptShorthand('v'))
-		} else {
-			c.Flags().Bool("version", false, usage)
+			opts = append(opts, zflag.OptShorthand('v'))
 		}
+		c.Flags().Bool("version", false, usage, opts...)
 	}
 }
 
@@ -1293,7 +1308,7 @@ func (c *Command) AddCommand(cmds ...*Command) {
 		cmds[i].parent = c
 		// if Group is not defined generate a new one with same title
 		if x.Group != "" && !c.ContainsGroup(x.Group) {
-			c.AddGroup(&Group{Group: x.Group, Title: x.Group})
+			c.AddGroup(Group{Group: x.Group, Title: x.Group})
 		}
 		// update max lengths
 		usageLen := len(x.Use)
@@ -1318,7 +1333,7 @@ func (c *Command) AddCommand(cmds ...*Command) {
 }
 
 // Groups returns a slice of child command groups.
-func (c *Command) Groups() []*Group {
+func (c *Command) Groups() []Group {
 	return c.commandGroups
 }
 
@@ -1333,7 +1348,7 @@ func (c *Command) ContainsGroup(group string) bool {
 }
 
 // AddGroup adds one or more command groups to this parent command.
-func (c *Command) AddGroup(groups ...*Group) {
+func (c *Command) AddGroup(groups ...Group) {
 	c.commandGroups = append(c.commandGroups, groups...)
 }
 

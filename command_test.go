@@ -1369,6 +1369,27 @@ func TestHooks(t *testing.T) {
 	}
 }
 
+func TestHooksVersionFlagAddedWhenVersionSetOnInitialize(t *testing.T) {
+	c := &zulu.Command{
+		Use: "c",
+		InitializeE: func(c *zulu.Command, _ []string) error {
+			c.Version = "(devel)"
+			return nil
+		},
+		RunE: func(_ *zulu.Command, _ []string) error {
+			return nil
+		},
+	}
+
+	output, err := executeCommand(c, "--version")
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if output != "c version (devel)\n" {
+		t.Errorf("Unexpected output: %v", output)
+	}
+}
+
 func TestPersistentHooks(t *testing.T) {
 	hooksArgs := map[string]string{}
 
@@ -1693,7 +1714,7 @@ func TestUsageHelpGroup(t *testing.T) {
 func TestAddGroup(t *testing.T) {
 	var rootCmd = &zulu.Command{Use: "root", Short: "test", RunE: emptyRun}
 
-	rootCmd.AddGroup(&zulu.Group{Group: "group", Title: "Test group"})
+	rootCmd.AddGroup(zulu.Group{Group: "group", Title: "Test group"})
 	rootCmd.AddCommand(&zulu.Command{Use: "cmd", Group: "group", RunE: emptyRun})
 
 	output, err := executeCommand(rootCmd, "--help")
