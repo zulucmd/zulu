@@ -943,6 +943,10 @@ func (c *Command) execute(a []string) (err error) {
 			return c.FlagErrorFunc()(c, err)
 		}
 
+		if err := c.validateFlagGroups(); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
