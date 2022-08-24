@@ -156,7 +156,7 @@ __{{ .CMDVarName }}_handle_standard_completion_case() {
     local tab=$'\t' comp
 
     # Short circuit to optimize if we don't have descriptions
-    if [[ $out != *$tab* ]]; then
+    if [[ "$out" != *$tab* ]]; then
         IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n' compgen -W "$out" -- "$cur")
         return 0
     fi
