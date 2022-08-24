@@ -57,7 +57,7 @@ __{{ .CMDVarName }}_get_completion_results() {
         directive=0
     fi
     __{{ .CMDVarName }}_debug "The completion directive is: ${directive}"
-    __{{ .CMDVarName }}_debug "The completions are: ${out[*]}"
+    __{{ .CMDVarName }}_debug "The completions are: ${out}"
 }
 
 __{{ .CMDVarName }}_process_completion_results() {
@@ -96,7 +96,7 @@ __{{ .CMDVarName }}_process_completion_results() {
 
         # Do not use quotes around the $out variable or else newline
         # characters will be kept.
-        for filter in ${out[*]}; do
+        for filter in ${out}; do
             fullFilter+="$filter|"
         done
 
@@ -108,7 +108,7 @@ __{{ .CMDVarName }}_process_completion_results() {
 
         # Use printf to strip any trailing newline
         local subdir
-        subdir=$(printf "%s" "${out[0]}")
+        subdir=$(printf "%s" "${out}")
         if [ -n "$subdir" ]; then
             __{{ .CMDVarName }}_debug "Listing directories in $subdir"
             pushd "$subdir" >/dev/null 2>&1 && _filedir -d && popd >/dev/null 2>&1 || return
@@ -133,17 +133,16 @@ __{{ .CMDVarName }}_handle_completion_types() {
         # If the user requested inserting one completion at a time, or all
         # completions at once on the command-line we must remove the descriptions.
         # https://github.com/spf13/cobra/issues/1508
-        local tab comp
-        tab=$(printf '\t')
+        local tab=$'\t' comp
         while IFS='' read -r comp; do
+            [[ -z $comp ]] && continue
             # Strip any description
             comp=${comp%%$tab*}
             # Only consider the completions that match
-            comp=$(compgen -W "$comp" -- "$cur")
-            if [ -n "$comp" ]; then
+            if [[ $comp == "$cur"* ]]; then
                 COMPREPLY+=("$comp")
             fi
-        done < <(printf "%s\n" "${out[@]}")
+        done < <(printf "%s\n" "${out}")
         ;;
 
     *)
@@ -154,44 +153,37 @@ __{{ .CMDVarName }}_handle_completion_types() {
 }
 
 __{{ .CMDVarName }}_handle_standard_completion_case() {
-    local tab comp
-    tab=$(printf '\t')
+    local tab=$'\t' comp
+
+    # Short circuit to optimize if we don't have descriptions
+    if [[ $out != *$tab* ]]; then
+        IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n' compgen -W "$out" -- "$cur")
+        return 0
+    fi
 
     local longest=0
+    local compline
     # Look for the longest completion so that we can format things nicely
-    while IFS='' read -r comp; do
+    while IFS='' read -r compline; do
+        [[ -z $compline ]] && continue
         # Strip any description before checking the length
-        comp=${comp%%$tab*}
+        comp=${compline%%$tab*}
         # Only consider the completions that match
-        comp=$(compgen -W "$comp" -- "$cur")
+        [[ $comp == "$cur"* ]] || continue
+        COMPREPLY+=("$compline")
         if ((${#comp}>longest)); then
             longest=${#comp}
         fi
-    done < <(printf "%s\n" "${out[@]}")
-
-    local completions=()
-    while IFS='' read -r comp; do
-        if [ -z "$comp" ]; then
-            continue
-        fi
-
-        __{{ .CMDVarName }}_debug "Original comp: $comp"
-        comp="$(__{{ .CMDVarName }}_format_comp_descriptions "$comp" "$longest")"
-        __{{ .CMDVarName }}_debug "Final comp: $comp"
-        completions+=("$comp")
-    done < <(printf "%s\n" "${out[@]}")
-
-    while IFS='' read -r comp; do
-        COMPREPLY+=("$comp")
-    done < <(compgen -W "${completions[*]}" -- "$cur")
+    done < <(printf "%s\n" "${out}")
 
     # If there is a single completion left, remove the description text
     if [ ${#COMPREPLY[*]} -eq 1 ]; then
         __{{ .CMDVarName }}_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
-        comp="${COMPREPLY[0]%% *}"
+        comp="${COMPREPLY[0]%%$tab*}"
         __{{ .CMDVarName }}_debug "Removed description from single completion, which is now: ${comp}"
-        COMPREPLY=()
-        COMPREPLY+=("$comp")
+        COMPREPLY[0]=$comp
+    else # Format the descriptions
+        __%[1]s_format_comp_descriptions $longest
     fi
 }
 
@@ -210,45 +202,48 @@ __{{ .CMDVarName }}_handle_special_char()
 
 __{{ .CMDVarName }}_format_comp_descriptions()
 {
-    local tab
-    tab=$(printf '\t')
-    local comp="$1"
-    local longest=$2
+    local tab=$'\t'
+    local comp desc maxdesclength
+    local longest=$1
 
-    # Properly format the description string which follows a tab character if there is one
-    if [[ "$comp" == *$tab* ]]; then
-        desc=${comp#*$tab}
-        comp=${comp%%$tab*}
+    local i ci
+    for ci in ${!COMPREPLY[*]}; do
+        comp=${COMPREPLY[ci]}
+        # Properly format the description string which follows a tab character if there is one
+        if [[ "$comp" == *$tab* ]]; then
+            __%[1]s_debug "Original comp: $comp"
+            desc=${comp#*$tab}
+            comp=${comp%%%%$tab*}
 
-        # $COLUMNS stores the current shell width.
-        # Remove an extra 4 because we add 2 spaces and 2 parentheses.
-        maxdesclength=$(( COLUMNS - longest - 4 ))
+            # $COLUMNS stores the current shell width.
+            # Remove an extra 4 because we add 2 spaces and 2 parentheses.
+            maxdesclength=$(( COLUMNS - longest - 4 ))
 
-        # Make sure we can fit a description of at least 8 characters
-        # if we are to align the descriptions.
-        if [[ $maxdesclength -gt 8 ]]; then
-            # Add the proper number of spaces to align the descriptions
-            for ((i = ${#comp} ; i < longest ; i++)); do
-                comp+=" "
-            done
-        else
-            # Don't pad the descriptions so we can fit more text after the completion
-            maxdesclength=$(( COLUMNS - ${#comp} - 4 ))
-        fi
-
-        # If there is enough space for any description text,
-        # truncate the descriptions that are too long for the shell width
-        if [ $maxdesclength -gt 0 ]; then
-            if [ ${#desc} -gt $maxdesclength ]; then
-                desc=${desc:0:$(( maxdesclength - 1 ))}
-                desc+="…"
+            # Make sure we can fit a description of at least 8 characters
+            # if we are to align the descriptions.
+            if [[ $maxdesclength -gt 8 ]]; then
+                # Add the proper number of spaces to align the descriptions
+                for ((i = ${#comp} ; i < longest ; i++)); do
+                    comp+=" "
+                done
+            else
+                # Don't pad the descriptions so we can fit more text after the completion
+                maxdesclength=$(( COLUMNS - ${#comp} - 4 ))
             fi
-            comp+="  ($desc)"
-        fi
-    fi
 
-    # Must use printf to escape all special characters
-    printf "%q" "${comp}"
+            # If there is enough space for any description text,
+            # truncate the descriptions that are too long for the shell width
+            if [ $maxdesclength -gt 0 ]; then
+                if [ ${#desc} -gt $maxdesclength ]; then
+                    desc=${desc:0:$(( maxdesclength - 1 ))}
+                    desc+="…"
+                fi
+                comp+="  ($desc)"
+            fi
+            COMPREPLY[ci]=$comp
+            __%[1]s_debug "Final comp: $comp"
+        fi
+    done
 }
 
 __start_{{ .CMDVarName }}()
