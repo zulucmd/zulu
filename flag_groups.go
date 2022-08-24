@@ -178,7 +178,7 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 	flags := c.Flags()
 	groupStatus := map[string]map[string]bool{}
 	mutuallyExclusiveGroupStatus := map[string]map[string]bool{}
-	c.Flags().VisitAll(func(pflag *flag.Flag) {
+	c.Flags().VisitAll(func(pflag *zflag.Flag) {
 		processFlagForGroupAnnotation(flags, pflag, requiredAsGroup, groupStatus)
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusive, mutuallyExclusiveGroupStatus)
 	})
@@ -190,7 +190,8 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 			if isSet {
 				// One of the flags of the group is set, mark the other ones as required
 				for _, fName := range strings.Split(flagList, " ") {
-					_ = c.MarkFlagRequired(fName)
+					flag := c.Flags().Lookup(fName)
+					_ = FlagOptRequired()(flag)
 				}
 			}
 		}
@@ -207,7 +208,7 @@ func (c *Command) enforceFlagGroupsForCompletion() {
 				for _, fName := range strings.Split(flagList, " ") {
 					if fName != flagName {
 						flag := c.Flags().Lookup(fName)
-						flag.Hidden = true
+						_ = zflag.OptHidden()(flag)
 					}
 				}
 			}

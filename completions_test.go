@@ -2635,17 +2635,17 @@ func TestFixedCompletions(t *testing.T) {
 }
 
 func TestCompletionForGroupedFlags(t *testing.T) {
-	getCmd := func() *Command {
-		rootCmd := &Command{
-			Use: "root",
-			Run: emptyRun,
+	getCmd := func() *zulu.Command {
+		rootCmd := &zulu.Command{
+			Use:  "root",
+			RunE: emptyRun,
 		}
-		childCmd := &Command{
+		childCmd := &zulu.Command{
 			Use: "child",
-			ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-				return []string{"subArg"}, ShellCompDirectiveNoFileComp
+			ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+				return []string{"subArg"}, zulu.ShellCompDirectiveNoFileComp
 			},
-			Run: emptyRun,
+			RunE: emptyRun,
 		}
 		rootCmd.AddCommand(childCmd)
 
@@ -2719,7 +2719,7 @@ func TestCompletionForGroupedFlags(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
 			c := getCmd()
-			args := []string{ShellCompNoDescRequestCmd}
+			args := []string{zulu.ShellCompNoDescRequestCmd}
 			args = append(args, tc.args...)
 			output, err := executeCommand(c, args...)
 			switch {
@@ -2733,17 +2733,17 @@ func TestCompletionForGroupedFlags(t *testing.T) {
 }
 
 func TestCompletionForMutuallyExclusiveFlags(t *testing.T) {
-	getCmd := func() *Command {
-		rootCmd := &Command{
-			Use: "root",
-			Run: emptyRun,
+	getCmd := func() *zulu.Command {
+		rootCmd := &zulu.Command{
+			Use:  "root",
+			RunE: emptyRun,
 		}
-		childCmd := &Command{
+		childCmd := &zulu.Command{
 			Use: "child",
-			ValidArgsFunction: func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-				return []string{"subArg"}, ShellCompDirectiveNoFileComp
+			ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+				return []string{"subArg"}, zulu.ShellCompDirectiveNoFileComp
 			},
-			Run: emptyRun,
+			RunE: emptyRun,
 		}
 		rootCmd.AddCommand(childCmd)
 
@@ -2807,7 +2807,7 @@ func TestCompletionForMutuallyExclusiveFlags(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.desc, func(t *testing.T) {
 			c := getCmd()
-			args := []string{ShellCompNoDescRequestCmd}
+			args := []string{zulu.ShellCompNoDescRequestCmd}
 			args = append(args, tc.args...)
 			output, err := executeCommand(c, args...)
 			switch {
