@@ -53,7 +53,7 @@ func genZshComp(buf io.StringWriter, name string, includeDesc bool) {
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
 	}
-	util.WriteStringAndCheck(buf, fmt.Sprintf(`#compdef _%[1]s %[1]s
+	util.WriteStringAndCheck(buf, fmt.Sprintf(`#compdef %[1]s
 
 # zsh completion for %-36[1]s -*- shell-script -*-
 
