@@ -2,6 +2,7 @@ package doc_test
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,6 +26,7 @@ func TestGenYamlDoc(t *testing.T) {
 	checkStringContains(t, output, "rootflag")
 	checkStringContains(t, output, rootCmd.Short)
 	checkStringContains(t, output, echoSubCmd.Short)
+	checkStringContains(t, output, fmt.Sprintf("- %s - %s", echoSubCmd.CommandPath(), echoSubCmd.Short))
 }
 
 func TestGenYamlNoTag(t *testing.T) {

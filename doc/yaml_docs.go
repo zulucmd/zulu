@@ -129,7 +129,7 @@ func GenYamlCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) stri
 			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
 			}
-			result = append(result, child.Name()+" - "+child.Short)
+			result = append(result, child.CommandPath()+" - "+child.Short)
 		}
 		yamlDoc.SeeAlso = result
 	}
