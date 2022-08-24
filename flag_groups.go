@@ -18,7 +18,7 @@ import (
 	"sort"
 	"strings"
 
-	flag "github.com/gowarden/zflag"
+	"github.com/gowarden/zflag"
 )
 
 const (
@@ -28,34 +28,27 @@ const (
 
 // MarkFlagsRequiredTogether marks the given flags with annotations so that Cobra errors
 // if the command is invoked with a subset (but not all) of the given flags.
-func (c *Command) MarkFlagsRequiredTogether(flagNames ...string) {
+func (c *Command) markFlagGroupAnnotations(annotation string, flagNames ...string) {
 	c.mergePersistentFlags()
 	for _, v := range flagNames {
 		f := c.Flags().Lookup(v)
 		if f == nil {
 			panic(fmt.Sprintf("Failed to find flag %q and mark it as being required in a flag group", v))
 		}
-		if err := c.Flags().SetAnnotation(v, requiredAsGroup, append(f.Annotations[requiredAsGroup], strings.Join(flagNames, " "))); err != nil {
-			// Only errs if the flag isn't found.
-			panic(err)
-		}
+		f.SetAnnotation(annotation, append(f.Annotations[annotation], strings.Join(flagNames, " ")))
 	}
+}
+
+// MarkFlagsRequiredTogether marks the given flags with annotations so that Cobra errors
+// if the command is invoked with a subset (but not all) of the given flags.
+func (c *Command) MarkFlagsRequiredTogether(flagNames ...string) {
+	c.markFlagGroupAnnotations(requiredAsGroup, flagNames...)
 }
 
 // MarkFlagsMutuallyExclusive marks the given flags with annotations so that Cobra errors
 // if the command is invoked with more than one flag from the given set of flags.
 func (c *Command) MarkFlagsMutuallyExclusive(flagNames ...string) {
-	c.mergePersistentFlags()
-	for _, v := range flagNames {
-		f := c.Flags().Lookup(v)
-		if f == nil {
-			panic(fmt.Sprintf("Failed to find flag %q and mark it as being in a mutually exclusive flag group", v))
-		}
-		// Each time this is called is a single new entry; this allows it to be a member of multiple groups if needed.
-		if err := c.Flags().SetAnnotation(v, mutuallyExclusive, append(f.Annotations[mutuallyExclusive], strings.Join(flagNames, " "))); err != nil {
-			panic(err)
-		}
-	}
+	c.markFlagGroupAnnotations(mutuallyExclusive, flagNames...)
 }
 
 // validateFlagGroups validates the mutuallyExclusive/requiredAsGroup logic and returns the
@@ -71,7 +64,7 @@ func (c *Command) validateFlagGroups() error {
 	// then a map of each flag name and whether it is set or not.
 	groupStatus := map[string]map[string]bool{}
 	mutuallyExclusiveGroupStatus := map[string]map[string]bool{}
-	flags.VisitAll(func(pflag *flag.Flag) {
+	flags.VisitAll(func(pflag *zflag.Flag) {
 		processFlagForGroupAnnotation(flags, pflag, requiredAsGroup, groupStatus)
 		processFlagForGroupAnnotation(flags, pflag, mutuallyExclusive, mutuallyExclusiveGroupStatus)
 	})
@@ -85,9 +78,9 @@ func (c *Command) validateFlagGroups() error {
 	return nil
 }
 
-func hasAllFlags(fs *flag.FlagSet, flagnames ...string) bool {
-	for _, fname := range flagnames {
-		f := fs.Lookup(fname)
+func hasAllFlags(fs *zflag.FlagSet, flagNames ...string) bool {
+	for _, flagName := range flagNames {
+		f := fs.Lookup(flagName)
 		if f == nil {
 			return false
 		}
@@ -95,7 +88,7 @@ func hasAllFlags(fs *flag.FlagSet, flagnames ...string) bool {
 	return true
 }
 
-func processFlagForGroupAnnotation(flags *flag.FlagSet, pflag *flag.Flag, annotation string, groupStatus map[string]map[string]bool) {
+func processFlagForGroupAnnotation(flags *zflag.FlagSet, pflag *zflag.Flag, annotation string, groupStatus map[string]map[string]bool) {
 	groupInfo, found := pflag.Annotations[annotation]
 	if found {
 		for _, group := range groupInfo {

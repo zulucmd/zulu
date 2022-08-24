@@ -23,6 +23,7 @@ func TestValidateFlagGroups(t *testing.T) {
 		c := &Command{
 			Use: "testcmd",
 			RunE: func(cmd *Command, args []string) error {
+				return nil
 			}}
 		// Define lots of flags to utilize for testing.
 		for _, v := range []string{"a", "b", "c", "d"} {
@@ -33,7 +34,8 @@ func TestValidateFlagGroups(t *testing.T) {
 		}
 		subC := &Command{
 			Use: "subcmd",
-			Run: func(cmd *Command, args []string) {
+			RunE: func(cmd *Command, args []string) error {
+				return nil
 			}}
 		subC.Flags().String("subonly", "", "")
 		c.AddCommand(subC)
