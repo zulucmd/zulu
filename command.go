@@ -1679,7 +1679,8 @@ func (c *Command) LocalFlags() *zflag.FlagSet {
 	}
 
 	addToLocal := func(f *zflag.Flag) {
-		if c.lflags.Lookup(f.Name) == nil && c.parentsPflags.Lookup(f.Name) == nil {
+		// Add the flag if it is not a parent PFlag, or it shadows a parent PFlag
+		if c.lflags.Lookup(f.Name) == nil && f != c.parentsPflags.Lookup(f.Name) {
 			c.lflags.AddFlag(f)
 		}
 	}
