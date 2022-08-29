@@ -44,5 +44,4 @@ func defaultUsageFormatter(flag *zflag.Flag) (string, string) {
 	}
 
 	return left, right
-
 }

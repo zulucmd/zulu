@@ -4,7 +4,7 @@ weight: 50
 
 # Getting Started
 
-While you are welcome to provide your own organization, typically a Zulu-based application will follow the following organizational structure:
+While you are welcome organise your application how you see fit, typically a Zulu-based application will follow the following organisational structure:
 
 ```
   ▾ cmd/
@@ -16,7 +16,7 @@ While you are welcome to provide your own organization, typically a Zulu-based a
         main.go
 ```
 
-In a Zulu app, typically the main.go file is very bare. It serves one purpose: initializing Zulu. It can optionally include the root `zulu.Command` definition.
+In a Zulu app, typically the `main.go` file is very bare. It serves one purpose: initializing Zulu. It can optionally include the root `zulu.Command` definition.
 
 ```go
 package main
@@ -31,7 +31,7 @@ func main() {
 
 ## Using the Zulu Library
 
-To implement Zulu you need to create a bare main.go file and a `rootCmd` file. You can optionally provide additional commands as you see fit.
+To implement Zulu, you need to create a bare `main.go` file and a `rootCmd` file. You can optionally provide additional commands as you see fit.
 
 ### Create root command
 
@@ -62,7 +62,9 @@ func main() {
 }
 ```
 
-You additionally define flags and handle configuration in your `InitializeE()` or the `init()` (not recommended) function.
+You additionally define flags and handle configuration in your `InitializeE()` or the `init()` function.
+
+Please note, `init()` is generally seen as an antipattern within the Go community.
 
 ```go
 // cmd/$app/main.go
@@ -110,9 +112,9 @@ func main() error {
 
 ### Create additional commands
 
-Additional commands can be defined and typically are each given their own file inside the cmd/ directory.
+Additional commands can be defined, and each is typically assigned its own file within the `cmd/` directory.
 
-If you wanted to create a version command you would create cmd/version.go and populate it accordingly.
+If you wanted to create a version command, you would create `cmd/version.go`, and populate it accordingly.
 
 ```go
 package main

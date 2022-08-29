@@ -734,7 +734,7 @@ func (c *Command) findNext(next string) *Command {
 // Traverse the command tree to find the command, and parse args for
 // each parent.
 func (c *Command) Traverse(args []string) (*Command, []string, error) {
-	flags := []string{}
+	var flags []string
 	inFlag := false
 
 	for i, arg := range args {

@@ -34,11 +34,11 @@ func (tc *argsTestcase) test(t *testing.T) {
 		c.ValidArgs = []string{"one", "two", "three"}
 	}
 
-	o, e := executeCommand(c, tc.rargs...)
+	output, actualError := executeCommand(c, tc.rargs...)
 
 	if len(tc.exerr) > 0 {
 		// Expect error
-		if e == nil {
+		if actualError == nil {
 			t.Fatal("Expected an error")
 		}
 		expected, ok := errStrings[tc.exerr]
@@ -46,16 +46,16 @@ func (tc *argsTestcase) test(t *testing.T) {
 			t.Errorf(`key "%s" is not found in map "errStrings"`, tc.exerr)
 			return
 		}
-		if got := e.Error(); got != expected {
+		if got := actualError.Error(); got != expected {
 			t.Errorf("Expected: %q, got: %q", expected, got)
 		}
 	} else {
 		// Expect success
-		if o != "" {
-			t.Errorf("Unexpected output: %v", o)
+		if output != "" {
+			t.Errorf("Unexpected output: %v", output)
 		}
-		if e != nil {
-			t.Fatalf("Unexpected error: %v", e)
+		if actualError != nil {
+			t.Fatalf("Unexpected error: %v", actualError)
 		}
 	}
 }

@@ -15,13 +15,14 @@ package doc
 
 import (
 	"fmt"
-	"github.com/gowarden/zulu"
-	"gopkg.in/yaml.v3"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/gowarden/zulu"
+	"gopkg.in/yaml.v3"
 
 	"github.com/gowarden/zflag"
 )

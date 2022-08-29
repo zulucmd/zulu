@@ -7,7 +7,7 @@
 # changes to the Cobra CLI
 "area/cli": cobra/**/*
 
-# changes to Github workflows
+# changes to GitHub workflows
 "area/github": .github/**/*
 
 # changes to shell completions
