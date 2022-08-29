@@ -8,32 +8,8 @@ import (
 )
 
 func TestValidateFlagGroups(t *testing.T) {
-	getCmd := func() *zulu.Command {
-		cmd := &zulu.Command{
-			Use:  "testcmd",
-			RunE: emptyRun,
-		}
+	t.Parallel()
 
-		cmd.Flags().String("a", "", "")
-		cmd.Flags().String("b", "", "")
-		cmd.Flags().String("c", "", "")
-		cmd.Flags().String("d", "", "")
-		cmd.PersistentFlags().String("p-a", "", "")
-		cmd.PersistentFlags().String("p-b", "", "")
-		cmd.PersistentFlags().String("p-c", "", "")
-
-		subCmd := &zulu.Command{
-			Use:  "subcmd",
-			RunE: emptyRun,
-		}
-		subCmd.Flags().String("sub-a", "", "")
-
-		cmd.AddCommand(subCmd)
-
-		return cmd
-	}
-
-	// Each test case uses a unique command from the function above.
 	testcases := []struct {
 		desc                 string
 		requiredTogether     []string
@@ -120,9 +96,30 @@ func TestValidateFlagGroups(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
+		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
-			cmd := getCmd()
-			subCmd := cmd.Commands()[0]
+			t.Parallel()
+
+			cmd := &zulu.Command{
+				Use:  "testcmd",
+				RunE: emptyRun,
+			}
+
+			cmd.Flags().String("a", "", "")
+			cmd.Flags().String("b", "", "")
+			cmd.Flags().String("c", "", "")
+			cmd.Flags().String("d", "", "")
+			cmd.PersistentFlags().String("p-a", "", "")
+			cmd.PersistentFlags().String("p-b", "", "")
+			cmd.PersistentFlags().String("p-c", "", "")
+
+			subCmd := &zulu.Command{
+				Use:  "subcmd",
+				RunE: emptyRun,
+			}
+			subCmd.Flags().String("sub-a", "", "")
+
+			cmd.AddCommand(subCmd)
 
 			for _, group := range tc.requiredTogether {
 				cmd.MarkFlagsRequiredTogether(strings.Split(group, " ")...)
