@@ -1824,6 +1824,26 @@ func TestFlagErrorFunc(t *testing.T) {
 	}
 }
 
+func TestFlagErrorFuncHelp(t *testing.T) {
+	t.Parallel()
+
+	c := &zulu.Command{Use: "c", RunE: emptyRun}
+	c.PersistentFlags().Bool("help", false, "help for c")
+	c.SetFlagErrorFunc(func(_ *zulu.Command, err error) error {
+		return fmt.Errorf("wrap error: %w", err)
+	})
+
+	expected := "Usage:\n  c [flags]\n\nFlags:\n      --help   help for c\n"
+
+	out, err := executeCommand(c, "--help")
+	assertNoErr(t, err)
+	assertEqual(t, expected, out)
+
+	out, err = executeCommand(c, "-h")
+	assertNoErr(t, err)
+	assertEqual(t, expected, out)
+}
+
 // TestSortedFlags checks,
 // if cmd.LocalFlags() is unsorted when cmd.Flags().SortFlags set to false.
 // Related to https://github.com/spf13/cobra/issues/404.

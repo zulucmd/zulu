@@ -1122,7 +1122,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 		// Always show help if requested, even if SilenceErrors is in
 		// effect
-		if err == zflag.ErrHelp {
+		if errors.Is(err, zflag.ErrHelp) {
 			cmd.HelpFunc()(cmd, args)
 			return cmd, nil
 		}

@@ -7,6 +7,18 @@ import (
 	"github.com/gowarden/zulu"
 )
 
+func assertEqual(t *testing.T, expected, actual interface{}) {
+	t.Helper()
+	assertEqualf(t, expected, actual, "expected %[1]v with type %[1]T but got %[2]v with type %[2]T", expected, actual)
+}
+
+func assertEqualf(t *testing.T, expected, actual interface{}, msg string, fmt ...interface{}) {
+	t.Helper()
+	if expected != actual {
+		t.Errorf(msg, fmt...)
+	}
+}
+
 func assertNoErr(t *testing.T, e error) {
 	if e != nil {
 		t.Error(e)
