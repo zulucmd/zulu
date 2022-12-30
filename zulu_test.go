@@ -1,11 +1,36 @@
 package zulu_test
 
 import (
+	"strings"
 	"testing"
 	"text/template"
 
 	"github.com/gowarden/zulu"
 )
+
+func assertNotContains(t *testing.T, str, unexpected string) {
+	t.Helper()
+	assertNotContainsf(t, str, unexpected, "%q should not contain %q", str, unexpected)
+}
+
+func assertNotContainsf(t *testing.T, str, unexpected string, msg string, fmt ...interface{}) {
+	t.Helper()
+	if strings.Contains(str, unexpected) {
+		t.Errorf(msg, fmt...)
+	}
+}
+
+func assertContains(t *testing.T, str, substr string) {
+	t.Helper()
+	assertContainsf(t, str, substr, "%q does not contain %q", str, substr)
+}
+
+func assertContainsf(t *testing.T, str, expected string, msg string, fmt ...interface{}) {
+	t.Helper()
+	if !strings.Contains(str, expected) {
+		t.Errorf(msg, fmt...)
+	}
+}
 
 func assertEqual(t *testing.T, expected, actual interface{}) {
 	t.Helper()

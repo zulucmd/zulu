@@ -2,7 +2,7 @@ package zulu
 
 const (
 	CompCmdName           = compCmdName
-	CompCmdNoDescFlagName = compCmdNoDescFlagName
+	CompCmdNoDescFlagName = compCmdDescFlagName
 )
 
 var StripFlags = stripFlags

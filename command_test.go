@@ -1179,7 +1179,7 @@ func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
 	if err == nil {
 		t.Errorf("Expected error")
 	}
-	check(t, rootCmd.Flags().ShorthandLookupStr("v").Name, "notversion")
+	assertContains(t, rootCmd.Flags().ShorthandLookupStr("v").Name, "notversion")
 	checkStringContains(t, err.Error(), "flag needs an argument: 'v' in -v")
 }
 

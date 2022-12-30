@@ -4,23 +4,10 @@ import (
 	"bytes"
 	"log"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/gowarden/zulu"
 )
-
-func checkOmit(t *testing.T, found, unexpected string) {
-	if strings.Contains(found, unexpected) {
-		t.Errorf("Got: %q\nBut should not have!\n", unexpected)
-	}
-}
-
-func check(t *testing.T, found, expected string) {
-	if !strings.Contains(found, expected) {
-		t.Errorf("Expecting to contain: \n %q\nGot:\n %q\n", expected, found)
-	}
-}
 
 func TestCompleteNoDesCmdInBashScript(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
@@ -35,7 +22,7 @@ func TestCompleteNoDesCmdInBashScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
 
-	check(t, output, zulu.ShellCompNoDescRequestCmd)
+	assertContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestCompleteCmdInBashScript(t *testing.T) {
@@ -51,8 +38,8 @@ func TestCompleteCmdInBashScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, true))
 	output := buf.String()
 
-	check(t, output, zulu.ShellCompRequestCmd)
-	checkOmit(t, output, zulu.ShellCompNoDescRequestCmd)
+	assertContains(t, output, zulu.ShellCompRequestCmd)
+	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestBashProgWithDash(t *testing.T) {
@@ -62,12 +49,12 @@ func TestBashProgWithDash(t *testing.T) {
 	output := buf.String()
 
 	// Functions name should have replace the '-'
-	check(t, output, "__root_dash_init_completion")
-	checkOmit(t, output, "__root-dash_init_completion")
+	assertContains(t, output, "__root_dash_init_completion")
+	assertNotContains(t, output, "__root-dash_init_completion")
 
 	// The command name should not have replaced the '-'
-	check(t, output, "__start_root_dash root-dash")
-	checkOmit(t, output, "dash root_dash")
+	assertContains(t, output, "__start_root_dash root-dash")
+	assertNotContains(t, output, "dash root_dash")
 }
 
 func TestBashProgWithColon(t *testing.T) {
@@ -77,12 +64,12 @@ func TestBashProgWithColon(t *testing.T) {
 	output := buf.String()
 
 	// Functions name should have replace the ':'
-	check(t, output, "__root_colon_init_completion")
-	checkOmit(t, output, "__root:colon_init_completion")
+	assertContains(t, output, "__root_colon_init_completion")
+	assertNotContains(t, output, "__root:colon_init_completion")
 
 	// The command name should not have replaced the ':'
-	check(t, output, "__start_root_colon root:colon")
-	checkOmit(t, output, "colon root_colon")
+	assertContains(t, output, "__start_root_colon root:colon")
+	assertNotContains(t, output, "colon root_colon")
 }
 
 func TestGenBashCompletionFile(t *testing.T) {

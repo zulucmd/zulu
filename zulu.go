@@ -76,8 +76,8 @@ func trimRightSpace(s string) string {
 
 // rpad adds padding to the right of a string.
 func rpad(s string, padding int) string {
-	template := fmt.Sprintf("%%-%ds", padding)
-	return fmt.Sprintf(template, s)
+	format := fmt.Sprintf("%%-%ds", padding)
+	return fmt.Sprintf(format, s)
 }
 
 // tmpl executes the given template text on data, writing the result to w.

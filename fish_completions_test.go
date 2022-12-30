@@ -22,7 +22,7 @@ func TestCompleteNoDesCmdInFishScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
 
-	check(t, output, zulu.ShellCompNoDescRequestCmd)
+	assertContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestCompleteCmdInFishScript(t *testing.T) {
@@ -38,8 +38,8 @@ func TestCompleteCmdInFishScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenFishCompletion(buf, true))
 	output := buf.String()
 
-	check(t, output, zulu.ShellCompRequestCmd)
-	checkOmit(t, output, zulu.ShellCompNoDescRequestCmd)
+	assertContains(t, output, zulu.ShellCompRequestCmd)
+	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestProgWithDash(t *testing.T) {
@@ -49,12 +49,12 @@ func TestProgWithDash(t *testing.T) {
 	output := buf.String()
 
 	// Functions name should have replace the '-'
-	check(t, output, "__root_dash_perform_completion")
-	checkOmit(t, output, "__root-dash_perform_completion")
+	assertContains(t, output, "__root_dash_perform_completion")
+	assertNotContains(t, output, "__root-dash_perform_completion")
 
 	// The command name should not have replaced the '-'
-	check(t, output, "-c root-dash")
-	checkOmit(t, output, "-c root_dash")
+	assertContains(t, output, "-c root-dash")
+	assertNotContains(t, output, "-c root_dash")
 }
 
 func TestProgWithColon(t *testing.T) {
@@ -64,12 +64,12 @@ func TestProgWithColon(t *testing.T) {
 	output := buf.String()
 
 	// Functions name should have replace the ':'
-	check(t, output, "__root_colon_perform_completion")
-	checkOmit(t, output, "__root:colon_perform_completion")
+	assertContains(t, output, "__root_colon_perform_completion")
+	assertNotContains(t, output, "__root:colon_perform_completion")
 
 	// The command name should not have replaced the ':'
-	check(t, output, "-c root:colon")
-	checkOmit(t, output, "-c root_colon")
+	assertContains(t, output, "-c root:colon")
+	assertNotContains(t, output, "-c root_colon")
 }
 
 func TestGenFishCompletionFile(t *testing.T) {

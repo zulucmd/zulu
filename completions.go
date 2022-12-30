@@ -87,7 +87,7 @@ const (
 const (
 	// Constants for the completion command
 	compCmdName              = "completion"
-	compCmdNoDescFlagName    = "no-descriptions"
+	compCmdDescFlagName      = "descriptions"
 	compCmdNoDescFlagDesc    = "disable completion descriptions"
 	compCmdNoDescFlagDefault = false
 )
@@ -652,15 +652,15 @@ To load completions for every new session, execute once:
 
 You will need to start a new shell for this setup to take effect.
 `, c.Root().Name()),
-		Args:                  NoArgs,
 		DisableFlagsInUseLine: true,
+		Args:                  NoArgs,
 		ValidArgsFunction:     NoFileCompletions,
 		RunE: func(cmd *Command, args []string) error {
 			return cmd.Root().GenBashCompletion(out, !noDesc)
 		},
 	}
 	if haveNoDescFlag {
-		bash.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+		bash.Flags().BoolVar(&noDesc, compCmdDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc, zflag.OptAddNegative())
 	}
 
 	zsh := &Command{
@@ -699,7 +699,7 @@ You will need to start a new shell for this setup to take effect.
 		},
 	}
 	if haveNoDescFlag {
-		zsh.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+		zsh.Flags().BoolVar(&noDesc, compCmdDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
 	fish := &Command{
@@ -724,7 +724,7 @@ You will need to start a new shell for this setup to take effect.
 		},
 	}
 	if haveNoDescFlag {
-		fish.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+		fish.Flags().BoolVar(&noDesc, compCmdDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
 	powershell := &Command{
@@ -750,7 +750,7 @@ to your powershell profile.
 		},
 	}
 	if haveNoDescFlag {
-		powershell.Flags().BoolVar(&noDesc, compCmdNoDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
+		powershell.Flags().BoolVar(&noDesc, compCmdDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
 	}
 
 	completionCmd.AddCommand(bash, zsh, fish, powershell)

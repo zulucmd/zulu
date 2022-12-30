@@ -1467,7 +1467,7 @@ func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenZshCompletionNoDesc(buf))
 	output := buf.String()
 
-	check(t, output, zulu.ShellCompNoDescRequestCmd)
+	assertContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestCompleteCmdInZshScript(t *testing.T) {
@@ -1483,8 +1483,8 @@ func TestCompleteCmdInZshScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenZshCompletion(buf))
 	output := buf.String()
 
-	check(t, output, zulu.ShellCompRequestCmd)
-	checkOmit(t, output, zulu.ShellCompNoDescRequestCmd)
+	assertContains(t, output, zulu.ShellCompRequestCmd)
+	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestFlagCompletionInGo(t *testing.T) {
@@ -2276,8 +2276,8 @@ func TestDefaultCompletionCmd(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	check(t, output, zulu.ShellCompRequestCmd)
-	checkOmit(t, output, zulu.ShellCompNoDescRequestCmd)
+	assertContains(t, output, zulu.ShellCompRequestCmd)
+	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
 
@@ -2288,7 +2288,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	check(t, output, zulu.ShellCompNoDescRequestCmd)
+	assertContains(t, output, zulu.ShellCompNoDescRequestCmd)
 	// Re-enable for next test
 	rootCmd.CompletionOptions.DisableDescriptions = false
 	// Remove completion command for the next test
