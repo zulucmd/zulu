@@ -156,7 +156,7 @@ __{{ .CMDVarName }}_handle_standard_completion_case() {
     local tab=$'\t' comp
 
     # Short circuit to optimize if we don't have descriptions
-    if [[ "$out" != *$tab* ]]; then
+    if [[ $out != *$tab* ]]; then
         IFS=$'\n' read -ra COMPREPLY -d '' < <(IFS=$'\n' compgen -W "$out" -- "$cur")
         return 0
     fi
@@ -183,7 +183,7 @@ __{{ .CMDVarName }}_handle_standard_completion_case() {
         __{{ .CMDVarName }}_debug "Removed description from single completion, which is now: ${comp}"
         COMPREPLY[0]=$comp
     else # Format the descriptions
-        __%[1]s_format_comp_descriptions $longest
+        __{{ .CMDVarName }}_format_comp_descriptions $longest
     fi
 }
 
@@ -211,9 +211,9 @@ __{{ .CMDVarName }}_format_comp_descriptions()
         comp=${COMPREPLY[ci]}
         # Properly format the description string which follows a tab character if there is one
         if [[ "$comp" == *$tab* ]]; then
-            __%[1]s_debug "Original comp: $comp"
+            __{{ .CMDVarName }}_debug "Original comp: $comp"
             desc=${comp#*$tab}
-            comp=${comp%%%%$tab*}
+            comp=${comp%%$tab*}
 
             # $COLUMNS stores the current shell width.
             # Remove an extra 4 because we add 2 spaces and 2 parentheses.
@@ -241,7 +241,7 @@ __{{ .CMDVarName }}_format_comp_descriptions()
                 comp+="  ($desc)"
             fi
             COMPREPLY[ci]=$comp
-            __%[1]s_debug "Final comp: $comp"
+            __{{ .CMDVarName }}_debug "Final comp: $comp"
         fi
     done
 }
