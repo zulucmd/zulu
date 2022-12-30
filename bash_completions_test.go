@@ -38,7 +38,7 @@ func TestCompleteCmdInBashScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, true))
 	output := buf.String()
 
-	assertContains(t, output, zulu.ShellCompRequestCmd)
+	assertContains(t, output, zulu.ShellCompRequestCmd+" ")
 	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 

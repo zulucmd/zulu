@@ -17,6 +17,7 @@
 package zulu
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strings"
@@ -66,7 +67,7 @@ func AddTemplateFunc(name string, tmplFunc interface{}) {
 // Help template generation.
 func AddTemplateFuncs(tmplFuncs template.FuncMap) {
 	for k, v := range tmplFuncs {
-		templateFuncs[k] = v
+		AddTemplateFunc(k, v)
 	}
 }
 
@@ -78,6 +79,21 @@ func trimRightSpace(s string) string {
 func rpad(s string, padding int) string {
 	format := fmt.Sprintf("%%-%ds", padding)
 	return fmt.Sprintf(format, s)
+}
+
+func tmplFromFile(templateFile string, data interface{}) string {
+	templateData, err := tmplFS.ReadFile(templateFile)
+	if err != nil {
+		panic(fmt.Sprintf("failed to read template file %q: %s", templateFile, err))
+	}
+
+	buf := new(bytes.Buffer)
+	err = tmpl(buf, string(templateData), data)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse template: %s", err))
+	}
+
+	return buf.String()
 }
 
 // tmpl executes the given template text on data, writing the result to w.

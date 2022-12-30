@@ -18,6 +18,7 @@ package zulu
 import (
 	"bytes"
 	"context"
+	"embed"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -31,8 +32,8 @@ import (
 	"github.com/gowarden/zulu/internal/util"
 )
 
-//go:embed resources/usage.txt.gotmpl
-var defaultUsageTemplate string
+//go:embed templates/*
+var tmplFS embed.FS
 
 // FParseErrAllowList configures Flag parse errors to be ignored
 type FParseErrAllowList zflag.ParseErrorsAllowlist
@@ -563,7 +564,13 @@ func (c *Command) UsageTemplate() string {
 	if c.HasParent() {
 		return c.parent.UsageTemplate()
 	}
-	return defaultUsageTemplate
+
+	data, err := tmplFS.ReadFile("templates/usage_default.txt.gotmpl")
+	if err != nil {
+		panic(fmt.Sprintf("failed to read default usage file: %s", err))
+	}
+
+	return string(data)
 }
 
 // HelpTemplate return help template for the command.

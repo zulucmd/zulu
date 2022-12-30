@@ -38,7 +38,7 @@ func TestCompleteCmdInFishScript(t *testing.T) {
 	assertNoErr(t, rootCmd.GenFishCompletion(buf, true))
 	output := buf.String()
 
-	assertContains(t, output, zulu.ShellCompRequestCmd)
+	assertContains(t, output, zulu.ShellCompRequestCmd+" ")
 	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
@@ -48,7 +48,7 @@ func TestProgWithDash(t *testing.T) {
 	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
 
-	// Functions name should have replace the '-'
+	// Functions name should have replaced the '-'
 	assertContains(t, output, "__root_dash_perform_completion")
 	assertNotContains(t, output, "__root-dash_perform_completion")
 
@@ -63,7 +63,7 @@ func TestProgWithColon(t *testing.T) {
 	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
 
-	// Functions name should have replace the ':'
+	// Functions name should have replaced the ':'
 	assertContains(t, output, "__root_colon_perform_completion")
 	assertNotContains(t, output, "__root:colon_perform_completion")
 

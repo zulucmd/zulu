@@ -2,6 +2,7 @@ package zulu
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"sync"
@@ -86,19 +87,19 @@ const (
 
 const (
 	// Constants for the completion command
-	compCmdName              = "completion"
-	compCmdDescFlagName      = "descriptions"
-	compCmdNoDescFlagDesc    = "disable completion descriptions"
-	compCmdNoDescFlagDefault = false
+	compCmdName            = "completion"
+	compCmdDescFlagName    = "descriptions"
+	compCmdDescFlagDesc    = "enable or disable completion descriptions"
+	compCmdDescFlagDefault = true
 )
 
 // CompletionOptions are the options to control shell completion
 type CompletionOptions struct {
 	// DisableDefaultCmd prevents Zulu from creating a default 'completion' command
 	DisableDefaultCmd bool
-	// DisableNoDescFlag prevents Zulu from creating the '--no-descriptions' flag
+	// DisableDescriptionsFlag prevents Zulu from creating the '--no-descriptions' flag
 	// for shells that support completion descriptions
-	DisableNoDescFlag bool
+	DisableDescriptionsFlag bool
 	// DisableDescriptions turns off all completion descriptions for shells
 	// that support them
 	DisableDescriptions bool
@@ -611,14 +612,10 @@ func (c *Command) InitDefaultCompletionCmd() {
 		}
 	}
 
-	haveNoDescFlag := !c.CompletionOptions.DisableNoDescFlag && !c.CompletionOptions.DisableDescriptions
-
 	completionCmd := &Command{
-		Use:   compCmdName,
-		Short: "Generate the autocompletion script for the specified shell",
-		Long: fmt.Sprintf(`Generate the autocompletion script for %[1]s for the specified shell.
-See each sub-command's help for details on how to use the generated script.
-`, c.Root().Name()),
+		Use:               compCmdName,
+		Short:             "Generate the autocompletion script for the specified shell",
+		Long:              tmplFromFile("templates/usage_completion_root.txt.gotmpl", map[string]string{"CMDName": c.Root().Name()}),
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
 		Hidden:            c.CompletionOptions.HiddenDefaultCmd,
@@ -626,134 +623,42 @@ See each sub-command's help for details on how to use the generated script.
 	c.AddCommand(completionCmd)
 
 	out := c.OutOrStdout()
-	noDesc := c.CompletionOptions.DisableDescriptions
-	shortDesc := "Generate the autocompletion script for %s"
-	bash := &Command{
-		Use:   "bash",
-		Short: fmt.Sprintf(shortDesc, "bash"),
-		Long: fmt.Sprintf(`Generate the autocompletion script for the bash shell.
+	includeDescriptions := !c.CompletionOptions.DisableDescriptions
+	bash := c.createCompletionCommand("bash", "templates/usage_completion_bash.txt.gotmpl", &includeDescriptions, func(cmd *Command, args []string) error {
+		return cmd.Root().GenBashCompletion(out, includeDescriptions)
+	})
 
-This script depends on the 'bash-completion' package.
-If it is not installed already, you can install it via your OS's package manager.
+	zsh := c.createCompletionCommand("zsh", "templates/usage_completion_zsh.txt.gotmpl", &includeDescriptions, func(cmd *Command, args []string) error {
+		return cmd.Root().GenZshCompletion(out, includeDescriptions)
+	})
 
-To load completions in your current shell session:
+	fish := c.createCompletionCommand("fish", "templates/usage_completion_fish.txt.gotmpl", &includeDescriptions, func(cmd *Command, args []string) error {
+		return cmd.Root().GenFishCompletion(out, includeDescriptions)
+	})
 
-	source <(%[1]s completion bash)
-
-To load completions for every new session, execute once:
-
-#### Linux:
-
-	%[1]s completion bash > /etc/bash_completion.d/%[1]s
-
-#### macOS:
-
-	%[1]s completion bash > /usr/local/etc/bash_completion.d/%[1]s
-
-You will need to start a new shell for this setup to take effect.
-`, c.Root().Name()),
-		DisableFlagsInUseLine: true,
-		Args:                  NoArgs,
-		ValidArgsFunction:     NoFileCompletions,
-		RunE: func(cmd *Command, args []string) error {
-			return cmd.Root().GenBashCompletion(out, !noDesc)
-		},
-	}
-	if haveNoDescFlag {
-		bash.Flags().BoolVar(&noDesc, compCmdDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc, zflag.OptAddNegative())
-	}
-
-	zsh := &Command{
-		Use:   "zsh",
-		Short: fmt.Sprintf(shortDesc, "zsh"),
-		Long: fmt.Sprintf(`Generate the autocompletion script for the zsh shell.
-
-If shell completion is not already enabled in your environment you will need
-to enable it.  You can execute the following once:
-
-	echo "autoload -U compinit; compinit" >> ~/.zshrc
-
-To load completions in your current shell session:
-
-	source <(%[1]s completion zsh); compdef _%[1]s %[1]s
-
-To load completions for every new session, execute once:
-
-#### Linux:
-
-	%[1]s completion zsh > "${fpath[1]}/_%[1]s"
-
-#### macOS:
-
-	%[1]s completion zsh > /usr/local/share/zsh/site-functions/_%[1]s
-
-You will need to start a new shell for this setup to take effect.
-`, c.Root().Name()),
-		Args:              NoArgs,
-		ValidArgsFunction: NoFileCompletions,
-		RunE: func(cmd *Command, args []string) error {
-			if noDesc {
-				return cmd.Root().GenZshCompletionNoDesc(out)
-			}
-			return cmd.Root().GenZshCompletion(out)
-		},
-	}
-	if haveNoDescFlag {
-		zsh.Flags().BoolVar(&noDesc, compCmdDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
-	}
-
-	fish := &Command{
-		Use:   "fish",
-		Short: fmt.Sprintf(shortDesc, "fish"),
-		Long: fmt.Sprintf(`Generate the autocompletion script for the fish shell.
-
-To load completions in your current shell session:
-
-	%[1]s completion fish | source
-
-To load completions for every new session, execute once:
-
-	%[1]s completion fish > ~/.config/fish/completions/%[1]s.fish
-
-You will need to start a new shell for this setup to take effect.
-`, c.Root().Name()),
-		Args:              NoArgs,
-		ValidArgsFunction: NoFileCompletions,
-		RunE: func(cmd *Command, args []string) error {
-			return cmd.Root().GenFishCompletion(out, !noDesc)
-		},
-	}
-	if haveNoDescFlag {
-		fish.Flags().BoolVar(&noDesc, compCmdDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
-	}
-
-	powershell := &Command{
-		Use:   "powershell",
-		Short: fmt.Sprintf(shortDesc, "powershell"),
-		Long: fmt.Sprintf(`Generate the autocompletion script for powershell.
-
-To load completions in your current shell session:
-
-	%[1]s completion powershell | Out-String | Invoke-Expression
-
-To load completions for every new session, add the output of the above command
-to your powershell profile.
-`, c.Root().Name()),
-		Args:              NoArgs,
-		ValidArgsFunction: NoFileCompletions,
-		RunE: func(cmd *Command, args []string) error {
-			if noDesc {
-				return cmd.Root().GenPowerShellCompletion(out)
-			}
-			return cmd.Root().GenPowerShellCompletionWithDesc(out)
-
-		},
-	}
-	if haveNoDescFlag {
-		powershell.Flags().BoolVar(&noDesc, compCmdDescFlagName, compCmdNoDescFlagDefault, compCmdNoDescFlagDesc)
-	}
+	powershell := c.createCompletionCommand("powershell", "templates/usage_completion_pwsh.txt.gotmpl", &includeDescriptions, func(cmd *Command, args []string) error {
+		return cmd.Root().GenPowershellCompletion(out, includeDescriptions)
+	})
 
 	completionCmd.AddCommand(bash, zsh, fish, powershell)
+}
+
+func (c *Command) createCompletionCommand(shellName string, usageTemplate string, includeDescriptions *bool, runFn HookFuncE) *Command {
+	completionCMD := &Command{
+		Use:               shellName,
+		Short:             fmt.Sprintf("Generate the autocompletion script for %s", shellName),
+		Long:              tmplFromFile(usageTemplate, map[string]string{"CMDName": c.Root().Name()}),
+		Args:              NoArgs,
+		ValidArgsFunction: NoFileCompletions,
+		RunE:              runFn,
+	}
+
+	haveDescriptionsFlag := !c.CompletionOptions.DisableDescriptionsFlag && !c.CompletionOptions.DisableDescriptions
+	if haveDescriptionsFlag {
+		completionCMD.Flags().BoolVar(includeDescriptions, compCmdDescFlagName, compCmdDescFlagDefault, compCmdDescFlagDesc, zflag.OptAddNegative())
+	}
+
+	return completionCMD
 }
 
 func findFlag(cmd *Command, name string) *zflag.Flag {
@@ -815,4 +720,31 @@ func CompError(msg string) {
 // CompErrorln prints the specified completion message to stderr with a newline at the end.
 func CompErrorln(msg string) {
 	CompError(fmt.Sprintf("%s\n", msg))
+}
+
+func genTemplateCompletion(buf io.Writer, templateFile string, name string, includeDesc bool) error {
+	template, err := tmplFS.ReadFile(templateFile)
+	if err != nil {
+		return fmt.Errorf("failed to read template file %q: %w", templateFile, err)
+	}
+
+	compCmd := ShellCompRequestCmd
+	if !includeDesc {
+		compCmd = ShellCompNoDescRequestCmd
+	}
+
+	nameForVar := name
+	nameForVar = strings.ReplaceAll(nameForVar, "-", "_")
+	nameForVar = strings.ReplaceAll(nameForVar, ":", "_")
+
+	return tmpl(buf, string(template), map[string]interface{}{
+		"CMDVarName":                      nameForVar,
+		"CMDName":                         name,
+		"CompletionCommand":               compCmd,
+		"ShellCompDirectiveError":         ShellCompDirectiveError,
+		"ShellCompDirectiveNoSpace":       ShellCompDirectiveNoSpace,
+		"ShellCompDirectiveNoFileComp":    ShellCompDirectiveNoFileComp,
+		"ShellCompDirectiveFilterFileExt": ShellCompDirectiveFilterFileExt,
+		"ShellCompDirectiveFilterDirs":    ShellCompDirectiveFilterDirs,
+	})
 }

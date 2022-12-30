@@ -1464,7 +1464,7 @@ func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenZshCompletionNoDesc(buf))
+	assertNoErr(t, rootCmd.GenZshCompletion(buf, false))
 	output := buf.String()
 
 	assertContains(t, output, zulu.ShellCompNoDescRequestCmd)
@@ -1480,10 +1480,10 @@ func TestCompleteCmdInZshScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenZshCompletion(buf))
+	assertNoErr(t, rootCmd.GenZshCompletion(buf, true))
 	output := buf.String()
 
-	assertContains(t, output, zulu.ShellCompRequestCmd)
+	assertContains(t, output, zulu.ShellCompRequestCmd+" ")
 	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
@@ -2276,7 +2276,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
-	assertContains(t, output, zulu.ShellCompRequestCmd)
+	assertContains(t, output, zulu.ShellCompRequestCmd+" ")
 	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
@@ -2309,7 +2309,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	removeCompCmd(rootCmd)
 
 	// Test that the '--no-descriptions' flag can be disabled
-	rootCmd.CompletionOptions.DisableNoDescFlag = true
+	rootCmd.CompletionOptions.DisableDescriptionsFlag = true
 	assertNoErr(t, rootCmd.Execute())
 	for _, shell := range []string{"fish", "zsh", "bash", "powershell"} {
 		if compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell}); err != nil {
@@ -2320,7 +2320,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 		}
 	}
 	// Re-enable for next test
-	rootCmd.CompletionOptions.DisableNoDescFlag = false
+	rootCmd.CompletionOptions.DisableDescriptionsFlag = false
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
 
