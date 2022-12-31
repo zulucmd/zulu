@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gowarden/zflag"
-	"github.com/gowarden/zulu"
+	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zulu"
 )
 
 func emptyRun(*zulu.Command, []string) error { return nil }

@@ -38,7 +38,7 @@ have children commands and optionally run an action.
 
 In the example above, 'server' is the command.
 
-[More about `zulu.Command`](https://pkg.go.dev/github.com/gowarden/zulu#Command)
+[More about `zulu.Command`](https://pkg.go.dev/github.com/zulucmd/zulu#Command)
 
 ## Flags
 
@@ -50,5 +50,5 @@ and flags that are only available to that command.
 In the example above, 'port' is the flag.
 
 Flag functionality is provided by the [zflag
-library](https://github.com/gowarden/zflag), a fork of the great [spf13/pflag](https://github.com/spf13/pflag)
+library](https://github.com/zulucmd/zflag), a fork of the great [spf13/pflag](https://github.com/spf13/pflag)
 library, which itself is a fork of the flag package from the standard library, and maintains the same interface while adding POSIX compliance.

@@ -28,7 +28,7 @@ Breaking changes are not allowed in release branches, as these represent minor v
 
 Examples of breaking changes include:
 - Removing or renaming exported constant, variable, type, or function.
-- Updating the version of critical libraries such as `gowarden/pflag` etc...
+- Updating the version of critical libraries such as `zulucmd/pflag` etc...
   - Some version updates may be acceptable for picking up bug fixes, but maintainers must exercise caution when reviewing.
 
 There may, at times, need to be exceptions where breaking changes are allowed in release branches. These are at the discretion of the project's maintainers, and must be carefully considered before merging.

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gowarden/zflag"
-	"github.com/gowarden/zulu/internal/util"
+	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zulu/internal/util"
 )
 
 const (

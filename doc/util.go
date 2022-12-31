@@ -16,7 +16,7 @@ package doc
 import (
 	"strings"
 
-	"github.com/gowarden/zulu"
+	"github.com/zulucmd/zulu"
 )
 
 // Test to see if we have a reason to print See Also information in docs

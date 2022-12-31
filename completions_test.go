@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gowarden/zflag"
-	"github.com/gowarden/zulu"
+	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zulu"
 )
 
 func validArgsFunc(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {

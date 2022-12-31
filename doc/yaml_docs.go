@@ -21,10 +21,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gowarden/zulu"
+	"github.com/zulucmd/zulu"
 	"gopkg.in/yaml.v3"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 type cmdOption struct {

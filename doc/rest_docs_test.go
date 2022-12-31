@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gowarden/zulu"
-	"github.com/gowarden/zulu/doc"
+	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/doc"
 )
 
 func TestGenRSTDoc(t *testing.T) {

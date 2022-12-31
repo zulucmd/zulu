@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/gowarden/zulu/internal/util"
+	"github.com/zulucmd/zulu/internal/util"
 )
 
 func TestCheckErr(t *testing.T) {

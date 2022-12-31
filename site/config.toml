@@ -1,6 +1,6 @@
 theme = "docuapi"
 languageCode = "en-us"
-baseurl = "https://gowarden.github.io/zulu/"
+baseurl = "https://zulucmd.github.io/zulu/"
 title = "Zulu"
 
 disableKinds = ["taxonomyTerm"]
@@ -36,7 +36,7 @@ languageName = "English"
 weight = 2
 title = "Zulu documentation"
 toc_footers = [
-    "[![github.com/gowraden/zulu](https://img.shields.io/badge/-gowarden/zulu-323131.svg?logo=github&style=flat-square&longCache=true)](https://github.com/gowarden/zulu)",
+    "[![github.com/gowraden/zulu](https://img.shields.io/badge/-zulucmd/zulu-323131.svg?logo=github&style=flat-square&longCache=true)](https://github.com/zulucmd/zulu)",
     "Built with [Hugo](https://gohugo.io/) theme [DocuAPI](https://github.com/bep/docuapi) by [bep](https://github.com/bep)"
 ]
 [languages.en.blackfriday]

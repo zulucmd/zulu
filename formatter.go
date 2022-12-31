@@ -3,7 +3,7 @@ package zulu
 import (
 	"fmt"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 func defaultUsageFormatter(flag *zflag.Flag) (string, string) {

@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gowarden/zulu"
+	"github.com/zulucmd/zulu"
 )
 
 func TestCompleteNoDesCmdInBashScript(t *testing.T) {

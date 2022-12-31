@@ -12,8 +12,8 @@ package main
 import (
 	"log"
 
-	"github.com/gowarden/zulu"
-	"github.com/gowarden/zulu/doc"
+	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/doc"
 )
 
 func main() {

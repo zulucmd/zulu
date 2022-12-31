@@ -3,7 +3,7 @@ package zulu
 import (
 	"fmt"
 
-	"github.com/gowarden/zflag"
+	"github.com/zulucmd/zflag"
 )
 
 // MarkFlagsRequiredTogether creates a relationship between flags, which ensures

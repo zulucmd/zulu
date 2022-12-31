@@ -41,7 +41,7 @@ Zulu doesn't require any special constructors. Simply create your commands.
 // cmd/$app/main.go
 package main
 
-import "github.com/gowarden/zulu"
+import "github.com/zulucmd/zulu"
 
 var rootCmd = &zulu.Command{
 	Use:   "hugo",
@@ -74,8 +74,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gowarden/zflag"
-	"github.com/gowarden/zulu"
+	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zulu"
 )
 
 var (
@@ -122,7 +122,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/gowarden/zulu"
+	"github.com/zulucmd/zulu"
 )
 
 func init() {
@@ -258,7 +258,7 @@ In the example below, we have defined three commands. Two are at the top level a
 
 We have only defined one flag for a single command.
 
-More documentation about flags is available at https://github.com/gowarden/zflag
+More documentation about flags is available at https://github.com/zulucmd/zflag
 
 ```go
 package main
@@ -267,8 +267,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gowarden/zflag"
-	"github.com/gowarden/zulu"
+	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zulu"
 )
 
 func main() {
@@ -437,7 +437,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/gowarden/zulu"
+	"github.com/zulucmd/zulu"
 )
 
 func main() {
