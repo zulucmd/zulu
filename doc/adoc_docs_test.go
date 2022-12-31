@@ -2,7 +2,6 @@ package doc_test
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,14 +18,14 @@ func TestGenAsciidoc(t *testing.T) {
 	}
 	output := buf.String()
 
-	checkStringContains(t, output, echoCmd.Long)
-	checkStringContains(t, output, echoCmd.Example)
-	checkStringContains(t, output, "boolone")
-	checkStringContains(t, output, "rootflag")
-	checkStringContains(t, output, rootCmd.Short)
-	checkStringContains(t, output, echoSubCmd.Short)
-	checkStringOmits(t, output, deprecatedCmd.Short)
-	checkStringContains(t, output, "Options inherited from parent commands")
+	assertContains(t, output, echoCmd.Long)
+	assertContains(t, output, echoCmd.Example)
+	assertContains(t, output, "boolone")
+	assertContains(t, output, "rootflag")
+	assertContains(t, output, rootCmd.Short)
+	assertContains(t, output, echoSubCmd.Short)
+	assertNotContains(t, output, deprecatedCmd.Short)
+	assertContains(t, output, "Options inherited from parent commands")
 }
 
 func TestGenAsciidocWithNoLongOrSynopsis(t *testing.T) {
@@ -37,10 +36,10 @@ func TestGenAsciidocWithNoLongOrSynopsis(t *testing.T) {
 	}
 	output := buf.String()
 
-	checkStringContains(t, output, dummyCmd.Example)
-	checkStringContains(t, output, dummyCmd.Short)
-	checkStringContains(t, output, "Options inherited from parent commands")
-	checkStringOmits(t, output, "### Synopsis")
+	assertContains(t, output, dummyCmd.Example)
+	assertContains(t, output, dummyCmd.Short)
+	assertContains(t, output, "Options inherited from parent commands")
+	assertNotContains(t, output, "### Synopsis")
 }
 
 func TestGenAsciidocNoHiddenParents(t *testing.T) {
@@ -56,14 +55,14 @@ func TestGenAsciidocNoHiddenParents(t *testing.T) {
 	}
 	output := buf.String()
 
-	checkStringContains(t, output, echoCmd.Long)
-	checkStringContains(t, output, echoCmd.Example)
-	checkStringContains(t, output, "boolone")
-	checkStringOmits(t, output, "rootflag")
-	checkStringContains(t, output, rootCmd.Short)
-	checkStringContains(t, output, echoSubCmd.Short)
-	checkStringOmits(t, output, deprecatedCmd.Short)
-	checkStringOmits(t, output, "Options inherited from parent commands")
+	assertContains(t, output, echoCmd.Long)
+	assertContains(t, output, echoCmd.Example)
+	assertContains(t, output, "boolone")
+	assertNotContains(t, output, "rootflag")
+	assertContains(t, output, rootCmd.Short)
+	assertContains(t, output, echoSubCmd.Short)
+	assertNotContains(t, output, deprecatedCmd.Short)
+	assertNotContains(t, output, "Options inherited from parent commands")
 }
 
 func TestGenAsciidocNoTag(t *testing.T) {
@@ -76,12 +75,12 @@ func TestGenAsciidocNoTag(t *testing.T) {
 	}
 	output := buf.String()
 
-	checkStringOmits(t, output, "Auto generated")
+	assertNotContains(t, output, "Auto generated")
 }
 
 func TestGenAsciidocTree(t *testing.T) {
 	c := &zulu.Command{Use: "do [OPTIONS] arg1 arg2"}
-	tmpdir, err := ioutil.TempDir("", "test-gen-md-tree")
+	tmpdir, err := os.MkdirTemp("", "test-gen-md-tree")
 	if err != nil {
 		t.Fatalf("Failed to create tmpdir: %v", err)
 	}
@@ -97,7 +96,7 @@ func TestGenAsciidocTree(t *testing.T) {
 }
 
 func BenchmarkGenAsciidocToFile(b *testing.B) {
-	file, err := ioutil.TempFile("", "")
+	file, err := os.CreateTemp("", "")
 	if err != nil {
 		b.Fatal(err)
 	}

@@ -2,7 +2,6 @@ package doc_test
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -19,13 +18,13 @@ func TestGenRSTDoc(t *testing.T) {
 	}
 	output := buf.String()
 
-	checkStringContains(t, output, echoCmd.Long)
-	checkStringContains(t, output, echoCmd.Example)
-	checkStringContains(t, output, "boolone")
-	checkStringContains(t, output, "rootflag")
-	checkStringContains(t, output, rootCmd.Short)
-	checkStringContains(t, output, echoSubCmd.Short)
-	checkStringOmits(t, output, deprecatedCmd.Short)
+	assertContains(t, output, echoCmd.Long)
+	assertContains(t, output, echoCmd.Example)
+	assertContains(t, output, "boolone")
+	assertContains(t, output, "rootflag")
+	assertContains(t, output, rootCmd.Short)
+	assertContains(t, output, echoSubCmd.Short)
+	assertNotContains(t, output, deprecatedCmd.Short)
 }
 
 func TestGenRSTNoHiddenParents(t *testing.T) {
@@ -41,14 +40,14 @@ func TestGenRSTNoHiddenParents(t *testing.T) {
 	}
 	output := buf.String()
 
-	checkStringContains(t, output, echoCmd.Long)
-	checkStringContains(t, output, echoCmd.Example)
-	checkStringContains(t, output, "boolone")
-	checkStringOmits(t, output, "rootflag")
-	checkStringContains(t, output, rootCmd.Short)
-	checkStringContains(t, output, echoSubCmd.Short)
-	checkStringOmits(t, output, deprecatedCmd.Short)
-	checkStringOmits(t, output, "Options inherited from parent commands")
+	assertContains(t, output, echoCmd.Long)
+	assertContains(t, output, echoCmd.Example)
+	assertContains(t, output, "boolone")
+	assertNotContains(t, output, "rootflag")
+	assertContains(t, output, rootCmd.Short)
+	assertContains(t, output, echoSubCmd.Short)
+	assertNotContains(t, output, deprecatedCmd.Short)
+	assertNotContains(t, output, "Options inherited from parent commands")
 }
 
 func TestGenRSTNoTag(t *testing.T) {
@@ -62,13 +61,13 @@ func TestGenRSTNoTag(t *testing.T) {
 	output := buf.String()
 
 	unexpected := "Auto generated"
-	checkStringOmits(t, output, unexpected)
+	assertNotContains(t, output, unexpected)
 }
 
 func TestGenRSTTree(t *testing.T) {
 	c := &zulu.Command{Use: "do [OPTIONS] arg1 arg2"}
 
-	tmpdir, err := ioutil.TempDir("", "test-gen-rst-tree")
+	tmpdir, err := os.MkdirTemp("", "test-gen-rst-tree")
 	if err != nil {
 		t.Fatalf("Failed to create tmpdir: %s", err.Error())
 	}
@@ -84,7 +83,7 @@ func TestGenRSTTree(t *testing.T) {
 }
 
 func BenchmarkGenReSTToFile(b *testing.B) {
-	file, err := ioutil.TempFile("", "")
+	file, err := os.CreateTemp("", "")
 	if err != nil {
 		b.Fatal(err)
 	}

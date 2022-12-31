@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -1817,12 +1816,12 @@ func TestCommandPrintRedirection(t *testing.T) {
 		t.Error(err)
 	}
 
-	gotErrBytes, err := ioutil.ReadAll(errBuff)
+	gotErrBytes, err := io.ReadAll(errBuff)
 	if err != nil {
 		t.Error(err)
 	}
 
-	gotOutBytes, err := ioutil.ReadAll(outBuff)
+	gotOutBytes, err := io.ReadAll(outBuff)
 	if err != nil {
 		t.Error(err)
 	}
@@ -2233,6 +2232,8 @@ func TestSetContext(t *testing.T) {
 			return nil
 		},
 	}
+
+	//nolint:staticcheck // not necessary to create separate type for this
 	ctx := context.WithValue(context.Background(), key, val)
 	root.SetContext(ctx)
 	err := root.Execute()
@@ -2246,6 +2247,8 @@ func TestSetContextPreRun(t *testing.T) {
 	root := &zulu.Command{
 		Use: "root",
 		PreRunE: func(cmd *zulu.Command, args []string) error {
+
+			//nolint:staticcheck // not necessary to create separate type for this
 			ctx := context.WithValue(cmd.Context(), key, val)
 			cmd.SetContext(ctx)
 			return nil
@@ -2281,6 +2284,8 @@ func TestSetContextPreRunOverwrite(t *testing.T) {
 			return nil
 		},
 	}
+
+	//nolint:staticcheck // not necessary to create separate type for this
 	ctx := context.WithValue(context.Background(), key, val)
 	root.SetContext(ctx)
 	err := root.ExecuteContext(context.Background())
@@ -2294,6 +2299,8 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 	root := &zulu.Command{
 		Use: "root",
 		PersistentPreRunE: func(cmd *zulu.Command, args []string) error {
+
+			//nolint:staticcheck // not necessary to create separate type for this
 			ctx := context.WithValue(cmd.Context(), key, val)
 			cmd.SetContext(ctx)
 			return nil

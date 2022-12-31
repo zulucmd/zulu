@@ -5,7 +5,7 @@ linters:
   disable-all: true
   enable:
     #- bodyclose
-    - deadcode
+    - unused
     #- depguard
     #- dogsled
     #- dupl
@@ -14,21 +14,18 @@ linters:
     #- funlen
     - gas
     #- gochecknoinits
-    - goconst
+    #- goconst
     #- gocritic
     #- gocyclo
     #- gofmt
     - goimports
-    - golint
     #- gomnd
     #- goprintffuncname
     #- gosec
     #- gosimple
     - govet
     - ineffassign
-    - interfacer
     #- lll
-    - maligned
     - megacheck
     #- misspell
     #- nakedret
@@ -36,13 +33,10 @@ linters:
     #- nolintlint
     #- rowserrcheck
     #- scopelint
-    #- staticcheck
-    - structcheck
+    - staticcheck
     #- stylecheck
     #- typecheck
     - unconvert
     #- unparam
-    #- unused
-    - varcheck
     #- whitespace
   fast: false

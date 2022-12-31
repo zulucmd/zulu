@@ -80,26 +80,32 @@ var dummyCmd = &zulu.Command{
 	Short: "Performs a dummy action",
 }
 
-func checkStringContains(t *testing.T, got, expected string) {
-	if !strings.Contains(got, expected) {
-		t.Errorf("Expected to contain: \n %v\nGot:\n %v\n", expected, got)
+func assertNotContains(t *testing.T, str, unexpected string) {
+	t.Helper()
+	assertNotContainsf(t, str, unexpected, "%q should not contain %q", str, unexpected)
+}
+
+func assertNotContainsf(t *testing.T, str, unexpected string, msg string, fmt ...interface{}) {
+	t.Helper()
+	if strings.Contains(str, unexpected) {
+		t.Errorf(msg, fmt...)
 	}
 }
 
-func checkStringOmits(t *testing.T, got, expected string) {
-	if strings.Contains(got, expected) {
-		t.Errorf("Expected to not contain: \n %v\nGot: %v", expected, got)
+func assertContains(t *testing.T, str, substr string) {
+	t.Helper()
+	assertContainsf(t, str, substr, "%q does not contain %q", str, substr)
+}
+
+func assertContainsf(t *testing.T, str, expected string, msg string, fmt ...interface{}) {
+	t.Helper()
+	if !strings.Contains(str, expected) {
+		t.Errorf(msg, fmt...)
 	}
 }
 
-func checkStringMatch(t *testing.T, got, pattern string) {
-	if ok, _ := regexp.MatchString(pattern, got); !ok {
-		t.Errorf("Expected to match: \n%v\nGot:\n %v\n", pattern, got)
-	}
-}
-
-func checkStringDontMatch(t *testing.T, got, pattern string) {
-	if ok, _ := regexp.MatchString(pattern, got); ok {
-		t.Errorf("Expected not to match: \n%v\nGot:\n %v\n", pattern, got)
+func assertMatch(t *testing.T, str, pattern string) {
+	if ok, _ := regexp.MatchString(pattern, str); !ok {
+		t.Errorf("Expected to match: \n%v\nGot:\n %v\n", pattern, str)
 	}
 }

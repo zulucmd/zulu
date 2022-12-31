@@ -3,7 +3,6 @@ package doc_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -20,13 +19,13 @@ func TestGenYamlDoc(t *testing.T) {
 	}
 	output := buf.String()
 
-	checkStringContains(t, output, echoCmd.Long)
-	checkStringContains(t, output, echoCmd.Example)
-	checkStringContains(t, output, "boolone")
-	checkStringContains(t, output, "rootflag")
-	checkStringContains(t, output, rootCmd.Short)
-	checkStringContains(t, output, echoSubCmd.Short)
-	checkStringContains(t, output, fmt.Sprintf("- %s - %s", echoSubCmd.CommandPath(), echoSubCmd.Short))
+	assertContains(t, output, echoCmd.Long)
+	assertContains(t, output, echoCmd.Example)
+	assertContains(t, output, "boolone")
+	assertContains(t, output, "rootflag")
+	assertContains(t, output, rootCmd.Short)
+	assertContains(t, output, echoSubCmd.Short)
+	assertContains(t, output, fmt.Sprintf("- %s - %s", echoSubCmd.CommandPath(), echoSubCmd.Short))
 }
 
 func TestGenYamlNoTag(t *testing.T) {
@@ -39,13 +38,13 @@ func TestGenYamlNoTag(t *testing.T) {
 	}
 	output := buf.String()
 
-	checkStringOmits(t, output, "Auto generated")
+	assertNotContains(t, output, "Auto generated")
 }
 
 func TestGenYamlTree(t *testing.T) {
 	c := &zulu.Command{Use: "do [OPTIONS] arg1 arg2"}
 
-	tmpdir, err := ioutil.TempDir("", "test-gen-yaml-tree")
+	tmpdir, err := os.MkdirTemp("", "test-gen-yaml-tree")
 	if err != nil {
 		t.Fatalf("Failed to create tmpdir: %s", err.Error())
 	}
@@ -68,11 +67,11 @@ func TestGenYamlDocRunnable(t *testing.T) {
 	}
 	output := buf.String()
 
-	checkStringContains(t, output, "usage: "+rootCmd.Use)
+	assertContains(t, output, "usage: "+rootCmd.Use)
 }
 
 func BenchmarkGenYamlToFile(b *testing.B) {
-	file, err := ioutil.TempFile("", "")
+	file, err := os.CreateTemp("", "")
 	if err != nil {
 		b.Fatal(err)
 	}
