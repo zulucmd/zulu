@@ -928,8 +928,8 @@ Global Flags:
       --bar   parent bar usage
 `
 
-	if got != expected {
-		t.Errorf("Help text mismatch.\nExpected:\n%s\n\nGot:\n%s\n", expected, got)
+	if rmCarriageRet(got) != expected {
+		t.Errorf("Help text mismatch.\nExpected:\n%q\n\nGot:\n%q\n", expected, got)
 	}
 }
 
@@ -1717,6 +1717,7 @@ func TestUsageWithGroup(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
+	output = rmCarriageRet(output)
 	// help should be ungrouped here
 	checkStringContains(t, output, "\nAvailable Commands:\n  help")
 	checkStringContains(t, output, "\ngroup1\n  cmd1")
@@ -1734,6 +1735,7 @@ func TestUsageHelpGroup(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
+	output = rmCarriageRet(output)
 	// now help should be grouped under "group"
 	checkStringOmits(t, output, "\nAvailable Commands:\n  help")
 	checkStringContains(t, output, "\nAvailable Commands:\n\ngroup\n  help")
@@ -1750,6 +1752,7 @@ func TestAddGroup(t *testing.T) {
 		t.Errorf("Unexpected error: %v", err)
 	}
 
+	output = rmCarriageRet(output)
 	checkStringContains(t, output, "\nTest group\n  cmd")
 }
 
@@ -1865,11 +1868,11 @@ func TestFlagErrorFuncHelp(t *testing.T) {
 
 	out, err := executeCommand(c, "--help")
 	assertNoErr(t, err)
-	assertEqual(t, expected, out)
+	assertEqual(t, expected, rmCarriageRet(out))
 
 	out, err = executeCommand(c, "-h")
 	assertNoErr(t, err)
-	assertEqual(t, expected, out)
+	assertEqual(t, expected, rmCarriageRet(out))
 }
 
 // TestSortedFlags checks,
@@ -2541,7 +2544,7 @@ Use "root child [command] --help" for more information about a command.
 				t.FailNow()
 			}
 
-			output := buf.String()
+			output := rmCarriageRet(buf.String())
 			if output != test.expectedUsage {
 				t.Errorf("Expecting: \n %q\nGot:\n %q\n", test.expectedUsage, output)
 			}
