@@ -25,9 +25,16 @@ repos:
       - id: trailing-whitespace
         stages: [commit]
 
-  - repo: https://github.com/hadenlabs/pre-commit-hooks
-    rev: 0.4.0
+  - repo: local
     hooks:
-      - id: go-unit-tests
-      - id: go-build
-      - id: go-mod-tidy
+      - name: Go Tests
+        id: go-tests
+        language: system
+        files: '\.go$'
+        pass_filenames: false
+        entry: go test -timeout 30s -short -v ./...
+      - name: Go Mod Tidy
+        id: go-mod-tidy
+        language: system
+        pass_filenames: false
+        entry: go mod tidy

@@ -115,7 +115,7 @@ func TestFailGenBashCompletionFile(t *testing.T) {
 		t.Error("should raise permission denied error")
 	}
 
-	if got.Error() != "open ./tmp/test: permission denied" {
-		t.Errorf("got: %s, want: %s", got.Error(), "open ./tmp/test: permission denied")
+	if got.Error() != expectedPermissionError {
+		t.Errorf("got: %s, want: %s", got.Error(), expectedPermissionError)
 	}
 }

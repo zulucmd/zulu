@@ -9,4 +9,3 @@ jobs:
     - uses: actions/labeler@v3
       with:
         repo-token: "${{ github.token }}"
-
