@@ -96,7 +96,7 @@ to quickly create a Zulu application.`,
 
 			cmd.AddCommand(addCmd)
 			cmd.AddCommand(initCmd)
-			
+
 			return nil
         },
 	}
@@ -308,7 +308,7 @@ a count and a string.`,
 			for i := 0; i < echoTimes; i++ {
 				fmt.Println("Echo: " + strings.Join(args, " "))
 			}
-			
+
 			return nil
 		},
 	}

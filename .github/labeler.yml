@@ -13,4 +13,3 @@
 # changes to shell completions
 "area/*sh completion":
   - ./*completions*
-

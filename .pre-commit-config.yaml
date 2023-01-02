@@ -1,0 +1,40 @@
+minimum_pre_commit_version: '2.9.3'
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit
+    rev: v2.17.0
+    hooks:
+      - id: validate_manifest
+
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.47.0
+    hooks:
+      - id: golangci-lint
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.1.0
+    hooks:
+      - id: check-merge-conflict
+        stages: [commit]
+      - id: check-symlinks
+        stages: [commit]
+      - id: check-yaml
+        stages: [commit]
+      - id: end-of-file-fixer
+        stages: [commit]
+      - id: trailing-whitespace
+        stages: [commit]
+
+  - repo: local
+    hooks:
+      - name: Go Tests
+        id: go-tests
+        language: system
+        files: '\.go$'
+        pass_filenames: false
+        entry: go test -timeout 30s -short -v ./...
+      - name: Go Mod Tidy
+        id: go-mod-tidy
+        language: system
+        pass_filenames: false
+        entry: go mod tidy

@@ -8,89 +8,119 @@ env:
   GO111MODULE: on
 
 jobs:
-
-  golangci-lint:
+  DetermineVersion:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - id: go-version-matrix
+        run: |
+          go_version="$(awk '/^go/{print $2}' go.mod)"
+          echo "go_version=${go_version}.x" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-go@v2
+          matrix_versions="$(git ls-remote --tags https://github.com/golang/go |
+              awk -F/ '$3 ~ /^go([0-9]+(\.[0-9]+)$)/{gsub(/^go/, "", $3); print $3}' |
+              sort -V |
+              sed -ne "/^$go_version$/,$ p" |
+              jq -cMnR '[inputs | select(length>0)] | map(. + ".x") + ["tip"]')"
+          echo "matrix=$matrix_versions" >> $GITHUB_OUTPUT
+
+          golangci_version="$(yq '.repos[] | select(.repo | contains("golangci-lint")) | .rev' .pre-commit-config.yaml)"
+          echo "golangci_version=$golangci_version" >> $GITHUB_OUTPUT
+    outputs:
+      matrix: ${{ steps.go-version-matrix.outputs.matrix }}
+      go_version: ${{ steps.go-version-matrix.outputs.go_version }}
+      golangci_version: ${{ steps.go-version-matrix.outputs.golangci_version }}
+
+  Pre-Commit:
+    needs: DetermineVersion
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v3
+      - name: Setup go
+        run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
         with:
-          go-version: '1.17'
+          path: |
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ needs.DetermineVersion.outputs.go_version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod
+      - name: Setup mdtoc
+        run: go install sigs.k8s.io/mdtoc@latest
+      - uses: pre-commit/action@v3.0.0
+        env:
+          SKIP: golangci-lint,go-build,go-unit-tests
 
-      - uses: actions/checkout@v2
-
-      - uses: golangci/golangci-lint-action@v2
+  GolangCI-Lint:
+    needs: DetermineVersion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup go
+        run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - uses: actions/cache@v3
         with:
-          version: latest
-          args: --verbose
+          path: |
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ needs.DetermineVersion.outputs.go_version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod
+      - name: Run linters
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: ${{ needs.DetermineVersion.outputs.golangci_version }}
 
-  test-unix:
+  Vet:
+    needs: DetermineVersion
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup go
+        run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ needs.DetermineVersion.outputs.go_version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod
+      - name: Run vet
+        run: go vet
+
+  Test:
+    needs: DetermineVersion
     strategy:
       fail-fast: false
       matrix:
-        platform:
-        - ubuntu
-        - macOS
-        go:
-        - 16
-        - 17
-        - 18
-        - 19
-    name: '${{ matrix.platform }} | 1.${{ matrix.go }}.x'
-    runs-on: ${{ matrix.platform }}-latest
+        go: ${{ fromJson(needs.DetermineVersion.outputs.matrix) }}
+        os: [ ubuntu-latest, macOS-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} Go ${{ matrix.go }} Tests
     steps:
-
-    - uses: actions/setup-go@v2
-      with:
-        go-version: 1.${{ matrix.go }}.x
-
-    - uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-1.${{ matrix.go }}.x-${{ hashFiles('**/go.sum') }}
-        restore-keys: ${{ runner.os }}-1.${{ matrix.go }}.x-
-
-    - run: |
-        export GOBIN=$HOME/go/bin
-        case "${{ matrix.go }}" in
-          16|17) _version='@latest';;
-          *) _version='';;
-        esac
-        go install github.com/kyoh86/richgo"${_version}"
-        go install github.com/mitchellh/gox"${_version}"
-
-  test-win:
-    name: MINGW64
-    defaults:
-      run:
-        shell: msys2 {0}
-    runs-on: windows-latest
-    steps:
-
-    - shell: bash
-      run: git config --global core.autocrlf input
-
-    - uses: msys2/setup-msys2@v2
-      with:
-        msystem: MINGW64
-        update: true
-        install: >
-          git
-          make
-          unzip
-          mingw-w64-x86_64-go
-
-    - uses: actions/checkout@v2
-
-    - uses: actions/cache@v2
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
-        restore-keys: ${{ runner.os }}-${{ matrix.go }}-
-
-    - run: |
-        export GOBIN=$HOME/go/bin
-        go install github.com/kyoh86/richgo@latest
-        go install github.com/mitchellh/gox@latest
+      - name: Setup go
+        shell: bash
+        run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ matrix.go }} $HOME
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod
+      - name: Run tests
+        shell: bash
+        run: go test -v -cover -race
