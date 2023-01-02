@@ -51,7 +51,7 @@ jobs:
           restore-keys: go-mod
       - name: Setup mdtoc
         run: go install sigs.k8s.io/mdtoc@latest
-      - uses: pre-commit/action@v3
+      - uses: pre-commit/action@v2.0.3
         env:
           SKIP: golangci-lint,go-build,go-unit-tests
 
