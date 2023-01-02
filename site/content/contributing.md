@@ -42,7 +42,7 @@ question.
 ### Quick steps to contribute
 
 1. Fork the project.
-1. Download your fork to your PC (`git clone https://github.com/your_username/zulu && cd zulu`)
+1. Clone your fork to your PC (`git clone https://github.com/your_username/zulu && cd zulu`)
 1. Create your feature branch (`git checkout -b my-new-feature`)
 1. Make changes and run tests (`make test`)
 1. Add them to staging (`git add .`)
