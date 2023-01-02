@@ -36,11 +36,11 @@ jobs:
     needs: DetermineVersion
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v
       - name: Setup go
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
       - uses: actions/checkout@v3
-      - uses: actions/cache@v2
+      - uses: actions/cache@v
         with:
           path: |
             ~/.cache/go-build
@@ -51,7 +51,7 @@ jobs:
           restore-keys: go-mod
       - name: Setup mdtoc
         run: go install sigs.k8s.io/mdtoc@latest
-      - uses: pre-commit/action@v2.0.3
+      - uses: pre-commit/action@v3
         env:
           SKIP: golangci-lint,go-build,go-unit-tests
 
@@ -63,7 +63,7 @@ jobs:
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
       - name: Checkout code
         uses: actions/checkout@v3
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cache/go-build
@@ -73,7 +73,7 @@ jobs:
           key: ${{ runner.os }}-go-${{ needs.DetermineVersion.outputs.go_version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: go-mod
       - name: Run linters
-        uses: golangci/golangci-lint-action@v2
+        uses: golangci/golangci-lint-action@v3
         with:
           version: ${{ needs.DetermineVersion.outputs.golangci_version }}
 
@@ -85,7 +85,7 @@ jobs:
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
       - name: Checkout code
         uses: actions/checkout@v3
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cache/go-build
@@ -112,7 +112,7 @@ jobs:
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ matrix.go }} $HOME
       - name: Checkout code
         uses: actions/checkout@v3
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cache/go-build
