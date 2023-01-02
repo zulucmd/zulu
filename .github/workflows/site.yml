@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Get Hugo and Theme
         run: |
@@ -33,7 +33,7 @@ jobs:
           cd site
           hugo version
           hugo --gc --minify
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: site
           path: site/public
