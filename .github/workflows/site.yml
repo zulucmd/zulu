@@ -2,7 +2,15 @@ name: 'site'
 
 on:
   push:
+    branches:
+      - main
+    paths:
+      - 'site/**'
+      - '.github/workflows/site.yml'
   pull_request:
+    paths:
+      - 'site/**'
+      - '.github/workflows/site.yml'
 
 jobs:
   doc:
@@ -26,21 +34,21 @@ jobs:
         run: |
           cd site
           hugo version
-          hugo
+          hugo --gc --minify
       - uses: actions/upload-artifact@v2
         with:
           name: site
           path: site/public
 
       - name: Publish site to gh-pages
-        if: github.event_name != 'pull_request'
+        if: success() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         run: |
           cd site/public/
           touch .nojekyll
           git init
           cp ../../.git/config ./.git/config
           git add .
-          git config --local user.email "push@gha"
-          git config --local user.name "GHA"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git commit -a -m "update ${{ github.sha }}"
           git push -u origin +HEAD:gh-pages
