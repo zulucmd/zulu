@@ -40,7 +40,7 @@ jobs:
       - name: Setup go
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
       - uses: actions/checkout@v3
-      - uses: actions/cache@v
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cache/go-build
