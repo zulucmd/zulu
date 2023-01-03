@@ -1,4 +1,4 @@
-[![](https://img.shields.io/github/workflow/status/zulucmd/zulu/Test?longCache=tru&label=Test&logo=github%20actions&logoColor=fff)](https://github.com/zulucmd/zulu/actions?query=workflow%3ATest)
+[![Test](https://github.com/zulucmd/zulu/actions/workflows/test.yml/badge.svg)](https://github.com/zulucmd/zulu/actions/workflows/test.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/zulucmd/zulu.svg)](https://pkg.go.dev/github.com/zulucmd/zulu)
 [![Go Report Card](https://goreportcard.com/badge/github.com/zulucmd/zulu)](https://goreportcard.com/report/github.com/zulucmd/zulu)
 

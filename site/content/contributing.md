@@ -34,15 +34,17 @@ question.
 
 1. CLA: Upon submitting a Pull Request (PR), contributors will be prompted to
    sign a CLA. Please sign the CLA :slightly_smiling_face:
-2. Tests: If you are submitting code, please ensure you have adequate tests
+2. You should use [`pre-commit`](https://pre-commit.com) which will ensure all
+   follow required formatting.
+3. Tests: If you are submitting code, please ensure you have adequate tests
    for the feature. Tests can be run via `go test ./...` or `make test`.
-1. Ensure the new code is properly formatted to ensure code consistency.
+4. Ensure the new code is properly formatted to ensure code consistency.
    Run `make all`.
 
 ### Quick steps to contribute
 
 1. Fork the project.
-1. Download your fork to your PC (`git clone https://github.com/your_username/zulu && cd zulu`)
+1. Clone your fork to your PC (`git clone https://github.com/your_username/zulu && cd zulu`)
 1. Create your feature branch (`git checkout -b my-new-feature`)
 1. Make changes and run tests (`make test`)
 1. Add them to staging (`git add .`)
