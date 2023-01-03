@@ -3,7 +3,7 @@
 
 __{{ .CMDVarName }}_debug()
 {
-    if [[ -n ${BASH_COMP_DEBUG_FILE:-} ]]; then
+    if [[ -n ${BASH_COMP_DEBUG_FILE-} ]]; then
         echo "$*" >> "${BASH_COMP_DEBUG_FILE}"
     fi
 }
@@ -30,7 +30,7 @@ __{{ .CMDVarName }}_get_completion_results() {
     lastChar=${lastParam:$((${#lastParam}-1)):1}
     __{{ .CMDVarName }}_debug "lastParam ${lastParam}, lastChar ${lastChar}"
 
-    if [ -z "${cur}" ] && [ "${lastChar}" != "=" ]; then
+    if [[ -z ${cur} && ${lastChar} != = ]]; then
         # If the last parameter is complete (there is a space following it)
         # We add an extra empty parameter so we can indicate this to the go method.
         __{{ .CMDVarName }}_debug "Adding extra empty parameter"
@@ -40,7 +40,7 @@ __{{ .CMDVarName }}_get_completion_results() {
     # When completing a flag with an = (e.g., {{ .CMDName }} -n=<TAB>)
     # bash focuses on the part after the =, so we need to remove
     # the flag part from $cur
-    if [[ "${cur}" == -*=* ]]; then
+    if [[ ${cur} == -*=* ]]; then
         cur="${cur#*=}"
     fi
 
@@ -52,7 +52,7 @@ __{{ .CMDVarName }}_get_completion_results() {
     directive=${out##*:}
     # Remove the directive
     out=${out%:*}
-    if [ "${directive}" = "${out}" ]; then
+    if [[ ${directive} == "${out}" ]]; then
         # There is not directive specified
         directive=0
     fi
@@ -67,21 +67,21 @@ __{{ .CMDVarName }}_process_completion_results() {
     local shellCompDirectiveFilterFileExt={{ .ShellCompDirectiveFilterFileExt }}
     local shellCompDirectiveFilterDirs={{ .ShellCompDirectiveFilterDirs }}
 
-    if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
+    if (((directive & shellCompDirectiveError) != 0)); then
         # Error code.  No completion.
         __{{ .CMDVarName }}_debug "Received error from custom completion go code"
         return
     else
-        if [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ]; then
-            if [[ $(type -t compopt) = "builtin" ]]; then
+        if (((directive & shellCompDirectiveNoSpace) != 0)); then
+            if [[ $(type -t compopt) == builtin ]]; then
                 __{{ .CMDVarName }}_debug "Activating no space"
                 compopt -o nospace
             else
                 __{{ .CMDVarName }}_debug "No space directive not supported in this version of bash"
             fi
         fi
-        if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
-            if [[ $(type -t compopt) = "builtin" ]]; then
+        if (((directive & shellCompDirectiveNoFileComp) != 0)); then
+            if [[ $(type -t compopt) == builtin ]]; then
                 __{{ .CMDVarName }}_debug "Activating no file completion"
                 compopt +o default
             else
@@ -90,7 +90,7 @@ __{{ .CMDVarName }}_process_completion_results() {
         fi
     fi
 
-    if [ $((directive & shellCompDirectiveFilterFileExt)) -ne 0 ]; then
+    if (((directive & shellCompDirectiveFilterFileExt) != 0)); then
         # File extension filtering
         local fullFilter filter filteringCmd
 
@@ -103,13 +103,11 @@ __{{ .CMDVarName }}_process_completion_results() {
         filteringCmd="_filedir $fullFilter"
         __{{ .CMDVarName }}_debug "File filtering command: $filteringCmd"
         $filteringCmd
-    elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
+    elif (((directive & shellCompDirectiveFilterDirs) != 0)); then
         # File completion for directories only
 
-        # Use printf to strip any trailing newline
-        local subdir
-        subdir=$(printf "%s" "${out}")
-        if [ -n "$subdir" ]; then
+        local subdir="${completions[0]}"
+        if [[ -n $subdir ]]; then
             __{{ .CMDVarName }}_debug "Listing directories in $subdir"
             pushd "$subdir" >/dev/null 2>&1 && _filedir -d && popd >/dev/null 2>&1 || return
         else
@@ -137,12 +135,12 @@ __{{ .CMDVarName }}_handle_completion_types() {
         while IFS='' read -r comp; do
             [[ -z $comp ]] && continue
             # Strip any description
-            comp=${comp%%$tab*}
+            comp=${comp%%"$tab"*}
             # Only consider the completions that match
             if [[ $comp == "$cur"* ]]; then
                 COMPREPLY+=("$comp")
             fi
-        done < <(printf "%s\n" "${out}")
+        done <<<"${out}"
         ;;
 
     *)
@@ -167,23 +165,23 @@ __{{ .CMDVarName }}_handle_standard_completion_case() {
     while IFS='' read -r compline; do
         [[ -z $compline ]] && continue
         # Strip any description before checking the length
-        comp=${compline%%$tab*}
+        comp=${compline%%"$tab"*}
         # Only consider the completions that match
         [[ $comp == "$cur"* ]] || continue
         COMPREPLY+=("$compline")
         if ((${#comp}>longest)); then
             longest=${#comp}
         fi
-    done < <(printf "%s\n" "${out}")
+    done <<<"${out}"
 
     # If there is a single completion left, remove the description text
-    if [ ${#COMPREPLY[*]} -eq 1 ]; then
+    if ((${#COMPREPLY[*]} == 1)); then
         __{{ .CMDVarName }}_debug "COMPREPLY[0]: ${COMPREPLY[0]}"
         comp="${COMPREPLY[0]%%$tab*}"
         __{{ .CMDVarName }}_debug "Removed description from single completion, which is now: ${comp}"
         COMPREPLY[0]=$comp
     else # Format the descriptions
-        __{{ .CMDVarName }}_format_comp_descriptions $longest
+        __{{ .CMDVarName }}_format_comp_descriptions "$longest"
     fi
 }
 
@@ -192,10 +190,10 @@ __{{ .CMDVarName }}_handle_special_char()
     local comp="$1"
     local char=$2
     if [[ "$comp" == *${char}* && "$COMP_WORDBREAKS" == *${char}* ]]; then
-        local word=${comp%"${comp##*${char}}"}
+        local word=${comp%"${comp##*"$char"}"}
         local idx=${#COMPREPLY[*]}
-        while [[ $((--idx)) -ge 0 ]]; do
-            COMPREPLY[$idx]=${COMPREPLY[$idx]#"$word"}
+        while ((--idx >= 0)); do
+            COMPREPLY[idx]=${COMPREPLY[idx]#"$word"}
         done
     fi
 }
@@ -212,8 +210,8 @@ __{{ .CMDVarName }}_format_comp_descriptions()
         # Properly format the description string which follows a tab character if there is one
         if [[ "$comp" == *$tab* ]]; then
             __{{ .CMDVarName }}_debug "Original comp: $comp"
-            desc=${comp#*$tab}
-            comp=${comp%%$tab*}
+            desc=${comp#*"$tab"}
+            comp=${comp%%"$tab"*}
 
             # $COLUMNS stores the current shell width.
             # Remove an extra 4 because we add 2 spaces and 2 parentheses.
@@ -221,7 +219,7 @@ __{{ .CMDVarName }}_format_comp_descriptions()
 
             # Make sure we can fit a description of at least 8 characters
             # if we are to align the descriptions.
-            if [[ $maxdesclength -gt 8 ]]; then
+            if ((maxdesclength > 8)); then
                 # Add the proper number of spaces to align the descriptions
                 for ((i = ${#comp} ; i < longest ; i++)); do
                     comp+=" "
@@ -233,8 +231,8 @@ __{{ .CMDVarName }}_format_comp_descriptions()
 
             # If there is enough space for any description text,
             # truncate the descriptions that are too long for the shell width
-            if [ $maxdesclength -gt 0 ]; then
-                if [ ${#desc} -gt $maxdesclength ]; then
+            if ((maxdesclength > 0)); then
+                if ((${#desc} > maxdesclength)); then
                     desc=${desc:0:$(( maxdesclength - 1 ))}
                     desc+="…"
                 fi
@@ -255,9 +253,9 @@ __start_{{ .CMDVarName }}()
     # Call _init_completion from the bash-completion package
     # to prepare the arguments properly
     if declare -F _init_completion >/dev/null 2>&1; then
-        _init_completion -n "=:" || return
+        _init_completion -n =: || return
     else
-        __{{ .CMDVarName }}_init_completion -n "=:" || return
+        __{{ .CMDVarName }}_init_completion -n =: || return
     fi
 
     __{{ .CMDVarName }}_debug
