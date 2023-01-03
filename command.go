@@ -32,6 +32,8 @@ import (
 	"github.com/zulucmd/zulu/internal/util"
 )
 
+const FlagSetByCobraAnnotation = "cobra_annotation_flag_set_by_cobra"
+
 //go:embed templates/*
 var tmplFS embed.FS
 
@@ -1208,7 +1210,7 @@ func (c *Command) InitDefaultHelpFlag() {
 		} else {
 			usage += c.Name()
 		}
-		c.Flags().Bool("help", false, usage, zflag.OptShorthand('h'))
+		c.Flags().Bool("help", false, usage, zflag.OptShorthand('h'), zflag.OptAnnotation(FlagSetByCobraAnnotation, []string{"true"}))
 	}
 }
 
@@ -1230,7 +1232,9 @@ func (c *Command) InitDefaultVersionFlag() {
 			usage += c.Name()
 		}
 
-		var opts []zflag.Opt
+		opts := []zflag.Opt{
+			zflag.OptAnnotation(FlagSetByCobraAnnotation, []string{"true"}),
+		}
 		if c.Flags().ShorthandLookup('v') == nil {
 			opts = append(opts, zflag.OptShorthand('v'))
 		}
