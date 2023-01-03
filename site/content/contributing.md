@@ -34,9 +34,11 @@ question.
 
 1. CLA: Upon submitting a Pull Request (PR), contributors will be prompted to
    sign a CLA. Please sign the CLA :slightly_smiling_face:
-2. Tests: If you are submitting code, please ensure you have adequate tests
+2. You should use [`pre-commit`](https://pre-commit.com) which will ensure all
+   follow required formatting.
+3. Tests: If you are submitting code, please ensure you have adequate tests
    for the feature. Tests can be run via `go test ./...` or `make test`.
-1. Ensure the new code is properly formatted to ensure code consistency.
+4. Ensure the new code is properly formatted to ensure code consistency.
    Run `make all`.
 
 ### Quick steps to contribute
