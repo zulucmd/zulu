@@ -2,7 +2,19 @@ name: Test
 
 on:
   push:
+    paths:
+      - '**.go'
+      - '**.gotmpl'
+      - 'go.*'
+      - '.golangci.yml'
+      - '.github/workflows/test.yml'
   pull_request:
+    paths:
+      - '**.go'
+      - '**.gotmpl'
+      - 'go.*'
+      - '.golangci.yml'
+      - '.github/workflows/test.yml'
 
 env:
   GO111MODULE: on

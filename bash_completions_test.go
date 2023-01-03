@@ -10,11 +10,11 @@ import (
 )
 
 func TestCompleteNoDesCmdInBashScript(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -26,11 +26,11 @@ func TestCompleteNoDesCmdInBashScript(t *testing.T) {
 }
 
 func TestCompleteCmdInBashScript(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -43,7 +43,7 @@ func TestCompleteCmdInBashScript(t *testing.T) {
 }
 
 func TestBashProgWithDash(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root-dash", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root-dash", Args: zulu.NoArgs, RunE: noopRun}
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
@@ -58,7 +58,7 @@ func TestBashProgWithDash(t *testing.T) {
 }
 
 func TestBashProgWithColon(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root:colon", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root:colon", Args: zulu.NoArgs, RunE: noopRun}
 	buf := new(bytes.Buffer)
 	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
@@ -80,11 +80,11 @@ func TestGenBashCompletionFile(t *testing.T) {
 
 	defer os.RemoveAll("./tmp")
 
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -102,11 +102,11 @@ func TestFailGenBashCompletionFile(t *testing.T) {
 	f, _ := os.OpenFile("./tmp/test", os.O_CREATE, 0400)
 	defer f.Close()
 
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(child)
 

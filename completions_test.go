@@ -41,32 +41,32 @@ func validArgsFunc2(cmd *zulu.Command, args []string, toComplete string) ([]stri
 func TestCmdNameCompletionInGo(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	childCmd1 := &zulu.Command{
 		Use:   "firstChild",
 		Short: "First command",
-		RunE:  emptyRun,
+		RunE:  noopRun,
 	}
 	childCmd2 := &zulu.Command{
 		Use:  "secondChild",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	hiddenCmd := &zulu.Command{
 		Use:    "testHidden",
 		Hidden: true, // Not completed
-		RunE:   emptyRun,
+		RunE:   noopRun,
 	}
 	deprecatedCmd := &zulu.Command{
 		Use:        "testDeprecated",
 		Deprecated: "deprecated", // Not completed
-		RunE:       emptyRun,
+		RunE:       noopRun,
 	}
 	aliasedCmd := &zulu.Command{
 		Use:     "aliased",
 		Short:   "A command with aliases",
 		Aliases: []string{"testAlias", "testSynonym"}, // Not completed
-		RunE:    emptyRun,
+		RunE:    noopRun,
 	}
 
 	rootCmd.AddCommand(childCmd1, childCmd2, hiddenCmd, deprecatedCmd, aliasedCmd)
@@ -143,7 +143,7 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 func TestNoCmdNameCompletionInGo(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	rootCmd.Flags().String("localroot", "", "local root flag")
 
@@ -151,7 +151,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 		Use:   "childCmd1",
 		Short: "First command",
 		Args:  zulu.MinimumNArgs(0),
-		RunE:  emptyRun,
+		RunE:  noopRun,
 	}
 	rootCmd.AddCommand(childCmd1)
 	childCmd1.PersistentFlags().String("persistent", "", "persistent flag", zflag.OptShorthand('p'))
@@ -161,7 +161,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 
 	childCmd2 := &zulu.Command{
 		Use:  "childCmd2",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	childCmd1.AddCommand(childCmd2)
 
@@ -363,12 +363,12 @@ func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:       "root",
 		ValidArgs: []string{"one", "two"},
-		RunE:      emptyRun,
+		RunE:      noopRun,
 	}
 
 	childCmd := &zulu.Command{
 		Use:  "thechild",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 
 	rootCmd.AddCommand(childCmd)
@@ -413,13 +413,13 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:               "root",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 
 	childCmd := &zulu.Command{
 		Use:   "thechild",
 		Short: "The child command",
-		RunE:  emptyRun,
+		RunE:  noopRun,
 	}
 
 	rootCmd.AddCommand(childCmd)
@@ -479,11 +479,11 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 func TestFlagNameCompletionInGo(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	childCmd := &zulu.Command{
 		Use:  "childCmd",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -562,12 +562,12 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	childCmd := &zulu.Command{
 		Use:   "childCmd",
 		Short: "first command",
-		RunE:  emptyRun,
+		RunE:  noopRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -646,12 +646,12 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 func TestFlagNameCompletionRepeat(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	childCmd := &zulu.Command{
 		Use:   "childCmd",
 		Short: "first command",
-		RunE:  emptyRun,
+		RunE:  noopRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -768,14 +768,14 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:       "root",
 		ValidArgs: []string{"realArg"},
-		RunE:      emptyRun,
+		RunE:      noopRun,
 	}
 	childCmd := &zulu.Command{
 		Use: "childCmd",
 		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 			return []string{"subArg"}, zulu.ShellCompDirectiveNoFileComp
 		},
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -958,7 +958,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 
 	// No extensions.  Should be ignored.
@@ -1076,7 +1076,7 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 func TestFlagDirFilterCompletionInGo(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 
 	// Filter directories
@@ -1201,12 +1201,12 @@ func TestValidArgsFuncCmdContext(t *testing.T) {
 
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	childCmd := &zulu.Command{
 		Use:               "childCmd",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -1232,7 +1232,7 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:               "root",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 
 	// Test completing an empty string
@@ -1276,7 +1276,7 @@ func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
 		// The problem is in the implementation of legacyArgs().
 		Args:              zulu.MinimumNArgs(1),
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 
 	// Check completing with wrong number of args
@@ -1295,16 +1295,16 @@ func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
 }
 
 func TestValidArgsFuncChildCmds(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child1Cmd := &zulu.Command{
 		Use:               "child1",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	child2Cmd := &zulu.Command{
 		Use:               "child2",
 		ValidArgsFunction: validArgsFunc2,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
@@ -1399,12 +1399,12 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 }
 
 func TestValidArgsFuncAliases(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child := &zulu.Command{
 		Use:               "child",
 		Aliases:           []string{"son", "daughter"},
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -1455,11 +1455,11 @@ func TestValidArgsFuncAliases(t *testing.T) {
 }
 
 func TestCompleteNoDesCmdInZshScript(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -1471,11 +1471,11 @@ func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 }
 
 func TestCompleteCmdInZshScript(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(child)
 
@@ -1490,7 +1490,7 @@ func TestCompleteCmdInZshScript(t *testing.T) {
 func TestFlagCompletionInGo(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
 		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
@@ -1583,16 +1583,16 @@ func TestFlagCompletionInGo(t *testing.T) {
 }
 
 func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child1Cmd := &zulu.Command{
 		Use:               "child1",
 		ValidArgsFunction: validArgsFunc,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	child2Cmd := &zulu.Command{
 		Use:               "child2",
 		ValidArgsFunction: validArgsFunc2,
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
@@ -1687,17 +1687,17 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 }
 
 func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
 	childCmd := &zulu.Command{
 		Use:  "child",
-		RunE: emptyRun,
+		RunE: noopRun,
 		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 			return []string{"--validarg", "test"}, zulu.ShellCompDirectiveDefault
 		},
 	}
 	childCmd2 := &zulu.Command{
 		Use:       "child2",
-		RunE:      emptyRun,
+		RunE:      noopRun,
 		ValidArgs: []string{"arg1", "arg2"},
 	}
 	rootCmd.AddCommand(childCmd, childCmd2)
@@ -1910,10 +1910,10 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 }
 
 func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
 	childCmd := &zulu.Command{
 		Use:  "child",
-		RunE: emptyRun,
+		RunE: noopRun,
 		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 			return []string{"--validarg", "test"}, zulu.ShellCompDirectiveDefault
 		},
@@ -1948,7 +1948,7 @@ func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
 func TestFlagCompletionInGoWithDesc(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
 		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
@@ -2047,7 +2047,7 @@ func TestValidArgsNotValidArgsFunc(t *testing.T) {
 		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 			return []string{"three", "four"}, zulu.ShellCompDirectiveNoFileComp
 		},
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 
 	// Test that if both ValidArgs and ValidArgsFunction are present
@@ -2089,7 +2089,7 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 		Args:       zulu.ArbitraryArgs,
 		ValidArgs:  []string{"one", "two", "three"},
 		ArgAliases: []string{"un", "deux", "trois"},
-		RunE:       emptyRun,
+		RunE:       noopRun,
 	}
 
 	// Test that argaliases are not completed when there are validargs that match
@@ -2142,20 +2142,20 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 }
 
 func TestCompleteHelp(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child1Cmd := &zulu.Command{
 		Use:  "child1",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	child2Cmd := &zulu.Command{
 		Use:  "child2",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
 	child3Cmd := &zulu.Command{
 		Use:  "child3",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	child1Cmd.AddCommand(child3Cmd)
 
@@ -2225,7 +2225,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
 		Args: zulu.NoArgs,
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 
 	// Test that no completion command is created if there are not other sub-commands
@@ -2239,7 +2239,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 
 	subCmd := &zulu.Command{
 		Use:  "sub",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	rootCmd.AddCommand(subCmd)
 
@@ -2357,10 +2357,10 @@ func TestDefaultCompletionCmd(t *testing.T) {
 }
 
 func TestCompleteCompletion(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	subCmd := &zulu.Command{
 		Use:  "sub",
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	rootCmd.AddCommand(subCmd)
 
@@ -2411,7 +2411,7 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:       "root",
 		ValidArgs: []string{"foo", "bar"},
-		RunE:      emptyRun,
+		RunE:      noopRun,
 	}
 	f := rootCmd.Flags()
 	f.Bool("short", false, "short flag 1", zflag.OptShorthand('s'))
@@ -2507,10 +2507,10 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 		return []string{"--flag", "-f"}, zulu.ShellCompDirectiveNoFileComp
 	}
 
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	childCmd := &zulu.Command{
 		Use:                "child",
-		RunE:               emptyRun,
+		RunE:               noopRun,
 		DisableFlagParsing: true,
 		ValidArgsFunction:  flagValidArgs,
 	}
@@ -2568,7 +2568,7 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 	rootCmd := &zulu.Command{
 		Use:  "root",
 		Args: nil, // Args must be nil to trigger the legacyArgs() function
-		RunE: emptyRun,
+		RunE: noopRun,
 		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 			return []string{"arg1", "arg2"}, zulu.ShellCompDirectiveNoFileComp
 		},
@@ -2608,12 +2608,12 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 }
 
 func TestFixedCompletions(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	choices := []string{"apple", "banana", "orange"}
 	childCmd := &zulu.Command{
 		Use:               "child",
 		ValidArgsFunction: zulu.FixedCompletions(choices, zulu.ShellCompDirectiveNoFileComp),
-		RunE:              emptyRun,
+		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(childCmd)
 
@@ -2638,14 +2638,14 @@ func TestCompletionForGroupedFlags(t *testing.T) {
 	getCmd := func() *zulu.Command {
 		rootCmd := &zulu.Command{
 			Use:  "root",
-			RunE: emptyRun,
+			RunE: noopRun,
 		}
 		childCmd := &zulu.Command{
 			Use: "child",
 			ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 				return []string{"subArg"}, zulu.ShellCompDirectiveNoFileComp
 			},
-			RunE: emptyRun,
+			RunE: noopRun,
 		}
 		rootCmd.AddCommand(childCmd)
 
@@ -2736,14 +2736,14 @@ func TestCompletionForMutuallyExclusiveFlags(t *testing.T) {
 	getCmd := func() *zulu.Command {
 		rootCmd := &zulu.Command{
 			Use:  "root",
-			RunE: emptyRun,
+			RunE: noopRun,
 		}
 		childCmd := &zulu.Command{
 			Use: "child",
 			ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 				return []string{"subArg"}, zulu.ShellCompDirectiveNoFileComp
 			},
-			RunE: emptyRun,
+			RunE: noopRun,
 		}
 		rootCmd.AddCommand(childCmd)
 

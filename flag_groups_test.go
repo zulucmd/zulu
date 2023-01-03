@@ -102,7 +102,7 @@ func TestValidateFlagGroups(t *testing.T) {
 
 			cmd := &zulu.Command{
 				Use:  "testcmd",
-				RunE: emptyRun,
+				RunE: noopRun,
 			}
 
 			cmd.Flags().String("a", "", "")
@@ -115,7 +115,7 @@ func TestValidateFlagGroups(t *testing.T) {
 
 			subCmd := &zulu.Command{
 				Use:  "subcmd",
-				RunE: emptyRun,
+				RunE: noopRun,
 			}
 			subCmd.Flags().String("sub-a", "", "")
 

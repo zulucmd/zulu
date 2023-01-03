@@ -28,7 +28,7 @@ func (tc *argsTestcase) test(t *testing.T) {
 	c := &zulu.Command{
 		Use:  "c",
 		Args: tc.args,
-		RunE: emptyRun,
+		RunE: noopRun,
 	}
 	if tc.wValid {
 		c.ValidArgs = []string{"one", "two", "three"}
@@ -131,8 +131,8 @@ func TestArgs_Range(t *testing.T) {
 // Takes(No)Args
 
 func TestRootTakesNoArgs(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
-	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	childCmd := &zulu.Command{Use: "child", RunE: noopRun}
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "illegal", "args")
@@ -148,8 +148,8 @@ func TestRootTakesNoArgs(t *testing.T) {
 }
 
 func TestRootTakesArgs(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: zulu.ArbitraryArgs, RunE: emptyRun}
-	childCmd := &zulu.Command{Use: "child", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.ArbitraryArgs, RunE: noopRun}
+	childCmd := &zulu.Command{Use: "child", RunE: noopRun}
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "legal", "args")
@@ -159,8 +159,8 @@ func TestRootTakesArgs(t *testing.T) {
 }
 
 func TestChildTakesNoArgs(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
-	childCmd := &zulu.Command{Use: "child", Args: zulu.NoArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	childCmd := &zulu.Command{Use: "child", Args: zulu.NoArgs, RunE: noopRun}
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "child", "illegal", "args")
@@ -176,8 +176,8 @@ func TestChildTakesNoArgs(t *testing.T) {
 }
 
 func TestChildTakesArgs(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
-	childCmd := &zulu.Command{Use: "child", Args: zulu.ArbitraryArgs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	childCmd := &zulu.Command{Use: "child", Args: zulu.ArbitraryArgs, RunE: noopRun}
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "child", "legal", "args")
@@ -219,7 +219,7 @@ func TestMatchAll(t *testing.T) {
 		},
 	}
 
-	rootCmd := &zulu.Command{Use: "root", Args: pargs, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: pargs, RunE: noopRun}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
@@ -239,7 +239,7 @@ func TestMatchAll(t *testing.T) {
 // It makes sure the root command accepts arguments if it does not have
 // sub-commands.
 func TestLegacyArgsRootAcceptsArgs(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: nil, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: nil, RunE: noopRun}
 
 	_, err := executeCommand(rootCmd, "somearg")
 	if err != nil {
@@ -251,9 +251,9 @@ func TestLegacyArgsRootAcceptsArgs(t *testing.T) {
 // to the legacyArgs() function.
 // It makes sure a sub-command accepts arguments and further sub-commands
 func TestLegacyArgsSubcmdAcceptsArgs(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", Args: nil, RunE: emptyRun}
-	childCmd := &zulu.Command{Use: "child", Args: nil, RunE: emptyRun}
-	grandchildCmd := &zulu.Command{Use: "grandchild", Args: nil, RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "root", Args: nil, RunE: noopRun}
+	childCmd := &zulu.Command{Use: "child", Args: nil, RunE: noopRun}
+	grandchildCmd := &zulu.Command{Use: "grandchild", Args: nil, RunE: noopRun}
 	rootCmd.AddCommand(childCmd)
 	childCmd.AddCommand(grandchildCmd)
 
