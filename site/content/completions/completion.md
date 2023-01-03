@@ -24,24 +24,13 @@ Zulu's completion scripts provide the following features:
 Zulu provides a few options for the default `completion` command.  To configure such options you must set
 the `CompletionOptions` field on the *root* command.
 
-To tell Zulu *not* to provide the default `completion` command:
-```
-rootCmd.CompletionOptions.DisableDefaultCmd = true
-```
-
-To tell Zulu *not* to provide the user with the `--no-descriptions` flag to the completion sub-commands:
-```
-rootCmd.CompletionOptions.DisableNoDescFlag = true
-```
-
-To tell Zulu to completely disable descriptions for completions:
-```
-rootCmd.CompletionOptions.DisableDescriptions = true
-```
+Please look at the documentation for the [`CompletionOptions](https://pkg.go.dev/github.com/zulucmd/zulu#CompletionOptions) struct to see what can be configured.
 
 ## Customizing completions
 
-The generated completion scripts will automatically handle completing commands and flags.  However, you can make your completions much more powerful by providing information to complete your program's nouns and flag values.
+The generated completion scripts will automatically handle completing commands and flags.
+However, you can make your completions much more powerful by providing information to
+complete your program's nouns and flag values.
 
 ### Completion of nouns
 
