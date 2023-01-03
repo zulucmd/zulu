@@ -82,13 +82,13 @@ _{{ .CMDVarName }}()
     __{{ .CMDVarName }}_debug "completions: ${out}"
     __{{ .CMDVarName }}_debug "flagPrefix: ${flagPrefix}"
 
-    if [ $((directive & shellCompDirectiveError)) -ne 0 ]; then
+    if (((directive & shellCompDirectiveError) != 0)); then
         __{{ .CMDVarName }}_debug "Completion received error. Ignoring completions."
         return
     fi
 
     while IFS='\n' read -r comp; do
-        if [ -n "$comp" ]; then
+        if [[ -n $comp ]]; then
             # If requested, completions are returned with a description.
             # The description is preceded by a TAB character.
             # For zsh's _describe, we need to use a : instead of a TAB.
@@ -104,12 +104,12 @@ _{{ .CMDVarName }}()
         fi
     done < <(printf "%s\n" "${out[@]}")
 
-    if [ $((directive & shellCompDirectiveNoSpace)) -ne 0 ]; then
+    if (((directive & shellCompDirectiveNoSpace) != 0)); then
         __{{ .CMDVarName }}_debug "Activating nospace."
         noSpace="-S ''"
     fi
 
-    if [ $((directive & shellCompDirectiveFilterFileExt)) -ne 0 ]; then
+    if (((directive & shellCompDirectiveFilterFileExt) != 0)); then
         # File extension filtering
         local filteringCmd
         filteringCmd='_files'
@@ -124,7 +124,7 @@ _{{ .CMDVarName }}()
 
         __{{ .CMDVarName }}_debug "File filtering command: $filteringCmd"
         _arguments '*:filename:'"$filteringCmd"
-    elif [ $((directive & shellCompDirectiveFilterDirs)) -ne 0 ]; then
+    elif (((directive & shellCompDirectiveFilterDirs) != 0)); then
         # File completion for directories only
         local subdir
         subdir="${completions[1]}"
@@ -152,7 +152,7 @@ _{{ .CMDVarName }}()
         else
             __{{ .CMDVarName }}_debug "_describe did not find completions."
             __{{ .CMDVarName }}_debug "Checking if we should do file completion."
-            if [ $((directive & shellCompDirectiveNoFileComp)) -ne 0 ]; then
+            if (((directive & shellCompDirectiveNoFileComp) != 0)); then
                 __{{ .CMDVarName }}_debug "deactivating file completion"
 
                 # We must return an error code here to let zsh know that there were no
