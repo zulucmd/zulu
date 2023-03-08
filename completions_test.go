@@ -10,7 +10,7 @@ import (
 	"github.com/zulucmd/zulu"
 )
 
-func validArgsFunc(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+func validArgsFunc(_ *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 	if len(args) != 0 {
 		return nil, zulu.ShellCompDirectiveNoFileComp
 	}
@@ -798,15 +798,15 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	}
 	rootCmd.AddCommand(childCmd)
 
-	rootCmd.Flags().Int("requiredFlag", -1, "required flag", zflag.OptShorthand('r'), zulu.FlagOptRequired())
+	rootCmd.Flags().Int("requiredFlag", -1, "required flag", zflag.OptShorthand('r'), zflag.OptRequired())
 	requiredFlag := rootCmd.Flags().Lookup("requiredFlag")
 
-	rootCmd.PersistentFlags().Int("requiredPersistent", -1, "required persistent", zflag.OptShorthand('p'), zulu.FlagOptRequired())
+	rootCmd.PersistentFlags().Int("requiredPersistent", -1, "required persistent", zflag.OptShorthand('p'), zflag.OptRequired())
 	requiredPersistent := rootCmd.PersistentFlags().Lookup("requiredPersistent")
 
 	rootCmd.Flags().String("release", "", "Release name", zflag.OptShorthand('R'))
 
-	childCmd.Flags().Bool("subRequired", false, "sub required flag", zflag.OptShorthand('s'), zulu.FlagOptRequired())
+	childCmd.Flags().Bool("subRequired", false, "sub required flag", zflag.OptShorthand('s'), zflag.OptRequired())
 	childCmd.Flags().Bool("subNotRequired", false, "sub not required flag", zflag.OptShorthand('n'))
 
 	// Test that a required flag is suggested even without the - prefix
@@ -2886,7 +2886,7 @@ func TestCompletionCobraFlags(t *testing.T) {
 
 		rootCmd.AddCommand(childCmd, childCmd2, childCmd3)
 
-		_ = childCmd.Flags().Bool("bool", false, "A bool flag", zulu.FlagOptRequired())
+		_ = childCmd.Flags().Bool("bool", false, "A bool flag", zflag.OptRequired())
 
 		// Have a command that adds its own help and version flag
 		_ = childCmd2.Flags().Bool("help", false, "My own help", zflag.OptShorthand('h'))

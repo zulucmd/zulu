@@ -863,7 +863,7 @@ func (c *Command) CancelRun() {
 
 func (c *Command) execute(a []string) (err error) {
 	if c == nil {
-		return fmt.Errorf("Called Execute() on a nil Command")
+		return fmt.Errorf("called Execute() on a nil Command")
 	}
 
 	if len(c.Deprecated) > 0 {
@@ -952,10 +952,12 @@ func (c *Command) execute(a []string) (err error) {
 	})
 
 	hooks = append(hooks, func(cmd *Command, args []string) error {
-		argWoFlags = c.Flags().Args()
 		if c.DisableFlagParsing {
 			argWoFlags = a
+			return nil
 		}
+
+		argWoFlags = c.Flags().Args()
 		return nil
 	})
 
@@ -973,16 +975,11 @@ func (c *Command) execute(a []string) (err error) {
 
 	prependHooks(&hooks, c.preRunHooks, c.PreRunE)
 
-	// Include the validateRequiredFlags() logic as a hook
+	// Include the validateFlagGroups() logic as a hook
 	// to be executed before running the main Run hooks.
 	hooks = append(hooks, func(cmd *Command, args []string) error {
-		err := cmd.validateRequiredFlags()
-		if err != nil {
-			return c.FlagErrorFunc()(c, err)
-		}
-
 		if err := c.validateFlagGroups(); err != nil {
-			return err
+			return c.FlagErrorFunc()(c, err)
 		}
 
 		return nil
@@ -1196,30 +1193,6 @@ func (c *Command) ValidateArgs(args []string) error {
 	}
 
 	return c.Args(c, args)
-}
-
-func (c *Command) validateRequiredFlags() error {
-	if c.DisableFlagParsing {
-		return nil
-	}
-
-	flags := c.Flags()
-	var missingFlagNames []string
-	flags.VisitAll(func(pflag *zflag.Flag) {
-		requiredAnnotation, found := pflag.Annotations[BashCompOneRequiredFlag]
-		if !found {
-			return
-		}
-		if requiredAnnotation[0] == "true" && !pflag.Changed {
-			missingFlagNames = append(missingFlagNames, pflag.Name)
-		}
-	})
-
-	if len(missingFlagNames) > 0 {
-		return fmt.Errorf(`required flag(s) "%s" not set`, strings.Join(missingFlagNames, `", "`))
-	}
-
-	return nil
 }
 
 // InitDefaultHelpFlag adds default help flag to c.
@@ -1681,7 +1654,6 @@ func (c *Command) Flags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.flags.SetOutput(c.flagErrorBuf)
-		c.flags.FlagUsageFormatter = defaultUsageFormatter
 	}
 
 	return c.flags
@@ -1710,7 +1682,6 @@ func (c *Command) LocalFlags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.lflags.SetOutput(c.flagErrorBuf)
-		c.lflags.FlagUsageFormatter = defaultUsageFormatter
 	}
 
 	c.lflags.SortFlags = c.Flags().SortFlags
@@ -1739,7 +1710,6 @@ func (c *Command) InheritedFlags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.iflags.SetOutput(c.flagErrorBuf)
-		c.iflags.FlagUsageFormatter = defaultUsageFormatter
 	}
 
 	local := c.LocalFlags()
@@ -1768,7 +1738,6 @@ func (c *Command) PersistentFlags() *zflag.FlagSet {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
 		c.pflags.SetOutput(c.flagErrorBuf)
-		c.pflags.FlagUsageFormatter = defaultUsageFormatter
 	}
 	return c.pflags
 }
@@ -1899,7 +1868,6 @@ func (c *Command) updateParentsPflags() {
 		c.parentsPflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
 		c.parentsPflags.SetOutput(c.flagErrorBuf)
 		c.parentsPflags.SortFlags = false
-		c.parentsPflags.FlagUsageFormatter = defaultUsageFormatter
 	}
 
 	if c.globNormFunc != nil {

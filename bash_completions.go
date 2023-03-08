@@ -10,9 +10,8 @@ import (
 
 // Annotations for Bash completion.
 const (
-	BashCompFilenameExt     = "zulu_annotation_bash_completion_filename_extensions"
-	BashCompOneRequiredFlag = "zulu_annotation_bash_completion_one_required_flag"
-	BashCompSubdirsInDir    = "zulu_annotation_bash_completion_subdirs_in_dir"
+	BashCompFilenameExt  = "zulu_annotation_bash_completion_filename_extensions"
+	BashCompSubdirsInDir = "zulu_annotation_bash_completion_subdirs_in_dir"
 )
 
 func nonCompletableFlag(flag *zflag.Flag) bool {

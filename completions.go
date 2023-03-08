@@ -255,6 +255,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// Let's add the --help and --version flag ourselves.
 	finalCmd.InitDefaultHelpFlag()
 	finalCmd.InitDefaultVersionFlag()
+	finalCmd.FParseErrAllowList.RequiredFlags = true
 
 	// Check if we are doing flag value completion before parsing the flags.
 	// This is important because if we are completing a flag value, we need to also
@@ -512,11 +513,9 @@ func completeRequireFlags(finalCmd *Command, toComplete string) []string {
 	var completions []string
 
 	doCompleteRequiredFlags := func(flag *zflag.Flag) {
-		if _, present := flag.Annotations[BashCompOneRequiredFlag]; present {
-			if !flag.Changed {
-				// If the flag is not already present, we suggest it as a completion
-				completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
-			}
+		if flag.Required && !flag.Changed {
+			// If the flag is not already present, we suggest it as a completion
+			completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
 		}
 	}
 

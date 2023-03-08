@@ -60,6 +60,7 @@ func resetCommandLineFlagSet() {
 }
 
 func checkStringContains(t *testing.T, got, expected string) {
+	t.Helper()
 	if !strings.Contains(got, expected) {
 		t.Errorf("Expected to contain: \n %v\nGot:\n %v\n", expected, got)
 	}
@@ -777,10 +778,10 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 
 func TestRequiredFlags(t *testing.T) {
 	c := &zulu.Command{Use: "c", RunE: noopRun}
-	c.Flags().String("foo1", "", "", zulu.FlagOptRequired())
-	c.Flags().String("foo2", "", "", zulu.FlagOptRequired())
+	c.Flags().String("foo1", "", "", zflag.OptRequired())
+	c.Flags().String("foo2", "", "", zflag.OptRequired())
 	c.Flags().String("bar", "", "")
-	expected := fmt.Sprintf("required flag(s) %q, %q not set", "foo1", "foo2")
+	expected := fmt.Sprintf("required flag(s) %q, %q not set", "--foo1", "--foo2")
 
 	_, err := executeCommand(c)
 	got := err.Error()
@@ -792,14 +793,14 @@ func TestRequiredFlags(t *testing.T) {
 
 func TestRequiredFlagsWithCustomFlagErrorFunc(t *testing.T) {
 	c := &zulu.Command{Use: "c", RunE: noopRun}
-	c.Flags().String("foo1", "", "", zulu.FlagOptRequired())
+	c.Flags().String("foo1", "", "", zflag.OptRequired())
 	silentError := "failed flag parsing"
 	c.SetFlagErrorFunc(func(c *zulu.Command, err error) error {
 		c.Println(err)
 		c.Println(c.UsageString())
 		return errors.New(silentError)
 	})
-	requiredFlagErrorMessage := fmt.Sprintf("required flag(s) %q not set", "foo1")
+	requiredFlagErrorMessage := fmt.Sprintf("required flag(s) %q not set", "--foo1")
 
 	output, err := executeCommand(c)
 	got := err.Error()
@@ -813,18 +814,18 @@ func TestRequiredFlagsWithCustomFlagErrorFunc(t *testing.T) {
 
 func TestPersistentRequiredFlags(t *testing.T) {
 	parent := &zulu.Command{Use: "parent", RunE: noopRun}
-	parent.PersistentFlags().String("foo1", "", "", zulu.FlagOptRequired())
-	parent.PersistentFlags().String("foo2", "", "", zulu.FlagOptRequired())
+	parent.PersistentFlags().String("foo1", "", "", zflag.OptRequired())
+	parent.PersistentFlags().String("foo2", "", "", zflag.OptRequired())
 	parent.Flags().String("foo3", "", "")
 
 	child := &zulu.Command{Use: "child", RunE: noopRun}
-	child.Flags().String("bar1", "", "", zulu.FlagOptRequired())
-	child.Flags().String("bar2", "", "", zulu.FlagOptRequired())
+	child.Flags().String("bar1", "", "", zflag.OptRequired())
+	child.Flags().String("bar2", "", "", zflag.OptRequired())
 	child.Flags().String("bar3", "", "")
 
 	parent.AddCommand(child)
 
-	expected := fmt.Sprintf("required flag(s) %q, %q, %q, %q not set", "bar1", "bar2", "foo1", "foo2")
+	expected := fmt.Sprintf("required flag(s) %q, %q, %q, %q not set", "--bar1", "--bar2", "--foo1", "--foo2")
 
 	_, err := executeCommand(parent, "child")
 	if err.Error() != expected {
@@ -837,7 +838,7 @@ func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 	// commands that disable flag parsing
 
 	parent := &zulu.Command{Use: "parent", RunE: noopRun}
-	parent.PersistentFlags().Bool("foo", false, "", zulu.FlagOptRequired())
+	parent.PersistentFlags().Bool("foo", false, "", zflag.OptRequired())
 	flag := parent.PersistentFlags().Lookup("foo")
 
 	child := &zulu.Command{Use: "child", RunE: noopRun}
@@ -2463,18 +2464,18 @@ Use "root child [command] --help" for more information about a command.
 				child.Example = "child sub --int 0"
 
 				pfs := root.PersistentFlags()
-				pfs.Int("pint", 1, "persistent int usage", zflag.OptShorthand('q'), zflag.OptGroup("group1"), zulu.FlagOptRequired())
+				pfs.Int("pint", 1, "persistent int usage", zflag.OptShorthand('q'), zflag.OptGroup("group1"), zflag.OptRequired())
 				pfs.Bool("pbool", false, "persistent bool usage", zflag.OptShorthand('c'), zflag.OptGroup("group2"))
 
 				fs := child.Flags()
 				fs.String("string1", "some", "string1 usage", zflag.OptShorthand('s'))
 				fs.Bool("bool1", false, "bool1 usage", zflag.OptShorthand('b'))
 
-				fs.String("string2", "some", "string2 usage in group1", zflag.OptGroup("group1"), zulu.FlagOptRequired())
+				fs.String("string2", "some", "string2 usage in group1", zflag.OptGroup("group1"), zflag.OptRequired())
 				fs.Bool("bool2", false, "bool2 usage in group1", zflag.OptGroup("group1"))
 
 				fs.String("string3", "some", "string3 usage in group2", zflag.OptGroup("group2"))
-				fs.Bool("bool3", false, "bool3 usage in group2", zflag.OptGroup("group2"), zulu.FlagOptRequired())
+				fs.Bool("bool3", false, "bool3 usage in group2", zflag.OptGroup("group2"), zflag.OptRequired())
 
 				sub1 := &zulu.Command{
 					Use:   "sub1",

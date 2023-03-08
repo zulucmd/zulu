@@ -96,7 +96,7 @@ func (g *requiredTogetherFlagGroup) AdjustCommandForCompletions(c *Command) {
 	if setFlags.hasAnyFrom(g.flagNames) {
 		for _, requiredFlagName := range g.flagNames {
 			f := c.Flags().Lookup(requiredFlagName)
-			_ = FlagOptRequired()(f)
+			_ = zflag.OptRequired()(f)
 		}
 	}
 }
