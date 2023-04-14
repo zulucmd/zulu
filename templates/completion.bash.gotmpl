@@ -66,6 +66,7 @@ __{{ .CMDVarName }}_process_completion_results() {
     local shellCompDirectiveNoFileComp={{ .ShellCompDirectiveNoFileComp }}
     local shellCompDirectiveFilterFileExt={{ .ShellCompDirectiveFilterFileExt }}
     local shellCompDirectiveFilterDirs={{ .ShellCompDirectiveFilterDirs }}
+    local shellCompDirectiveKeepOrder={{ .ShellCompDirectiveKeepOrder }}
 
     if (((directive & shellCompDirectiveError) != 0)); then
         # Error code.  No completion.
@@ -78,6 +79,19 @@ __{{ .CMDVarName }}_process_completion_results() {
                 compopt -o nospace
             else
                 __{{ .CMDVarName }}_debug "No space directive not supported in this version of bash"
+            fi
+        fi
+        if (((directive & shellCompDirectiveKeepOrder) != 0)); then
+            if [[ $(type -t compopt) == builtin ]]; then
+                # no sort isn't supported for bash less than < 4.4
+                if [[ ${BASH_VERSINFO[0]} -lt 4 || ( ${BASH_VERSINFO[0]} -eq 4 && ${BASH_VERSINFO[1]} -lt 4 ) ]]; then
+                    __{{ .CMDVarName }}_debug "No sort directive not supported in this version of bash"
+                else
+                    __{{ .CMDVarName }}_debug "Activating keep order"
+                    compopt -o nosort
+                fi
+            else
+                __{{ .CMDVarName }}_debug "No sort directive not supported in this version of bash"
             fi
         fi
         if (((directive & shellCompDirectiveNoFileComp) != 0)); then

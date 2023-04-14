@@ -73,8 +73,11 @@ const (
 	// zflag option has been provided as a convenience.
 	ShellCompDirectiveFilterDirs
 
-	// ===========================================================================
+	// ShellCompDirectiveKeepOrder indicates that the shell should preserve the order
+	// in which the completions are provided
+	ShellCompDirectiveKeepOrder
 
+	// ===========================================================================
 	// All directives using iota should be above this one.
 	// For internal use.
 	shellCompDirectiveMaxValue
@@ -138,6 +141,9 @@ func (d ShellCompDirective) string() string {
 	}
 	if d&ShellCompDirectiveFilterDirs != 0 {
 		directives = append(directives, "ShellCompDirectiveFilterDirs")
+	}
+	if d&ShellCompDirectiveKeepOrder != 0 {
+		directives = append(directives, "ShellCompDirectiveKeepOrder")
 	}
 	if len(directives) == 0 {
 		directives = append(directives, "ShellCompDirectiveDefault")
@@ -769,5 +775,6 @@ func genTemplateCompletion(buf io.Writer, templateFile string, name string, incl
 		"ShellCompDirectiveNoFileComp":    ShellCompDirectiveNoFileComp,
 		"ShellCompDirectiveFilterFileExt": ShellCompDirectiveFilterFileExt,
 		"ShellCompDirectiveFilterDirs":    ShellCompDirectiveFilterDirs,
+		"ShellCompDirectiveKeepOrder":     ShellCompDirectiveKeepOrder,
 	})
 }

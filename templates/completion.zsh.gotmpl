@@ -18,8 +18,9 @@ _{{ .CMDVarName }}()
     local shellCompDirectiveNoFileComp={{ .ShellCompDirectiveNoFileComp }}
     local shellCompDirectiveFilterFileExt={{ .ShellCompDirectiveFilterFileExt }}
     local shellCompDirectiveFilterDirs={{ .ShellCompDirectiveFilterDirs }}
+    local shellCompDirectiveKeepOrder={{ .ShellCompDirectiveKeepOrder }}
 
-    local lastParam lastChar flagPrefix requestComp out directive comp lastComp noSpace
+    local lastParam lastChar flagPrefix requestComp out directive comp lastComp noSpace keepOrder
     local -a completions
 
     __{{ .CMDVarName }}_debug "\n========= starting completion logic =========="
@@ -109,6 +110,11 @@ _{{ .CMDVarName }}()
         noSpace="-S ''"
     fi
 
+    if [ $((directive & shellCompDirectiveKeepOrder)) -ne 0 ]; then
+        __{{ .CMDVarName }}_debug "Activating keep order."
+        keepOrder="-V"
+    fi
+
     if (((directive & shellCompDirectiveFilterFileExt) != 0)); then
         # File extension filtering
         local filteringCmd
@@ -144,7 +150,7 @@ _{{ .CMDVarName }}()
         return $result
     else
         __{{ .CMDVarName }}_debug "Calling _describe"
-        if eval _describe "completions" completions $flagPrefix $noSpace; then
+        if eval _describe $keepOrder "completions" completions $flagPrefix $noSpace; then
             __{{ .CMDVarName }}_debug "_describe found some completions"
 
             # Return the success of having called _describe

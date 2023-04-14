@@ -41,6 +41,7 @@ Register-ArgumentCompleter -CommandName '{{ .CMDVarName }}' -ScriptBlock {
     $ShellCompDirectiveNoFileComp={{ .ShellCompDirectiveNoFileComp }}
     $ShellCompDirectiveFilterFileExt={{ .ShellCompDirectiveFilterFileExt }}
     $ShellCompDirectiveFilterDirs={{ .ShellCompDirectiveFilterDirs }}
+    $ShellCompDirectiveKeepOrder={{ .ShellCompDirectiveKeepOrder }}
 
     # Prepare the command to request completions for the program.
     # Split the command at the first space to separate the program and arguments.
@@ -149,6 +150,11 @@ Register-ArgumentCompleter -CommandName '{{ .CMDVarName }}' -ScriptBlock {
             __{{ .CMDVarName }}_debug "Join the equal sign flag back to the completion value"
             $_.Name = $Flag + "=" + $_.Name
         }
+    }
+
+    # we sort the values in ascending order by name if keep order isn't passed
+    if (($Directive -band $ShellCompDirectiveKeepOrder) -eq 0 ) {
+        $Values = $Values | Sort-Object -Property Name
     }
 
     if (($Directive -band $ShellCompDirectiveNoFileComp) -ne 0 ) {
