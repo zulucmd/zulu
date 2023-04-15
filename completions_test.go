@@ -3042,3 +3042,39 @@ func TestCompletionCobraFlags(t *testing.T) {
 		})
 	}
 }
+
+func TestShellCompDirective_ListDirectives(t *testing.T) {
+	tests := []struct {
+		name string
+		d    zulu.ShellCompDirective
+		want string
+	}{
+		{
+			name: "Default",
+			d:    zulu.ShellCompDirectiveDefault,
+			want: "ShellCompDirectiveDefault",
+		},
+		{
+			name: "Default skipped",
+			d:    zulu.ShellCompDirectiveDefault | zulu.ShellCompDirectiveKeepOrder,
+			want: "ShellCompDirectiveKeepOrder",
+		},
+		{
+			name: "No error",
+			d:    zulu.ShellCompDirectiveError | zulu.ShellCompDirectiveKeepOrder,
+			want: "ShellCompDirectiveError, ShellCompDirectiveKeepOrder",
+		},
+		{
+			name: "Error",
+			d:    zulu.ShellCompDirectiveMaxValue,
+			want: "ERROR: unexpected ShellCompDirective value: 64",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.d.ListDirectives(); got != tt.want {
+				t.Errorf("expected %v, got %v", tt.want, got)
+			}
+		})
+	}
+}

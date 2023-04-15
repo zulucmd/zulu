@@ -121,48 +121,7 @@ harbor notary rook thanos
 ```
 
 You may have noticed the use of `zulu.ShellCompDirective`.  These directives are bit fields allowing to control some shell completion behaviors for your particular completion.  You can combine them with the bit-or operator such as `zulu.ShellCompDirectiveNoSpace | zulu.ShellCompDirectiveNoFileComp`
-```go
-// Indicates that the shell will perform its default behavior after completions
-// have been provided (this implies none of the other directives).
-ShellCompDirectiveDefault
-
-// Indicates an error occurred and completions should be ignored.
-ShellCompDirectiveError
-
-// Indicates that the shell should not add a space after the completion,
-// even if there is a single completion provided.
-ShellCompDirectiveNoSpace
-
-// Indicates that the shell should not provide file completion even when
-// no completion is provided.
-ShellCompDirectiveNoFileComp
-
-// ShellCompDirectiveFilterFileExt indicates that the provided completions
-// should be used as file extension filters.
-// For example, to complete only files of the form *.json or *.yaml:
-//    return []string{"yaml", "json"}, ShellCompDirectiveFilterFileExt
-// The BashCompFilenameExt annotation can also be used to obtain
-// the same behavior for flags. For flags, using FlagOptFilename() is a shortcut
-// to using this directive explicitly.
-ShellCompDirectiveFilterFileExt
-
-// ShellCompDirectiveFilterDirs indicates that only directory names should
-// be provided in file completion.
-// For example:
-//    return nil, ShellCompDirectiveFilterDirs
-// To request directory names within another directory, the returned completions
-// should specify a single directory name within which to search. For example,
-// to complete directories within "themes/":
-//    return []string{"themes"}, ShellCompDirectiveFilterDirs
-// The BashCompSubdirsInDir annotation can be used to
-// obtain the same behavior but only for flags. The function FlagOptDirname
-// zflag option has been provided as a convenience.
-ShellCompDirectiveFilterDirs
-
-// ShellCompDirectiveKeepOrder indicates that the shell should preserve the order
-// in which the completions are provided
-ShellCompDirectiveKeepOrder
-```
+{{% code file="/content/code/shell_directives.gen.txt" language="go" %}}
 
 ***Note***: When using the `ValidArgsFunction`, Zulu will call your registered function after having parsed all flags and arguments provided in the command-line.  You therefore don't need to do this parsing yourself.  For example, when a user calls `helm status --namespace my-rook-ns [tab][tab]`, Zulu will call your registered `ValidArgsFunction` after having parsed the `--namespace` flag, as it would have done when calling the `RunE` function.
 

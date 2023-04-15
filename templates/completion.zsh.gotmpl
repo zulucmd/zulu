@@ -110,7 +110,7 @@ _{{ .CMDVarName }}()
         noSpace="-S ''"
     fi
 
-    if [ $((directive & shellCompDirectiveKeepOrder)) -ne 0 ]; then
+    if (((directive & shellCompDirectiveKeepOrder) != 0)); then
         __{{ .CMDVarName }}_debug "Activating keep order."
         keepOrder="-V"
     fi

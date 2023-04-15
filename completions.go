@@ -124,34 +124,28 @@ func FixedCompletions(choices []string, directive ShellCompDirective) func(cmd *
 	}
 }
 
-// Returns a string listing the different directive enabled in the specified parameter
-func (d ShellCompDirective) string() string {
+// ListDirectives returns a string listing the different directive enabled in the specified parameter
+func (d ShellCompDirective) ListDirectives() string {
 	var directives []string
-	if d&ShellCompDirectiveError != 0 {
-		directives = append(directives, "ShellCompDirectiveError")
-	}
-	if d&ShellCompDirectiveNoSpace != 0 {
-		directives = append(directives, "ShellCompDirectiveNoSpace")
-	}
-	if d&ShellCompDirectiveNoFileComp != 0 {
-		directives = append(directives, "ShellCompDirectiveNoFileComp")
-	}
-	if d&ShellCompDirectiveFilterFileExt != 0 {
-		directives = append(directives, "ShellCompDirectiveFilterFileExt")
-	}
-	if d&ShellCompDirectiveFilterDirs != 0 {
-		directives = append(directives, "ShellCompDirectiveFilterDirs")
-	}
-	if d&ShellCompDirectiveKeepOrder != 0 {
-		directives = append(directives, "ShellCompDirectiveKeepOrder")
-	}
-	if len(directives) == 0 {
-		directives = append(directives, "ShellCompDirectiveDefault")
-	}
 
 	if d >= shellCompDirectiveMaxValue {
 		return fmt.Sprintf("ERROR: unexpected ShellCompDirective value: %d", d)
 	}
+
+	for _, directive := range ShellCompDirectiveValues() {
+		if directive == ShellCompDirectiveDefault {
+			continue
+		}
+
+		if d&directive != 0 {
+			directives = append(directives, directive.String())
+		}
+	}
+
+	if len(directives) == 0 {
+		directives = append(directives, "ShellCompDirectiveDefault")
+	}
+
 	return strings.Join(directives, ", ")
 }
 
@@ -207,7 +201,7 @@ func (c *Command) initCompleteCmd(args []string) {
 
 			// Print some helpful info to stderr for the user to understand.
 			// Output from stderr must be ignored by the completion script.
-			fmt.Fprintf(finalCmd.ErrOrStderr(), "Completion ended with directive: %s\n", directive.string())
+			fmt.Fprintf(finalCmd.ErrOrStderr(), "Completion ended with directive: %s\n", directive.ListDirectives())
 
 			return nil
 		},

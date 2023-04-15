@@ -7,3 +7,5 @@ const (
 
 var StripFlags = stripFlags
 var StringInSlice = stringInSlice
+
+var ShellCompDirectiveMaxValue = shellCompDirectiveMaxValue
