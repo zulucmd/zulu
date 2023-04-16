@@ -69,8 +69,8 @@ _completionTests_verifyCompletion() {
   for arg in "$@"; do
     case "$arg" in
       nofile) nofile=1 ;;
-      nospace) nofile=1 ;;
-      *) echo "Invalid directive: $4" && exit 1 ;;
+      nospace) nospace=1 ;;
+      *) echo "Invalid directive: $arg" && exit 1 ;;
     esac
   done
 
