@@ -170,7 +170,7 @@ verifyDebug
 
 # Test completion with a redirection
 # https://github.com/spf13/cobra/issues/1334
-if [ "${BASH_VERSINFO[0]}" != 3 ]; then
+if (("${BASH_VERSINFO[0]}" != 3)); then
   # We know and accept that this fails with bash 3
   # https://github.com/spf13/cobra/issues/1334
   verifyRedirect

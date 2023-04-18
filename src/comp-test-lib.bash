@@ -68,9 +68,9 @@ _completionTests_verifyCompletion() {
 
   for arg in "$@"; do
     case "$arg" in
-      nofile) nofile=1 ;;
-      nospace) nospace=1 ;;
-      *) echo "Invalid directive: $arg" && exit 1 ;;
+    nofile) nofile=1 ;;
+    nospace) nospace=1 ;;
+    *) echo "Invalid directive: $arg" && exit 1 ;;
     esac
   done
 
@@ -79,7 +79,7 @@ _completionTests_verifyCompletion() {
   result=$(_completionTests_sort "$result")
   expected=$(_completionTests_sort "$expected")
 
-  if [ "$result" = "$expected" ]; then
+  if [[ "$result" == "$expected" ]]; then
     if ! _completionTests_checkDirective $nofile $nospace "$cmdLine"; then
       _completionTests_TEST_FAILED=1
       return 1
@@ -87,7 +87,7 @@ _completionTests_verifyCompletion() {
 
     # Truncate result to save space
     resultOut="$result"
-    if [ "${#result}" -gt 50 ]; then
+    if [[ "${#result}" > 50 ]]; then
       resultOut="${result:0:50} <truncated>"
     fi
     echo -e "${GREEN}SUCCESS: \"$cmdLine\" completes to \"$resultOut\"$NC"
@@ -102,7 +102,7 @@ _completionTests_verifyCompletion() {
 _completionTests_sort() {
   # We use printf instead of echo as the $1 could be -n which would be
   # interpreted as an argument to echo
-  if [ -n "${BASH_COMP_NO_SORT:-}" ]; then
+  if [[ -n "${BASH_COMP_NO_SORT:-}" ]]; then
     # Don't sort, just print back what we received
     printf "%s\n" "$1"
   else
@@ -116,8 +116,8 @@ _completionTests_sort() {
 # $3 - An output prefix
 _completionTests_timing() {
   TIMEFORMAT=%R
-  timing=$({ time { _completionTests_complete "$1" > /dev/null; } } 2>&1)
-  if (( $(echo "$timing > ${2}" | bc -l) )); then
+  timing=$({ time { _completionTests_complete "$1" >/dev/null; }; } 2>&1)
+  if (($(echo "$timing > ${2}" | bc -l))); then
     _completionTests_TEST_FAILED=1
     echo -e "${RED}<= TIMING => ${3}: 1000 completions took ${timing} seconds > ${2-0.1} seconds limit$NC"
     return 1
@@ -136,11 +136,11 @@ _completionTests_findCompletionFunction() {
   IFS=' ' read -r -a out < <(complete -p "$binary")
   local returnNext=0
   for i in "${out[@]}"; do
-    if [ $returnNext -eq 1 ]; then
+    if ((returnNext == 1)); then
       echo "$i"
       return
     fi
-    [ "$i" = "-F" ] && returnNext=1
+    [[ "$i" == "-F" ]] && returnNext=1
   done
 }
 
@@ -157,7 +157,7 @@ _completionTests_complete() {
   COMP_CWORD=$((${#COMP_WORDS[@]} - 1))
   # We must check for a space as the last character which will tell us
   # that the previous word is complete and the cursor is on the next word.
-  [ "${cmdLine: -1}" = " " ] && COMP_CWORD=${#COMP_WORDS[@]}
+  [[ "${cmdLine: -1}" == " " ]] && COMP_CWORD=${#COMP_WORDS[@]}
 
   # Call the completion function associated with the binary being called.
   # Also redirect stderr to stdout so that the tests fail if anything is printed
@@ -185,7 +185,7 @@ _completionTests_exit() {
 _completionTests_checkDirective() {
   # compopt does not exist for bash 3 so shell directives
   # don't work.  Don't fail in this case.
-  if [ "${BASH_VERSINFO[0]}" -eq 3 ]; then
+  if (("${BASH_VERSINFO[0]}" == 3)); then
     return 0
   fi
 
@@ -194,15 +194,15 @@ _completionTests_checkDirective() {
   local cmdLine="$3"
 
   local realnofile=0
-  [ -f $_compTests_nofile ] && realnofile=1
+  [[ -f $_compTests_nofile ]] && realnofile=1
   local realnospace=0
-  [ -f $_compTests_nospace ] && realnospace=1
+  [[ -f $_compTests_nospace ]] && realnospace=1
 
-  if [[ $requestnofile -ne $realnofile ]]; then
+  if ((requestnofile != realnofile)); then
     echo -e "${RED}ERROR: \"$cmdLine\" expected nofile=$requestnofile but got nofile=$realnofile$NC"
     return 1
   fi
-  if [[ $requestnospace -ne $realnospace ]]; then
+  if ((requestnospace != realnospace)); then
     echo -e "${RED}ERROR: \"$cmdLine\" expected nospace=$requestnospace but got nospace=$realnospace$NC"
     return 1
   fi
