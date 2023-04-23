@@ -60,8 +60,7 @@ _completionTests_verifyCompletion() {
   local cmdLine="$1"
   local expected="$2"
 
-  shift
-  shift
+  shift 2
 
   local nofile=0
   local nospace=0
@@ -87,7 +86,7 @@ _completionTests_verifyCompletion() {
 
     # Truncate result to save space
     resultOut="$result"
-    if [[ "${#result}" > 50 ]]; then
+    if ((${#result} > 50)); then
       resultOut="${result:0:50} <truncated>"
     fi
     echo -e "${GREEN}SUCCESS: \"$cmdLine\" completes to \"$resultOut\"$NC"
@@ -168,7 +167,7 @@ _completionTests_complete() {
   # We separate each completion with a space and not a newline; using newlines
   # was preventing us from detecting empty completions as newlines are stripped
   # automatically by the sub-shell call to this function.
-  result="$(printf "%s " "${COMPREPLY[@]}")"
+  printf -v result "%s " "${COMPREPLY[@]}"
   # remove the last space we inserted ourselves
   result="${result% }"
   # We use printf instead of echo as the first completion could be -n which
