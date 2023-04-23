@@ -1,6 +1,10 @@
 package zulu_test
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"text/template"
@@ -32,22 +36,86 @@ func assertContainsf(t *testing.T, str, expected string, msg string, fmt ...inte
 	}
 }
 
+func toStr(t *testing.T, obj interface{}) string {
+	t.Helper()
+	switch o := obj.(type) {
+	case string:
+		return o
+	case []byte:
+		return string(o)
+	default:
+		buf := bytes.Buffer{}
+		enc := json.NewEncoder(&buf)
+		err := enc.Encode(obj)
+		if err != nil {
+			t.Fatalf("failed to convert %+v to string", obj)
+		}
+		return buf.String()
+	}
+}
+
 func assertEqual(t *testing.T, expected, actual interface{}) {
 	t.Helper()
-	assertEqualf(t, expected, actual, "expected %[1]v with type %[1]T but got %[2]v with type %[2]T", expected, actual)
+	assertEqualf(t, expected, actual, "Values are not equal.")
 }
 
-func assertEqualf(t *testing.T, expected, actual interface{}, msg string, fmt ...interface{}) {
+func assertEqualf(t *testing.T, expected, actual interface{}, msg string, f ...interface{}) {
 	t.Helper()
 	if expected != actual {
-		t.Errorf(msg, fmt...)
+		diff := Diff([]byte(toStr(t, expected)), []byte(toStr(t, actual)))
+		t.Errorf("%[1]s\nExpected type %[2]T, actual type %[3]T\n%[4]s", fmt.Sprintf(msg, f...), expected, actual, diff)
 	}
 }
 
-func assertNoErr(t *testing.T, e error) {
-	if e != nil {
-		t.Error(e)
+func assertErrf(t *testing.T, e error, msg string, f ...interface{}) {
+	t.Helper()
+	if e == nil {
+		if msg != "" {
+			msg = ": " + msg
+		}
+		t.Errorf("expected an error but got none"+msg, f...)
 	}
+}
+
+func isNil(i interface{}) bool {
+	if i == nil {
+		return true
+	}
+
+	switch reflect.TypeOf(i).Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+		return reflect.ValueOf(i).IsNil()
+	}
+	return false
+}
+
+func assertNotNilf(t *testing.T, obj interface{}, msg string, f ...interface{}) {
+	t.Helper()
+	if isNil(obj) {
+		if msg == "" {
+			t.Errorf("expected an some value but got %v", obj)
+			return
+		}
+
+		t.Errorf(msg, f...)
+	}
+}
+
+func assertNilf(t *testing.T, obj interface{}, msg string, f ...interface{}) {
+	t.Helper()
+	if !isNil(obj) {
+		if msg == "" {
+			t.Errorf("expected nil but got %v", obj)
+			return
+		}
+
+		t.Errorf(msg, f...)
+	}
+}
+
+func assertNil(t *testing.T, e error) {
+	t.Helper()
+	assertNilf(t, e, "")
 }
 
 func TestAddTemplateFunctions(t *testing.T) {

@@ -3,12 +3,13 @@ package zulu
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/zulucmd/zflag"
-	"github.com/zulucmd/zulu/internal/util"
+	"github.com/zulucmd/zflag/v2"
+	"github.com/zulucmd/zulu/internal/template"
 )
 
 const (
@@ -20,14 +21,19 @@ const (
 	ShellCompNoDescRequestCmd = "__completeNoDesc"
 )
 
-// Global map of flag completion functions. Make sure to use flagCompletionMutex before you try to read and write from it.
+// A global map of flag completion functions. Make sure to use flagCompletionMutex before you try to read and write from it.
 var flagCompletionFunctions = map[*zflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
 
-// lock for reading and writing from flagCompletionFunctions
+// Lock for reading and writing from flagCompletionFunctions
 var flagCompletionMutex = &sync.RWMutex{}
+
+var logger *log.Logger
 
 // ShellCompDirective is a bit map representing the different behaviors the shell
 // can be instructed to have once completions have been provided.
+//
+//go:generate go run ./internal/enumer -type=ShellCompDirective -output ./shell_comp_directive.gen.go -format -template=./gen_templates/stringer.go.gotmpl ./
+//go:generate go run ./internal/enumer -type=ShellCompDirective -output ./site/content/code/shell_directives.gen.txt -template=./gen_templates/shell_directives.txt.gotmpl ./
 type ShellCompDirective int
 
 type flagCompError struct {
@@ -137,13 +143,13 @@ func (d ShellCompDirective) ListDirectives() string {
 			continue
 		}
 
-		if d&directive != 0 {
-			directives = append(directives, directive.String())
+		if (d & directive) != 0 {
+			directives = append(directives, directive.Name())
 		}
 	}
 
 	if len(directives) == 0 {
-		directives = append(directives, "ShellCompDirectiveDefault")
+		directives = append(directives, ShellCompDirectiveDefault.Name())
 	}
 
 	return strings.Join(directives, ", ")
@@ -164,7 +170,7 @@ func (c *Command) initCompleteCmd(args []string) {
 		RunE: func(cmd *Command, args []string) error {
 			finalCmd, completions, directive, err := cmd.getCompletions(args)
 			if err != nil {
-				CompErrorln(err.Error())
+				CompLogger().Println(err)
 				// Keep going for multiple reasons:
 				// 1- There could be some valid completions even though there was an error
 				// 2- Even without completions, we need to print the directive
@@ -179,7 +185,7 @@ func (c *Command) initCompleteCmd(args []string) {
 
 				// Make sure we only write the first line to the output.
 				// This is needed if a description contains a linebreak.
-				// Otherwise the shell scripts will interpret the other lines as new flags
+				// Otherwise, the shell scripts will interpret the other lines as new flags
 				// and could therefore provide a wrong completion.
 				comp = strings.Split(comp, "\n")[0]
 
@@ -271,7 +277,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	_ = finalCmd.ParseFlags(append(finalArgs, "--"))
 	newArgCount := finalCmd.Flags().NArg()
 
-	// Parse the flags early so we can check if required flags are set
+	// Parse the flags early, so we can check if required flags are set
 	if err = finalCmd.ParseFlags(finalArgs); err != nil {
 		return finalCmd, []string{}, ShellCompDirectiveDefault, fmt.Errorf("Error while parsing flags from args %v: %s", finalArgs, err.Error())
 	}
@@ -283,7 +289,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	}
 	// Error while attempting to parse flags
 	if flagErr != nil {
-		// If error type is flagCompError and we don't want flagCompletion we should ignore the error
+		// If error type is flagCompError, and we don't want flagCompletion we should ignore the error
 		if _, ok := flagErr.(*flagCompError); !(ok && !flagCompletion) {
 			return finalCmd, []string{}, ShellCompDirectiveDefault, flagErr
 		}
@@ -344,7 +350,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		// If we have not found any required flags, only then can we show regular flags
 		if len(completions) == 0 {
 			doCompleteFlags := func(flag *zflag.Flag) {
-				if v, ok := flag.Value.(zflag.Typed); !flag.Changed || (ok && (strings.Contains(v.Type(), "Slice") || strings.Contains(v.Type(), "Array"))) {
+				if _, isSlice := flag.Value.(zflag.SliceValue); !flag.Changed || isSlice {
 					// If the flag is not already present, or if it can be specified multiple times (Array or Slice)
 					// we suggest it as a completion
 					completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
@@ -466,11 +472,11 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 
 func helpOrVersionFlagPresent(cmd *Command) bool {
 	if versionFlag := cmd.Flags().Lookup("version"); versionFlag != nil &&
-		len(versionFlag.Annotations[FlagSetByCobraAnnotation]) > 0 && versionFlag.Changed {
+		len(versionFlag.Annotations[FlagSetByZuluAnnotation]) > 0 && versionFlag.Changed {
 		return true
 	}
 	if helpFlag := cmd.Flags().Lookup("help"); helpFlag != nil &&
-		len(helpFlag.Annotations[FlagSetByCobraAnnotation]) > 0 && helpFlag.Changed {
+		len(helpFlag.Annotations[FlagSetByZuluAnnotation]) > 0 && helpFlag.Changed {
 		return true
 	}
 	return false
@@ -635,10 +641,15 @@ func (c *Command) InitDefaultCompletionCmd() {
 		}
 	}
 
+	long, err := template.ParseFromFile(tmplFS, "templates/usage_completion_root.txt.gotmpl", map[string]string{"CMDName": c.Root().Name()}, templateFuncs)
+	if err != nil {
+		panic(err)
+	}
+
 	completionCmd := &Command{
 		Use:               compCmdName,
 		Short:             "Generate the autocompletion script for the specified shell",
-		Long:              tmplFromFile("templates/usage_completion_root.txt.gotmpl", map[string]string{"CMDName": c.Root().Name()}),
+		Long:              long,
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
 		Hidden:            c.CompletionOptions.HiddenDefaultCmd,
@@ -667,10 +678,15 @@ func (c *Command) InitDefaultCompletionCmd() {
 }
 
 func (c *Command) createCompletionCommand(shellName string, usageTemplate string, includeDescriptions *bool, runFn HookFuncE) *Command {
+	long, err := template.ParseFromFile(tmplFS, usageTemplate, map[string]string{"CMDName": c.Root().Name()}, templateFuncs)
+	if err != nil {
+		panic(err)
+	}
+
 	completionCMD := &Command{
 		Use:               shellName,
 		Short:             fmt.Sprintf("Generate the autocompletion script for %s", shellName),
-		Long:              tmplFromFile(usageTemplate, map[string]string{"CMDName": c.Root().Name()}),
+		Long:              long,
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions,
 		RunE:              runFn,
@@ -703,54 +719,34 @@ func findFlag(cmd *Command, name string) *zflag.Flag {
 	return cmd.Flag(name)
 }
 
-// CompDebug prints the specified string to the same file as where the
-// completion script prints its logs.
-// Note that completion printouts should never be on stdout as they would
-// be wrongly interpreted as actual completion choices by the completion script.
-func CompDebug(msg string, printToStdErr bool) {
-	msg = fmt.Sprintf("[Debug] %s", msg)
+// CompLogger gets or creates a logger that prints to stderr or the completion log file.
+// Such logs are only printed when the user has set the environment variable `BASH_COMP_DEBUG`
+// to true. The logs can be optionally output to a file by setting `BASH_COMP_DEBUG_FILE` to
+// a file location.
+func CompLogger() *log.Logger {
+	if logger == nil {
+		var f io.Writer
+		debugFile := os.Getenv("BASH_COMP_DEBUG_FILE")
+		if debugFile == "" {
+			f = io.Discard
+		} else {
+			var err error
+			f, err = os.OpenFile(debugFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			if err != nil {
+				log.Println(err)
+			}
 
-	// Such logs are only printed when the user has set the environment
-	// variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
-	if path := os.Getenv("BASH_COMP_DEBUG_FILE"); path != "" {
-		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err == nil {
-			defer f.Close()
-			util.WriteStringAndCheck(f, msg)
+			if fc, ok := f.(io.WriteCloser); ok {
+				defer fc.Close()
+			}
 		}
+		logger = log.New(f, "completion: ", log.Flags())
 	}
 
-	if printToStdErr {
-		// Must print to stderr for this not to be read by the completion script.
-		fmt.Fprint(os.Stderr, msg)
-	}
-}
-
-// CompDebugln prints the specified string with a newline at the end
-// to the same file as where the completion script prints its logs.
-// Such logs are only printed when the user has set the environment
-// variable BASH_COMP_DEBUG_FILE to the path of some file to be used.
-func CompDebugln(msg string, printToStdErr bool) {
-	CompDebug(fmt.Sprintf("%s\n", msg), printToStdErr)
-}
-
-// CompError prints the specified completion message to stderr.
-func CompError(msg string) {
-	msg = fmt.Sprintf("[Error] %s", msg)
-	CompDebug(msg, true)
-}
-
-// CompErrorln prints the specified completion message to stderr with a newline at the end.
-func CompErrorln(msg string) {
-	CompError(fmt.Sprintf("%s\n", msg))
+	return logger
 }
 
 func genTemplateCompletion(buf io.Writer, templateFile string, name string, includeDesc bool) error {
-	template, err := tmplFS.ReadFile(templateFile)
-	if err != nil {
-		return fmt.Errorf("failed to read template file %q: %w", templateFile, err)
-	}
-
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
@@ -760,7 +756,7 @@ func genTemplateCompletion(buf io.Writer, templateFile string, name string, incl
 	nameForVar = strings.ReplaceAll(nameForVar, "-", "_")
 	nameForVar = strings.ReplaceAll(nameForVar, ":", "_")
 
-	return tmpl(buf, string(template), map[string]interface{}{
+	res, err := template.ParseFromFile(tmplFS, templateFile, map[string]interface{}{
 		"CMDVarName":                      nameForVar,
 		"CMDName":                         name,
 		"CompletionCommand":               compCmd,
@@ -770,5 +766,11 @@ func genTemplateCompletion(buf io.Writer, templateFile string, name string, incl
 		"ShellCompDirectiveFilterFileExt": ShellCompDirectiveFilterFileExt,
 		"ShellCompDirectiveFilterDirs":    ShellCompDirectiveFilterDirs,
 		"ShellCompDirectiveKeepOrder":     ShellCompDirectiveKeepOrder,
-	})
+	}, templateFuncs)
+	if err != nil {
+		return err
+	}
+
+	_, err = buf.Write([]byte(res))
+	return err
 }

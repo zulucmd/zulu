@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu"
 )
 
@@ -726,19 +726,10 @@ func TestChildFlagShadowsParentPersistentFlag(t *testing.T) {
 	childInherited := child.InheritedFlags()
 	childLocal := child.LocalFlags()
 
-	if childLocal.Lookup("strf") == nil {
-		t.Error(`LocalFlags expected to contain "strf", got "nil"`)
-	}
-	if childInherited.Lookup("boolf") == nil {
-		t.Error(`InheritedFlags expected to contain "boolf", got "nil"`)
-	}
-
-	if childInherited.Lookup("intf") != nil {
-		t.Errorf(`InheritedFlags should not contain shadowed flag "intf"`)
-	}
-	if childLocal.Lookup("intf") == nil {
-		t.Error(`LocalFlags expected to contain "intf", got "nil"`)
-	}
+	assertNotNilf(t, childLocal.Lookup("strf"), `LocalFlags expected to contain "strf"`)
+	assertNotNilf(t, childInherited.Lookup("boolf"), `InheritedFlags expected to contain "boolf"`)
+	assertNilf(t, childInherited.Lookup("intf"), `InheritedFlags should not contain shadowed flag "intf"`)
+	assertNotNilf(t, childLocal.Lookup("intf"), `LocalFlags expected to contain "intf"`)
 }
 
 func TestPersistentFlagsOnChild(t *testing.T) {
@@ -1200,9 +1191,7 @@ func TestUsageIsNotPrintedTwice(t *testing.T) {
 	cmd.AddCommand(sub)
 
 	output, _ := executeCommand(cmd, "")
-	if strings.Count(output, "Usage:") != 1 {
-		t.Error("Usage output is not printed exactly once")
-	}
+	assertEqualf(t, strings.Count(output, "Usage:"), 1, "Usage output is not printed exactly once")
 }
 
 func TestVisitParents(t *testing.T) {
@@ -1288,9 +1277,7 @@ func TestRemoveCommand(t *testing.T) {
 	rootCmd.RemoveCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "child")
-	if err == nil {
-		t.Error("Expected error on calling removed command. Got nil.")
-	}
+	assertNotNilf(t, err, "Expected error on calling removed command.")
 }
 
 func TestReplaceCommandWithRemove(t *testing.T) {
@@ -1868,11 +1855,11 @@ func TestFlagErrorFuncHelp(t *testing.T) {
 	expected := "Usage:\n  c [flags]\n\nFlags:\n      --help   help for c\n"
 
 	out, err := executeCommand(c, "--help")
-	assertNoErr(t, err)
+	assertNil(t, err)
 	assertEqual(t, expected, rmCarriageRet(out))
 
 	out, err = executeCommand(c, "-h")
-	assertNoErr(t, err)
+	assertNil(t, err)
 	assertEqual(t, expected, rmCarriageRet(out))
 }
 

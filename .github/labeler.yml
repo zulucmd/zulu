@@ -4,9 +4,6 @@
 # changes to the core Go cobra lib package
 "area/lib": ./*.go
 
-# changes to the Cobra CLI
-"area/cli": cobra/**/*
-
 # changes to GitHub workflows
 "area/github": .github/**/*
 

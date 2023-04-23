@@ -2,7 +2,6 @@ package zulu_test
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestCompleteNoDesCmdInBashScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
+	assertNil(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
 
 	assertContains(t, output, zulu.ShellCompNoDescRequestCmd)
@@ -35,17 +34,17 @@ func TestCompleteCmdInBashScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenBashCompletion(buf, true))
+	assertNil(t, rootCmd.GenBashCompletion(buf, true))
 	output := buf.String()
 
-	assertContains(t, output, zulu.ShellCompRequestCmd+" ")
+	assertContains(t, output, zulu.ShellCompRequestCmd+"$")
 	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestBashProgWithDash(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root-dash", Args: zulu.NoArgs, RunE: noopRun}
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
+	assertNil(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
 
 	// Functions name should have replace the '-'
@@ -60,7 +59,7 @@ func TestBashProgWithDash(t *testing.T) {
 func TestBashProgWithColon(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root:colon", Args: zulu.NoArgs, RunE: noopRun}
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenBashCompletion(buf, false))
+	assertNil(t, rootCmd.GenBashCompletion(buf, false))
 	output := buf.String()
 
 	// Functions name should have replace the ':'
@@ -75,7 +74,7 @@ func TestBashProgWithColon(t *testing.T) {
 func TestGenBashCompletionFile(t *testing.T) {
 	err := os.Mkdir("./tmp", 0755)
 	if err != nil {
-		log.Fatal(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	defer os.RemoveAll("./tmp")
@@ -88,13 +87,13 @@ func TestGenBashCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	assertNoErr(t, rootCmd.GenBashCompletionFile("./tmp/test", false))
+	assertNil(t, rootCmd.GenBashCompletionFile("./tmp/test", false))
 }
 
 func TestFailGenBashCompletionFile(t *testing.T) {
 	err := os.Mkdir("./tmp", 0755)
 	if err != nil {
-		log.Fatal(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	defer os.RemoveAll("./tmp")
@@ -110,12 +109,7 @@ func TestFailGenBashCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	got := rootCmd.GenBashCompletionFile("./tmp/test", false)
-	if got == nil {
-		t.Error("should raise permission denied error")
-	}
-
-	if got.Error() != expectedPermissionError {
-		t.Errorf("got: %s, want: %s", got.Error(), expectedPermissionError)
-	}
+	err = rootCmd.GenBashCompletionFile("./tmp/test", false)
+	assertErrf(t, err, "should raise permission denied error")
+	assertEqual(t, expectedPermissionError, err.Error())
 }

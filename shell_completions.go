@@ -3,7 +3,7 @@ package zulu
 import (
 	"fmt"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 )
 
 // FlagOptFilename instructs the various shell completion implementations to

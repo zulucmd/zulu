@@ -74,7 +74,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu"
 )
 
@@ -267,7 +267,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu"
 )
 

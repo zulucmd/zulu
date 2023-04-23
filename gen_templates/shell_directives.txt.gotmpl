@@ -1,0 +1,4 @@
+{{- range $k, $val := .values }}
+{{- if ne $k 0 }}{{ "\n" }}{{ end }}
+{{- $val.Comment }}{{ $val.Name }}
+{{ end -}}

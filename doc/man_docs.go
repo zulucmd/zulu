@@ -28,7 +28,7 @@ import (
 	"github.com/zulucmd/zulu/internal/util"
 
 	"github.com/cpuguy83/go-md2man/v2/md2man"
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 )
 
 // GenManTree will generate a man page for this command and all descendants

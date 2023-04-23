@@ -5,6 +5,10 @@ go 1.16
 require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.2
 	github.com/inconshreveable/mousetrap v1.1.0
-	github.com/zulucmd/zflag v1.1.2
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
+	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
+	github.com/zulucmd/zflag/v2 v2.0.0
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/tools v0.2.0
+	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
+	gopkg.in/yaml.v3 v3.0.1
 )

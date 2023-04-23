@@ -17,9 +17,7 @@
 package zulu
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"strings"
 	"text/template"
 	"time"
@@ -33,8 +31,8 @@ var templateFuncs = template.FuncMap{
 	"rpad":                    rpad,
 }
 
-// EnablePrefixMatching allows to set automatic prefix matching. Automatic prefix matching can be a dangerous thing
-// to automatically enable in CLI tools.
+// EnablePrefixMatching allows to set an automatic prefix matching. The automatic prefix matching can be a
+// dangerous thing to automatically enable in CLI tools.
 // Set this to true to enable it.
 var EnablePrefixMatching = false
 
@@ -79,29 +77,6 @@ func trimRightSpace(s string) string {
 func rpad(s string, padding int) string {
 	format := fmt.Sprintf("%%-%ds", padding)
 	return fmt.Sprintf(format, s)
-}
-
-func tmplFromFile(templateFile string, data interface{}) string {
-	templateData, err := tmplFS.ReadFile(templateFile)
-	if err != nil {
-		panic(fmt.Sprintf("failed to read template file %q: %s", templateFile, err))
-	}
-
-	buf := new(bytes.Buffer)
-	err = tmpl(buf, string(templateData), data)
-	if err != nil {
-		panic(fmt.Sprintf("failed to parse template: %s", err))
-	}
-
-	return buf.String()
-}
-
-// tmpl executes the given template text on data, writing the result to w.
-func tmpl(w io.Writer, text string, data interface{}) error {
-	t := template.New("top")
-	t.Funcs(templateFuncs)
-	template.Must(t.Parse(text))
-	return t.Execute(w, data)
 }
 
 // ld compares two strings and returns the levenshtein distance between them.

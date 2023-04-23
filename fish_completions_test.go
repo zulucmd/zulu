@@ -2,7 +2,6 @@ package zulu_test
 
 import (
 	"bytes"
-	"log"
 	"os"
 	"testing"
 
@@ -19,7 +18,7 @@ func TestCompleteNoDesCmdInFishScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
+	assertNil(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
 
 	assertContains(t, output, zulu.ShellCompNoDescRequestCmd)
@@ -35,7 +34,7 @@ func TestCompleteCmdInFishScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenFishCompletion(buf, true))
+	assertNil(t, rootCmd.GenFishCompletion(buf, true))
 	output := buf.String()
 
 	assertContains(t, output, zulu.ShellCompRequestCmd+" ")
@@ -45,7 +44,7 @@ func TestCompleteCmdInFishScript(t *testing.T) {
 func TestProgWithDash(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root-dash", Args: zulu.NoArgs, RunE: noopRun}
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
+	assertNil(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
 
 	// Functions name should have replaced the '-'
@@ -60,7 +59,7 @@ func TestProgWithDash(t *testing.T) {
 func TestProgWithColon(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root:colon", Args: zulu.NoArgs, RunE: noopRun}
 	buf := new(bytes.Buffer)
-	assertNoErr(t, rootCmd.GenFishCompletion(buf, false))
+	assertNil(t, rootCmd.GenFishCompletion(buf, false))
 	output := buf.String()
 
 	// Functions name should have replaced the ':'
@@ -75,7 +74,7 @@ func TestProgWithColon(t *testing.T) {
 func TestGenFishCompletionFile(t *testing.T) {
 	err := os.Mkdir("./tmp", 0755)
 	if err != nil {
-		log.Fatal(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	defer os.RemoveAll("./tmp")
@@ -88,13 +87,13 @@ func TestGenFishCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	assertNoErr(t, rootCmd.GenFishCompletionFile("./tmp/test", false))
+	assertNil(t, rootCmd.GenFishCompletionFile("./tmp/test", false))
 }
 
 func TestFailGenFishCompletionFile(t *testing.T) {
 	err := os.Mkdir("./tmp", 0755)
 	if err != nil {
-		log.Fatal(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	defer os.RemoveAll("./tmp")

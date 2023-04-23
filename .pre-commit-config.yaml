@@ -49,8 +49,9 @@ repos:
         language: system
         pass_filenames: false
         entry: go mod tidy
-      - name: Shell directives markdown generator
-        id: shell_directives_generator
-        language: python
+        files: '(\.go$|go\.mod|go\.sum)'
+      - name: Go Generate
+        id: go-generate
+        language: system
         pass_filenames: false
-        entry: ./scripts/const_retriever completions.go ShellCompDirective -o site/content/code/shell_directives.gen.txt
+        entry: go generate ./...

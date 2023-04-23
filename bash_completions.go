@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 )
 
 // Annotations for Bash completion.

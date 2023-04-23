@@ -24,7 +24,7 @@ import (
 	"github.com/zulucmd/zulu"
 	"gopkg.in/yaml.v3"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
 )
 
 type cmdOption struct {

@@ -28,17 +28,18 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zulucmd/zflag"
+	"github.com/zulucmd/zflag/v2"
+	"github.com/zulucmd/zulu/internal/template"
 	"github.com/zulucmd/zulu/internal/util"
 )
 
-const FlagSetByCobraAnnotation = "cobra_annotation_flag_set_by_cobra"
+const FlagSetByZuluAnnotation = "zulu_annotation_flag_set_by_zulu"
 
 //go:embed templates/*
 var tmplFS embed.FS
 
 // FParseErrAllowList configures Flag parse errors to be ignored
-type FParseErrAllowList zflag.ParseErrorsAllowlist
+type FParseErrAllowList zflag.ParseErrorsAllowList
 
 // ErrVersion is the error returned if the flag -version is invoked.
 var ErrVersion = errors.New("zulu: version requested")
@@ -444,7 +445,7 @@ func (c *Command) UsageFunc() (f func(*Command) error) {
 	}
 	return func(c *Command) error {
 		c.mergePersistentFlags()
-		err := tmpl(c.OutOrStderr(), c.UsageTemplate(), c)
+		err := template.Parse(c.OutOrStderr(), c.UsageTemplate(), c, templateFuncs)
 		if err != nil {
 			c.PrintErrln(err)
 		}
@@ -472,7 +473,7 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 		c.mergePersistentFlags()
 		// The help should be sent to stdout
 		// See https://github.com/spf13/cobra/issues/1002
-		err := tmpl(c.OutOrStdout(), c.HelpTemplate(), c)
+		err := template.Parse(c.OutOrStdout(), c.HelpTemplate(), c, templateFuncs)
 		if err != nil {
 			c.PrintErrln(err)
 		}
@@ -939,7 +940,7 @@ func (c *Command) execute(a []string) (err error) {
 				return err
 			}
 			if versionVal {
-				err := tmpl(c.OutOrStdout(), c.VersionTemplate(), c)
+				err = template.Parse(c.OutOrStdout(), c.VersionTemplate(), c, templateFuncs)
 				if err != nil {
 					c.Println(err)
 					return err
@@ -1207,7 +1208,7 @@ func (c *Command) InitDefaultHelpFlag() {
 		} else {
 			usage += c.Name()
 		}
-		c.Flags().Bool("help", false, usage, zflag.OptShorthand('h'), zflag.OptAnnotation(FlagSetByCobraAnnotation, []string{"true"}))
+		c.Flags().Bool("help", false, usage, zflag.OptShorthand('h'), zflag.OptAnnotation(FlagSetByZuluAnnotation, []string{"true"}))
 	}
 }
 
@@ -1230,7 +1231,7 @@ func (c *Command) InitDefaultVersionFlag() {
 		}
 
 		opts := []zflag.Opt{
-			zflag.OptAnnotation(FlagSetByCobraAnnotation, []string{"true"}),
+			zflag.OptAnnotation(FlagSetByZuluAnnotation, []string{"true"}),
 		}
 		if c.Flags().ShorthandLookup('v') == nil {
 			opts = append(opts, zflag.OptShorthand('v'))
@@ -1836,7 +1837,7 @@ func (c *Command) ParseFlags(args []string) error {
 	c.mergePersistentFlags()
 
 	// do it here after merging all flags and just before parse
-	c.Flags().ParseErrorsAllowlist = zflag.ParseErrorsAllowlist(c.FParseErrAllowList)
+	c.Flags().ParseErrorsAllowList = zflag.ParseErrorsAllowList(c.FParseErrAllowList)
 
 	err := c.Flags().Parse(args)
 	// Print warnings if they occurred (e.g. deprecated flag messages).
