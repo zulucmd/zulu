@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 func printOptionsAdoc(buf *bytes.Buffer, cmd *zulu.Command) error {

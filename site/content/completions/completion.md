@@ -24,7 +24,7 @@ Zulu's completion scripts provide the following features:
 Zulu provides a few options for the default `completion` command.  To configure such options you must set
 the `CompletionOptions` field on the *root* command.
 
-Please look at the documentation for the [`CompletionOptions](https://pkg.go.dev/github.com/zulucmd/zulu#CompletionOptions) struct to see what can be configured.
+Please look at the documentation for the [`CompletionOptions](https://pkg.go.dev/{{< param go_import_package >}}#CompletionOptions) struct to see what can be configured.
 
 ## Customizing completions
 

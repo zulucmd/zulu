@@ -1,6 +1,7 @@
-[![Test](https://github.com/zulucmd/zulu/actions/workflows/test.yml/badge.svg)](https://github.com/zulucmd/zulu/actions/workflows/test.yml)
-[![Go Reference](https://pkg.go.dev/badge/github.com/zulucmd/zulu.svg)](https://pkg.go.dev/github.com/zulucmd/zulu)
+[![Go Reference](https://pkg.go.dev/badge/github.com/zulucmd/zulu)](https://pkg.go.dev/github.com/zulucmd/zulu)
 [![Go Report Card](https://goreportcard.com/badge/github.com/zulucmd/zulu)](https://goreportcard.com/report/github.com/zulucmd/zulu)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/zulucmd/zulu?sort=semver)](https://github.com/zulucmd/zulu/releases)
+[![Build Status](https://github.com/zulucmd/zulu/actions/workflows/test.yml/badge.svg)](https://github.com/zulucmd/zulu/actions/workflows/test.yml)
 
 # [Zulu](https://zulucmd.github.io/zulu)
 

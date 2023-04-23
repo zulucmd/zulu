@@ -22,6 +22,7 @@ path = "github.com/bep/empty-hugo-module"
 
 [params]
 search = true
+go_import_package = "github.com/zulucmd/zulu/v2"
 
 [markup]
 [markup.goldmark]
@@ -36,8 +37,8 @@ languageName = "English"
 weight = 2
 title = "Zulu documentation"
 toc_footers = [
-    "[![github.com/gowraden/zulu](https://img.shields.io/badge/-zulucmd/zulu-323131.svg?logo=github&style=flat-square&longCache=true)](https://github.com/zulucmd/zulu)",
-    "Built with [Hugo](https://gohugo.io/) theme [DocuAPI](https://github.com/bep/docuapi) by [bep](https://github.com/bep)"
+  "[![github.com/zulucmd/zulu](https://img.shields.io/badge/-zulucmd/zulu-323131.svg?logo=github&style=flat-square&longCache=true)](https://github.com/zulucmd/zulu)",
+  "Built with [Hugo](https://gohugo.io/) theme [DocuAPI](https://github.com/bep/docuapi) by [bep](https://github.com/bep)",
 ]
 [languages.en.blackfriday]
 angledQuotes = false

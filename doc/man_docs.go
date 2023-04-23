@@ -24,8 +24,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zulucmd/zulu"
-	"github.com/zulucmd/zulu/internal/util"
+	"github.com/zulucmd/zulu/v2"
+	"github.com/zulucmd/zulu/v2/internal/util"
 
 	"github.com/cpuguy83/go-md2man/v2/md2man"
 	"github.com/zulucmd/zflag/v2"

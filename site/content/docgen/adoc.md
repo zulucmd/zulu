@@ -12,8 +12,8 @@ package main
 import (
 	"log"
 
-	"github.com/zulucmd/zulu"
-	"github.com/zulucmd/zulu/doc"
+	"{{< param go_import_package >}}"
+	"{{< param go_import_package >}}/doc"
 )
 
 func main() {
@@ -45,7 +45,7 @@ import (
 	"k8s.io/kubernetes/pkg/kubectl/cmd"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 
-	"github.com/zulucmd/zulu/doc"
+	"{{< param go_import_package >}}/doc"
 )
 
 func main() {

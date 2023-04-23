@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 func TestValidateFlagGroups(t *testing.T) {

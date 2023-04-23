@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 type argsTestcase struct {

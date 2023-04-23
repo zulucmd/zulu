@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 func TestCompleteNoDesCmdInFishScript(t *testing.T) {

@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 func printOptionsReST(buf *bytes.Buffer, cmd *zulu.Command, name string) error {

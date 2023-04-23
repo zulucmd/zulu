@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/zulucmd/zulu"
-	"github.com/zulucmd/zulu/doc"
-	"github.com/zulucmd/zulu/internal/util"
+	"github.com/zulucmd/zulu/v2"
+	"github.com/zulucmd/zulu/v2/doc"
+	"github.com/zulucmd/zulu/v2/internal/util"
 )
 
 func ExampleGenManTree() {

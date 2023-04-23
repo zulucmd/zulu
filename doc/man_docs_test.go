@@ -11,8 +11,8 @@ import (
 
 	"github.com/zulucmd/zflag/v2"
 
-	"github.com/zulucmd/zulu"
-	"github.com/zulucmd/zulu/doc"
+	"github.com/zulucmd/zulu/v2"
+	"github.com/zulucmd/zulu/v2/doc"
 )
 
 func translate(in string) string {

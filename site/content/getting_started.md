@@ -41,7 +41,7 @@ Zulu doesn't require any special constructors. Simply create your commands.
 // cmd/$app/main.go
 package main
 
-import "github.com/zulucmd/zulu"
+import "{{< param go_import_package >}}"
 
 var rootCmd = &zulu.Command{
 	Use:   "hugo",
@@ -75,7 +75,7 @@ import (
 	"os"
 
 	"github.com/zulucmd/zflag/v2"
-	"github.com/zulucmd/zulu"
+	"{{< param go_import_package >}}"
 )
 
 var (
@@ -122,7 +122,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/zulucmd/zulu"
+	"{{< param go_import_package >}}"
 )
 
 func init() {
@@ -268,7 +268,7 @@ import (
 	"strings"
 
 	"github.com/zulucmd/zflag/v2"
-	"github.com/zulucmd/zulu"
+	"{{< param go_import_package >}}"
 )
 
 func main() {

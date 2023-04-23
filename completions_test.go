@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/zulucmd/zflag/v2"
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 func validArgsFunc(_ *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {

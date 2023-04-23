@@ -1,0 +1,16 @@
+{{ $owner := .Get "owner" }}
+{{ $repo := .Get "repo" }}
+{{ $data := getJSON "https://api.github.com/repos/" $owner "/" $repo "/releases" }}
+{{ range $data }}
+
+## {{ .name }}
+
+{{ replaceRE `([^\n])([#]+)` `$1#$2` .body }}
+
+Link: [{{ .name }}]({{ .html_url }})
+
+{{ else }}
+
+No releases yet.
+
+{{ end }}

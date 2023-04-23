@@ -21,7 +21,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 	"gopkg.in/yaml.v3"
 
 	"github.com/zulucmd/zflag/v2"

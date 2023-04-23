@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zulucmd/zulu/internal/template"
+	"github.com/zulucmd/zulu/v2/internal/template"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -36,7 +36,7 @@ func Usage() {
 	_, _ = fmt.Fprintf(os.Stderr, "\tEnumer [flags] -type T [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tEnumer [flags] -type T files... # Must be a single package\n")
 	_, _ = fmt.Fprintf(os.Stderr, "For more information, see:\n")
-	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/zulucmd/zulu/internal/enumer\n")
+	_, _ = fmt.Fprintf(os.Stderr, "\thttps://godoc.org/github.com/zulucmd/zulu/v2/internal/enumer\n")
 	_, _ = fmt.Fprintf(os.Stderr, "Flags:\n")
 	flag.PrintDefaults()
 }

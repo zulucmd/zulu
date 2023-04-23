@@ -3,7 +3,7 @@ package zulu_test
 import (
 	"fmt"
 
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 func ExampleHookFuncE() {

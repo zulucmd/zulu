@@ -1,4 +1,4 @@
-module github.com/zulucmd/zulu
+module github.com/zulucmd/zulu/v2
 
 go 1.16
 

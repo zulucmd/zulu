@@ -29,8 +29,8 @@ import (
 	"strings"
 
 	"github.com/zulucmd/zflag/v2"
-	"github.com/zulucmd/zulu/internal/template"
-	"github.com/zulucmd/zulu/internal/util"
+	"github.com/zulucmd/zulu/v2/internal/template"
+	"github.com/zulucmd/zulu/v2/internal/util"
 )
 
 const FlagSetByZuluAnnotation = "zulu_annotation_flag_set_by_zulu"

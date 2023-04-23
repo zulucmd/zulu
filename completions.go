@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/zulucmd/zflag/v2"
-	"github.com/zulucmd/zulu/internal/template"
+	"github.com/zulucmd/zulu/v2/internal/template"
 )
 
 const (

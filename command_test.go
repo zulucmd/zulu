@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/zulucmd/zflag/v2"
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 func noopRun(*zulu.Command, []string) error { return nil }

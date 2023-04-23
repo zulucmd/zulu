@@ -9,7 +9,7 @@ import (
 	"testing"
 	"text/template"
 
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 func assertNotContains(t *testing.T, str, unexpected string) {

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/zulucmd/zulu"
-	"github.com/zulucmd/zulu/doc"
+	"github.com/zulucmd/zulu/v2"
+	"github.com/zulucmd/zulu/v2/doc"
 )
 
 func TestGenAsciidoc(t *testing.T) {
