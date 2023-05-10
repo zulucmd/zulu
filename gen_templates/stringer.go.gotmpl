@@ -17,7 +17,9 @@ func _{{ .typeName }}NoOp() {
 
 var _{{ .typeName }}Values = []{{ .typeName }}{
 {{- range $val := .values }}
+{{- if $val.Exported }}
 	{{ $val.Name }},
+{{- end }}
 {{- end }}
 }
 
@@ -39,8 +41,10 @@ func (i {{ .typeName }}) IsA{{ .typeName }}() bool {
 func (i {{ .typeName }}) Name() string {
 	switch i {
 {{- range $val := .values }}
+{{- if $val.Exported }}
 	case {{ $val.Name }}:
 		return "{{ $val.Name }}"
+{{- end }}
 {{- end }}
 	default:
 		return fmt.Sprintf("{{ .typeName }}(%d)", i)

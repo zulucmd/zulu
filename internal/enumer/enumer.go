@@ -67,7 +67,7 @@ func main() {
 		panic(err)
 	}
 
-	g.parsePackage(args, []string{})
+	g.parsePackage(args)
 
 	res, err := template.ParseFromFile(os.DirFS(dir), path, map[string]interface{}{
 		"pkgName":  g.pkg.name,
@@ -86,6 +86,14 @@ func main() {
 }
 
 func writeSource(typeName, dir, outputName string, src []byte) {
+	if outputName == "-" {
+		_, err := os.Stdout.Write(src)
+		if err != nil {
+			log.Fatalf("failed to write output: %s", err)
+		}
+		return
+	}
+
 	if outputName == "" {
 		baseName := fmt.Sprintf("%s.gen.go", typeName)
 		outputName = filepath.Join(dir, strings.ToLower(baseName))
@@ -159,7 +167,7 @@ type Package struct {
 
 // parsePackage analyzes the single package constructed from the patterns and tags.
 // parsePackage exits if there is an error.
-func (g *Generator) parsePackage(patterns []string, tags []string) {
+func (g *Generator) parsePackage(patterns []string) {
 	cfg := &packages.Config{
 		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo,
 		Tests: false,
@@ -236,8 +244,9 @@ type Value struct {
 	// this matters is when sorting.
 	// Much of the time the Value field is all we need; it is printed
 	// by Value.String.
-	Value   string // The string representation given by the "go/exact" package.
-	Comment string // The comment given to this field.
+	Value    string // The string representation given by the "go/exact" package.
+	Comment  string // The comment given to this field.
+	Exported bool   // Whether the field is exported.
 }
 
 func (v *Value) String() string {
@@ -282,7 +291,7 @@ func (f *File) genDecl(node ast.Node) bool {
 		// declared with the desired type.
 		// Grab their names and actual values and store them in f.values.
 		for _, n := range vspec.Names {
-			if n.Name == "_" || !n.IsExported() {
+			if n.Name == "_" {
 				continue
 			}
 
@@ -305,8 +314,9 @@ func (f *File) genDecl(node ast.Node) bool {
 			}
 
 			v := Value{
-				Name:  n.Name,
-				Value: value.String(),
+				Name:     n.Name,
+				Value:    value.String(),
+				Exported: n.IsExported(),
 			}
 
 			if vspec.Comment != nil || vspec.Doc != nil {

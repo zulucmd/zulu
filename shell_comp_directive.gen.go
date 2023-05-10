@@ -16,6 +16,7 @@ func _ShellCompDirectiveNoOp() {
 	_ = x[ShellCompDirectiveFilterFileExt-(8)]
 	_ = x[ShellCompDirectiveFilterDirs-(16)]
 	_ = x[ShellCompDirectiveKeepOrder-(32)]
+	_ = x[shellCompDirectiveMaxValue-(64)]
 	_ = x[ShellCompDirectiveDefault-(0)]
 }
 

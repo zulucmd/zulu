@@ -1,4 +1,6 @@
 {{- range $k, $val := .values }}
+{{- if $val.Exported }}
 {{- if ne $k 0 }}{{ "\n" }}{{ end }}
 {{- $val.Comment }}{{ $val.Name }}
+{{ end -}}
 {{ end -}}
