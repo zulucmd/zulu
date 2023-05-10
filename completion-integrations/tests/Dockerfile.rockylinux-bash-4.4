@@ -1,0 +1,6 @@
+FROM quay.io/rockylinux/rockylinux
+
+RUN yum install -y bash-completion which
+
+WORKDIR /work
+COPY . .

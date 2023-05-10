@@ -1,0 +1,12 @@
+FROM docker.io/library/bash:3.2
+
+RUN apk update && apk add ca-certificates
+# For bash 3.2, the bash-completion package required is version 1.3
+RUN mkdir /usr/share/bash-completion && \
+  wget -qO - https://github.com/scop/bash-completion/archive/1.3.tar.gz | \
+    tar xvz -C /usr/share/bash-completion --strip-components 1 bash-completion-1.3/bash_completion
+
+ENV BASH_COMPLETION=/usr/share/bash-completion
+
+WORKDIR /work
+COPY . .

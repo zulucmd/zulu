@@ -1,0 +1,8 @@
+FROM quay.io/rockylinux/rockylinux
+
+RUN cd /etc/yum.repos.d/ && \
+  curl -O https://download.opensuse.org/repositories/shells:/fish/CentOS_8/shells:fish.repo && \
+  yum install -y fish which
+
+WORKDIR /work
+COPY . .

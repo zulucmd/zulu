@@ -1,0 +1,5 @@
+FROM docker.io/library/bash:4.4
+RUN apk update && apk add bash-completion ca-certificates
+
+WORKDIR /work
+COPY . .
