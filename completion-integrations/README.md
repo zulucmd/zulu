@@ -72,4 +72,3 @@ cannot be used outside of a real completion scenario, so it cannot be used durin
 regression tests.  The tests replace it with their own implementation and keep track
 of what directives have been enabled/disabled to verify it is what is expected.
 See [comp-tests-lib.bash](src/comp-tests-lib.bash).
-
