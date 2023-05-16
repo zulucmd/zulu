@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zulucmd/zulu"
+	"github.com/zulucmd/zulu/v2"
 )
 
 var (
@@ -255,5 +255,7 @@ func main() {
 		defaultCmdNoPrefix,
 	)
 
-	rootCmd.Execute()
+	if err := rootCmd.Execute(); err != nil {
+		panic(err)
+	}
 }
