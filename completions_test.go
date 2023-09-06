@@ -985,11 +985,8 @@ func TestValidArgsFuncCmdContext(t *testing.T) {
 	validArgsFunc := func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 		ctx := cmd.Context()
 
-		if ctx == nil {
-			t.Error("Received nil context in completion func")
-		} else if ctx.Value("testKey") != "123" {
-			t.Error("Received invalid context")
-		}
+		assertNotNilf(t, ctx, "Received nil context in completion func")
+		assertEqualf(t, "123", ctx.Value("testKey"), "Received invalid context")
 
 		return nil, zulu.ShellCompDirectiveDefault
 	}
@@ -1835,10 +1832,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	// Test that no completion command is created if there are not other sub-commands
 	assertNil(t, rootCmd.Execute())
 	for _, cmd := range rootCmd.Commands() {
-		if cmd.Name() == zulu.CompCmdName {
-			t.Errorf("Should not have a 'completion' command when there are no other sub-commands of root")
-			break
-		}
+		assertNotEqualf(t, zulu.CompCmdName, cmd.Name(), "Should not have a 'completion' command when there are no other sub-commands of root")
 	}
 
 	subCmd := &zulu.Command{
@@ -1856,9 +1850,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 			break
 		}
 	}
-	if !found {
-		t.Errorf("Should have a 'completion' command when there are other sub-commands of root")
-	}
+	assertEqualf(t, true, found, "Should have a 'completion' command when there are other sub-commands of root")
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
 
@@ -1866,10 +1858,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	assertNil(t, rootCmd.Execute())
 	for _, cmd := range rootCmd.Commands() {
-		if cmd.Name() == zulu.CompCmdName {
-			t.Errorf("Should not have a 'completion' command when the feature is disabled")
-			break
-		}
+		assertNotEqualf(t, zulu.CompCmdName, cmd.Name(), "Should not have a 'completion' command when the feature is disabled")
 	}
 	// Re-enable for next test
 	rootCmd.CompletionOptions.DisableDefaultCmd = false
@@ -1898,12 +1887,10 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	// Test that the --no-descriptions flag is present on all shells
 	assertNil(t, rootCmd.Execute())
 	for _, shell := range []string{"bash", "fish", "powershell", "zsh"} {
-		if compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell}); err != nil {
-			t.Errorf("Unexpected error: %v", err)
-		}
-		if flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName); flag == nil {
-			t.Errorf("Missing --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
-		}
+		compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell})
+		assertNilf(t, err, "Unexpected error")
+		flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName)
+		assertNotNilf(t, flag, "Missing --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
 	}
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
@@ -1912,12 +1899,10 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.CompletionOptions.DisableDescriptionsFlag = true
 	assertNil(t, rootCmd.Execute())
 	for _, shell := range []string{"fish", "zsh", "bash", "powershell"} {
-		if compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell}); err != nil {
-			t.Errorf("Unexpected error: %v", err)
-		}
-		if flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName); flag != nil {
-			t.Errorf("Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
-		}
+		compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell})
+		assertNilf(t, err, "Unexpected error")
+		flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName)
+		assertNilf(t, flag, "Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
 	}
 	// Re-enable for next test
 	rootCmd.CompletionOptions.DisableDescriptionsFlag = false
@@ -1928,12 +1913,10 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	rootCmd.CompletionOptions.DisableDescriptions = true
 	assertNil(t, rootCmd.Execute())
 	for _, shell := range []string{"fish", "zsh", "bash", "powershell"} {
-		if compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell}); err != nil {
-			t.Errorf("Unexpected error: %v", err)
-		}
-		if flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName); flag != nil {
-			t.Errorf("Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
-		}
+		compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell})
+		assertNilf(t, err, "Unexpected error")
+		flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName)
+		assertNilf(t, flag, "Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
 	}
 	// Re-enable for next test
 	rootCmd.CompletionOptions.DisableDescriptions = false
@@ -1945,9 +1928,7 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	assertNil(t, rootCmd.Execute())
 	compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName})
 	assertNilf(t, err, "Unexpected error: %v", err)
-	if compCmd.Hidden == false {
-		t.Error("Default 'completion' command should be hidden but it is not")
-	}
+	assertEqualf(t, true, compCmd.Hidden, "Default 'completion' command should be hidden but it is not")
 	// Re-enable for next test
 	rootCmd.CompletionOptions.HiddenDefaultCmd = false
 	// Remove completion command for the next test
@@ -2593,9 +2574,8 @@ func TestShellCompDirective_ListDirectives(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.d.ListDirectives(); got != tt.want {
-				t.Errorf("expected %v, got %v", tt.want, got)
-			}
+			got := tt.d.ListDirectives()
+			assertEqual(t, tt.want, got)
 		})
 	}
 }

@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -815,7 +814,7 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 
 // SuggestionsFor provides suggestions for the typedName.
 func (c *Command) SuggestionsFor(typedName string) []string {
-	suggestions := []string{}
+	var suggestions []string
 	for _, cmd := range c.commands {
 		if cmd.IsAvailableCommand() {
 			levenshteinDistance := ld(typedName, cmd.Name(), true)
@@ -1115,8 +1114,8 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 
 	args := c.args
 
-	// Workaround FAIL with "go test -v" or "zulu.test -test.v", see #155
-	if c.args == nil && !strings.Contains(filepath.Base(os.Args[0]), "zulu.test") {
+	// Workaround FAIL with "go test -v" or "zulu_v2.test -test.v", see #155
+	if c.args == nil && os.Args[0] == c.Name() {
 		args = os.Args[1:]
 	}
 

@@ -41,16 +41,29 @@ func toStr(t *testing.T, obj interface{}) string {
 	switch o := obj.(type) {
 	case string:
 		return o
+	case error:
+		return o.Error()
+	case fmt.Stringer:
+		return o.String()
 	case []byte:
 		return string(o)
 	default:
 		buf := bytes.Buffer{}
 		enc := json.NewEncoder(&buf)
+		enc.SetIndent("", "  ")
 		err := enc.Encode(obj)
 		if err != nil {
 			t.Fatalf("failed to convert %+v to string", obj)
 		}
 		return buf.String()
+	}
+}
+
+func assertNotEqualf(t *testing.T, unexpected, actual interface{}, msg string, f ...interface{}) {
+	t.Helper()
+	if actual == unexpected {
+		diff := Diff([]byte(toStr(t, unexpected)), []byte(toStr(t, actual)))
+		t.Errorf("%[1]s\nUnexpected type %[2]T, actual type %[3]T\n%[4]s", fmt.Sprintf(msg, f...), unexpected, actual, diff)
 	}
 }
 
@@ -93,7 +106,7 @@ func assertNotNilf(t *testing.T, obj interface{}, msg string, f ...interface{}) 
 	t.Helper()
 	if isNil(obj) {
 		if msg == "" {
-			t.Errorf("expected an some value but got %v", obj)
+			t.Errorf("expected a value but got %v", obj)
 			return
 		}
 

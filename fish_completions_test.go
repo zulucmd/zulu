@@ -110,11 +110,6 @@ func TestFailGenFishCompletionFile(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	got := rootCmd.GenFishCompletionFile("./tmp/test", false)
-	if got == nil {
-		t.Error("should raise permission denied error")
-	}
-
-	if got.Error() != expectedPermissionError {
-		t.Errorf("got: %s, want: %s", got.Error(), expectedPermissionError)
-	}
+	assertNotNilf(t, got, "should raise permission denied error")
+	assertEqual(t, expectedPermissionError, got.Error())
 }
