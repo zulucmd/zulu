@@ -11,11 +11,11 @@ all: $(TESTS)
 
 .PHONY: build-linux
 build-linux:
-	@cd $(TESTPROG_DIR) && make build-linux
+	cd $(TESTPROG_DIR) && make build-linux
 
 .PHONE: $(TESTS)
 $(TESTS): build-linux
-	@src/test-all.sh $@
+	src/test-all.sh $@
 
 .PHONY: $(SHELLS)
 $(SHELLS):
@@ -30,11 +30,11 @@ macos: mac
 
 PHONY: mac
 mac:
-	@cd $(TESTPROG_DIR) && make clean
-	@cd $(TESTPROG_DIR) && make
-	@src/test-completion.sh bash
-	@src/test-completion.sh fish
+	cd $(TESTPROG_DIR) && make clean
+	cd $(TESTPROG_DIR) && make
+	src/test-completion.sh bash
+	src/test-completion.sh fish
 
 .PHONY: clean
 clean:
-	@cd $(TESTPROG_DIR) && make clean
+	cd $(TESTPROG_DIR) && make clean

@@ -1,0 +1,45 @@
+name: Test Completions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  GO111MODULE: on
+
+jobs:
+  DetermineVersion:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - id: go-version-matrix
+        run: |
+          go_version="$(awk '/^go/{print $2}' go.mod)"
+          echo "go_version=${go_version}.x" >> $GITHUB_OUTPUT
+    outputs:
+      go_version: ${{ steps.go-version-matrix.outputs.go_version }}
+
+  Test-Docker:
+    needs: DetermineVersion
+    runs-on: ubuntu-latest
+    name: Docker Tests
+    steps:
+      - name: Setup go
+        shell: bash
+        run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/Library/Caches/go-build
+            ~/AppData/Local/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: go-mod
+      - name: Run tests
+        shell: bash
+        run: cd completion-integrations && make all

@@ -35,7 +35,7 @@ verifyRedirect() {
   fi
 }
 
-ROOTDIR="$PWD"
+ROOTDIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." &>/dev/null && pwd)
 export PATH="$ROOTDIR/testprog/bin:$PATH"
 
 # Source the testing logic
@@ -155,6 +155,7 @@ HOME="$(mktemp -d)"
 cp "$ROOTDIR/testprog/bin/testprog" "$HOME/"
 # Must use single quotes to keep the environment variable
 _completionTests_verifyCompletion "\$HOME/testprog prefix default u" "unicorn"
+# shellcheck disable=SC2088
 _completionTests_verifyCompletion "~/testprog prefix default u" "unicorn"
 rm "$HOME/testprog"
 rmdir "$HOME"

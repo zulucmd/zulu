@@ -7,10 +7,13 @@ set -euo pipefail
 # Get path to docker or podman binary
 CONTAINER_ENGINE="$(command -v podman docker | head -n1)"
 
-if [ -z "$CONTAINER_ENGINE" ]; then
+if [[ -z "$CONTAINER_ENGINE" ]]; then
   echo "Missing 'docker' or 'podman' which is required for these tests"
   exit 2
 fi
+
+engine_args=()
+[[ $CONTAINER_ENGINE == */docker ]] && engine_args+=("--load")
 
 BASE_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." &>/dev/null && pwd)
 
@@ -45,7 +48,7 @@ for testName in "$@"; do
   (
     exec > >(trap "" INT TERM; sed 's/^/'"$testName"': /')
     exec 2> >(trap "" INT TERM; sed 's/^/'"$testName"': /' >&2)
-    $CONTAINER_ENGINE build -t "${imageName}" "${BASE_DIR}" -f "$testFile"
+    $CONTAINER_ENGINE build "${engine_args[@]}" -t "${imageName}" "${BASE_DIR}" -f "$testFile"
   ) &
 done
 

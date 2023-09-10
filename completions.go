@@ -216,7 +216,7 @@ func (c *Command) initCompleteCmd(args []string) {
 	subCmd, _, err := c.Find(args)
 	if err != nil || subCmd.Name() != ShellCompRequestCmd {
 		// Only create this special command if it is actually being called.
-		// This reduces possible side-effects of creating such a command;
+		// This reduces possible side effects of creating such a command;
 		// for example, having this command would cause problems to a
 		// zulu program that only consists of the root command, since this
 		// command would cause the root command to suddenly have a subcommand.

@@ -1115,7 +1115,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	args := c.args
 
 	// Workaround FAIL with "go test -v" or "zulu_v2.test -test.v", see #155
-	if c.args == nil && os.Args[0] == c.Name() {
+	if args == nil && !strings.HasSuffix(os.Args[0], ".test") {
 		args = os.Args[1:]
 	}
 

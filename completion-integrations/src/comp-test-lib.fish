@@ -1,4 +1,4 @@
-#!sh
+#!/usr/bin/env fish
 
 # Global variable to keep track of if a test has failed.
 set -g _completionTests_TEST_FAILED 0

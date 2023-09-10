@@ -96,7 +96,7 @@ function __{{ .CMDVarName }}_requires_order_preservation
     __{{ .CMDVarName }}_debug "Directive is: $directive"
 
     set -l shellCompDirectiveKeepOrder {{ .ShellCompDirectiveKeepOrder }}
-    set -l keeporder (math (math --scale 0 $directive / $shellCompDirectiveKeepOrder) %% 2)
+    set -l keeporder (math (math --scale 0 $directive / $shellCompDirectiveKeepOrder) % 2)
     __{{ .CMDVarName }}_debug "Keeporder is: $keeporder"
 
     if test $keeporder -ne 0
