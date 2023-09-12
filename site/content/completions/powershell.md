@@ -20,7 +20,7 @@ Users need PowerShell version 5.0 or above, which comes with Windows 10 and can 
 They can then write the completions to a file and source this file from their PowerShell profile, which is referenced by the `$Profile` environment variable.
 See `Get-Help about_Profiles` for more info about PowerShell profiles.
 
-```
+```shell
 # With descriptions and Mode 'Complete'
 $ helm s[tab]
 search  (search for a keyword in charts)  show  (show information of a chart)  status  (displays the status of the named release)
@@ -40,7 +40,7 @@ search  show  status
 
 You can also configure `powershell` aliases for your program, and they will also support completions.
 
-```
+```shell
 $ sal aliasname origcommand
 $ Register-ArgumentCompleter -CommandName 'aliasname' -ScriptBlock $__origcommandCompleterBlock
 # and now when you run `aliasname` completion will make
@@ -48,16 +48,17 @@ $ Register-ArgumentCompleter -CommandName 'aliasname' -ScriptBlock $__origcomman
 $ aliasname <tab>
 completion     firstcommand   secondcommand
 ```
+
 The name of the completer block variable is of the form `$__<programName>CompleterBlock` where every `-` and `:` in the program name have been replaced with `_`, to respect powershell naming syntax.
 
 ### Limitations
 
 * The following flag completion annotations are not supported and will be ignored for `powershell`:
-    * `BashCompFilenameExt` (filtering by file extension)
-    * `BashCompSubdirsInDir` (filtering by directory)
+   * `BashCompFilenameExt` (filtering by file extension)
+   * `BashCompSubdirsInDir` (filtering by directory)
 * The functions corresponding to the above annotations are consequently not supported and will be ignored for `powershell`:
-    * `FlagOptFilename()` (filtering by file extension)
-    * `FlagOptDirname()` (filtering by directory)
+   * `FlagOptFilename()` (filtering by file extension)
+   * `FlagOptDirname()` (filtering by directory)
 * Similarly, the following completion directives are not supported and will be ignored for `powershell`:
-    * `ShellCompDirectiveFilterFileExt` (filtering by file extension)
-    * `ShellCompDirectiveFilterDirs` (filtering by directory)
+   * `ShellCompDirectiveFilterFileExt` (filtering by file extension)
+   * `ShellCompDirectiveFilterDirs` (filtering by directory)

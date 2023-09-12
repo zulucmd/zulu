@@ -11,7 +11,7 @@ written in the corresponding shell language, is a more challenging endeavour.
 This project aims to provide such regression tests which exercise and verify the
 completion scripts implemented by Zulu.
 
-# Current shell support
+## Current shell support
 
 At this time regression testing is supported for the `bash` and `fish` shell.
 
@@ -20,7 +20,7 @@ I aim to also support `zsh` but I have to figure out how to do so first.
 I don't expect to be able to test `powershell` as I am not familiar with that shell;
 contributions welcomed.
 
-# Dependencies
+## Dependencies
 
 - Clone this project and clone the Zulu project both in the same parent directory
 - A container engine installation (e.g., Podman or Docker)
@@ -31,24 +31,30 @@ shells.  The tests can be run on Linux or macOS.
 
 It is also possible to run the tests natively on macOS to run regression tests
 for that platform. This is done automatically when running the tests on macOS.
-# Running the tests
 
-## Test all
-```
+## Running the tests
+
+### Test all
+
+```shell
 make
 ```
-## Test bash
-```
+
+### Test bash
+
+```shell
 make bash
 ```
-## Test fish
-```
+
+### Test fish
+
+```shell
 make fish
 ```
 
-# Implementation
+## Implementation
 
-## fish
+### fish
 
 Testing completion for the `fish` shell is relatively simple as the `fish` shell
 allows to trigger completion from a test script by using `complete --do-complete <commandLine>`.
@@ -56,7 +62,7 @@ With this approach, it is also possible to check if file completion is triggered
 (to test `ShellCompDirectiveNoFileComp`).
 See [comp-tests-lib.fish](src/comp-test-lib.fish).
 
-## bash
+### bash
 
 The completion logic for the `bash` shell requires the completion script to store all
 completions in the `$COMPREPLY` array.  Also, starting with bash 4, the `compopt` command

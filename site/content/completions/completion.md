@@ -6,6 +6,7 @@ weight: 100
 
 Zulu can generate shell completions for multiple shells.
 The currently supported shells are:
+
 - Bash
 - Zsh
 - fish
@@ -15,6 +16,7 @@ Zulu will automatically provide your program with a fully functional `completion
 similarly to how it provides the `help` command.
 
 Zulu's completion scripts provide the following features:
+
 - Supports completion descriptions (like the other shells).
 - Small completion script of less than 300 lines.
 - Streamlined user experience thanks to a completion behavior aligned with the other shells.
@@ -24,7 +26,7 @@ Zulu's completion scripts provide the following features:
 Zulu provides a few options for the default `completion` command.  To configure such options you must set
 the `CompletionOptions` field on the *root* command.
 
-Please look at the documentation for the [`CompletionOptions](https://pkg.go.dev/{{< param go_import_package >}}#CompletionOptions) struct to see what can be configured.
+Please look at the documentation for the [`CompletionOptions`](https://pkg.go.dev/{{< param go_import_package >}}#CompletionOptions) struct to see what can be configured.
 
 ## Customizing completions
 
@@ -112,6 +114,7 @@ cmd := &zulu.Command{
 	},
 }
 ```
+
 Where `getReleasesFromCluster()` is a Go function that returns the list of current Helm release names running on the Kubernetes cluster.
 Similarly as for `RunE`, the `args` parameter represents the arguments present on the command-line, while the `toComplete` parameter represents the final argument which the user is trying to complete (e.g., `helm status th<TAB>` will have `toComplete` be `"th"`); the `toComplete` parameter will be empty when the user has requested completions right after typing a space (e.g., `helm status <TAB>`). Notice we put the `ValidArgsFunction` on the `status` sub-command, as it provides completions for this sub-command specifically. Let's assume the Helm releases on the cluster are: `harbor`, `notary`, `rook` and `thanos` then this dynamic completion will give results like:
 
@@ -125,16 +128,19 @@ You may have noticed the use of `zulu.ShellCompDirective`.  These directives are
 
 ***Note***: When using the `ValidArgsFunction`, Zulu will call your registered function after having parsed all flags and arguments provided in the command-line.  You therefore don't need to do this parsing yourself.  For example, when a user calls `helm status --namespace my-rook-ns [tab][tab]`, Zulu will call your registered `ValidArgsFunction` after having parsed the `--namespace` flag, as it would have done when calling the `RunE` function.
 
-##### Debugging
+##### Debugging completion
 
 Zulu achieves dynamic completion through the use of a hidden command called by the completion script.  To debug your Go completion code, you can call this hidden command directly:
+
 ```bash
 $ helm __complete status har<ENTER>
 harbor
 :4
 Completion ended with directive: ShellCompDirectiveNoFileComp # This is on stderr
 ```
+
 ***Important:*** If the noun to complete is empty (when the user has not yet typed any letters of that noun), you must pass an empty parameter to the `__complete` command:
+
 ```bash
 $ helm __complete status ""<ENTER>
 harbor
@@ -144,7 +150,9 @@ thanos
 :4
 Completion ended with directive: ShellCompDirectiveNoFileComp # This is on stderr
 ```
+
 Calling the `__complete` command directly allows you to run the Go debugger to troubleshoot your code.  You can also add printouts to your code; Zulu provides the following functions to use for printouts in Go completion code:
+
 ```go
 // Prints to the completion script debug file (if BASH_COMP_DEBUG_FILE
 // is set to a file path) and optionally prints to stderr.
@@ -156,6 +164,7 @@ zulu.CompDebugln(msg string, printToStdErr bool)
 zulu.CompError(msg string)
 zulu.CompErrorln(msg string)
 ```
+
 ***Important:*** You should **not** leave traces that print directly to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the zulu-provided debugging traces functions mentioned above.
 
 ### Completions for flags
@@ -186,6 +195,7 @@ cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, 
 	return []string{"json", "table", "yaml"}, zulu.ShellCompDirectiveDefault
 })
 ```
+
 Notice that calling `RegisterFlagCompletionFunc()` is done through the `command` with which the flag is associated.  In our example this dynamic completion will give results like so:
 
 ```bash
@@ -196,6 +206,7 @@ json table yaml
 #### Debugging
 
 You can also easily debug your Go completion code for flags:
+
 ```bash
 $ helm __complete status --output ""
 json
@@ -204,15 +215,19 @@ yaml
 :4
 Completion ended with directive: ShellCompDirectiveNoFileComp # This is on stderr
 ```
+
 ***Important:*** You should **not** leave traces that print to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the zulu-provided debugging traces functions mentioned further above.
 
 #### Specify valid filename extensions for flags that take a filename
 
 To limit completions of flag values to file names with certain extensions you can either use the `zulu.FlagOptFilename()` function or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterFileExt`, like so:
+
 ```go
 flagSet.String("output", "", "output usage", zulu.FlagOptFilename("yaml", "json"))
 ```
+
 or
+
 ```go
 flagName := "output"
 cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
@@ -222,47 +237,59 @@ cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, 
 #### Limit flag completions to directory names
 
 To limit completions of flag values to directory names you can either use the `zulu.FlagOptDirname()` functions or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterDirs`, like so:
+
 ```go
 flagSet.String("output", "", "output usage", zulu.FlagOptDirname())
 ```
+
 or
+
 ```go
 flagName := "output"
 cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 	return nil, zulu.ShellCompDirectiveFilterDirs
 })
 ```
+
 To limit completions of flag values to directory names *within another directory* you can use a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterDirs` like so:
+
 ```go
 flagName := "output"
 cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 	return []string{"themes"}, zulu.ShellCompDirectiveFilterDirs
 })
 ```
+
 #### Descriptions for completions
 
 Zulu provides support for completion descriptions.  Such descriptions are supported for each shell.
 For commands and flags, Zulu will provide the descriptions automatically, based on usage information.
 For example, using zsh:
-```
+
+```shell
 $ helm s[tab]
 search  -- search for a keyword in charts
 show    -- show information of a chart
 status  -- displays the status of the named release
 ```
+
 while using fish:
-```
+
+```shell
 $ helm s[tab]
 search  (search for a keyword in charts)  show  (show information of a chart)  status  (displays the status of the named release)
 ```
 
 Zulu allows you to add descriptions to your own completions.  Simply add the description text after each completion, following a `\t` separator.  This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and `RegisterFlagCompletionFunc()`.  For example:
+
 ```go
 ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 	return []string{"harbor\tAn image registry", "thanos\tLong-term metrics"}, zulu.ShellCompDirectiveNoFileComp
 }}
 ```
+
 or
+
 ```go
 ValidArgs: []string{"bash\tCompletions for bash", "zsh\tCompletions for zsh"}
 ```

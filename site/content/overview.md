@@ -8,6 +8,7 @@ Zulu is a library providing a simple interface to create powerful modern CLI
 interfaces similar to git & go tools.
 
 Zulu provides:
+
 * Easy subcommand-based CLIs: `app server`, `app fetch`, etc.
 * Fully POSIX-compliant flags (including short & long versions).
 * Nested subcommands.

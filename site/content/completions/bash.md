@@ -8,7 +8,7 @@ Bash completion can be used by calling `command.GenBashCompletion()` or `command
 It supports descriptions for completions. When calling the functions you must provide it with a parameter indicating if the completions should be annotated with a description; Zulu
 will provide the description automatically based on usage information.  You can choose to make this option configurable by your users.
 
-```
+```shell
 # With descriptions
 $ helm s[tab][tab]
 search  (search for a keyword in charts)           status  (display the status of the named release)

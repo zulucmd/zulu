@@ -11,7 +11,7 @@ will provide the description automatically based on usage information.  You can 
 The generated completion script should be put somewhere in your `$fpath` and be named
 `_<yourProgram>`.  You will need to start a new shell for the completions to become available.
 
-```
+```shell
 # With descriptions
 $ helm s[tab]
 search  -- search for a keyword in charts

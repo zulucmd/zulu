@@ -22,7 +22,18 @@ $nav-bg:#254E70 !default;
   clear: none !important;
 }
 
-.content > h1, .content > h2, .content > h3, .content > h4, .content > h5, .content > h6, .content > p, .content > table, .content > ul, .content > ol, .content > aside, .content > dl {
+.content > h1,
+.content > h2,
+.content > h3,
+.content > h4,
+.content > h5,
+.content > h6,
+.content > p,
+.content > table,
+.content > ul,
+.content > ol,
+.content > aside,
+.content > dl {
   margin-right: initial !important;
 }
 
@@ -30,9 +41,10 @@ $nav-bg:#254E70 !default;
   margin-bottom: 1em !important;
 }
 
-.content h2 {
-  margin-top: 1em !important;
+.content h1 {
+  font-size: 28px !important;
 }
+
 
 .dark-box {
   display: none !important;

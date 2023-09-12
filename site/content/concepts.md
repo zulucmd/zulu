@@ -22,12 +22,14 @@ In the following example, 'server' is a command, and 'port' is a flag.
 
 ```shell
 $ hugo server --port=1313
+hugo: downloading modules
 ```
 
 In this command, we are telling Git to clone the URL bare.
 
 ```shell
 $ git clone URL --bare
+Cloning into bare repository '/tmp/project'...
 ```
 
 ## Commands
