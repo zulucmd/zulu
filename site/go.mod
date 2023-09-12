@@ -1,11 +1,13 @@
-module github.com/bep/docuapi
+module github.com/zulucmd/zulu/v2/site
 
 go 1.17
 
+require github.com/zulucmd/zulu/v2 v2.0.0-20230613161721-97eb776f1092
+
 require (
-	github.com/bep/empty-hugo-module v1.0.0 // indirect
-	github.com/gohugoio/hugo-mod-jslibs-dist/alpinejs/v3 v3.900.100 // indirect
-	github.com/jquery/jquery-dist v0.0.0-20190501211928-15bc73803f76 // indirect
-	github.com/olivernn/lunr.js v2.3.8+incompatible // indirect
-	github.com/slatedocs/slate v2.3.1+incompatible // indirect
+	github.com/bep/docuapi/v2 v2.3.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/zulucmd/zflag/v2 v2.0.0 // indirect
 )
+
+replace github.com/hoshsadiq/zulu => ../

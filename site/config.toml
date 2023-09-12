@@ -1,5 +1,5 @@
 theme = "docuapi"
-languageCode = "en-us"
+languageCode = "en-gb"
 baseurl = "https://zulucmd.github.io/zulu/"
 title = "Zulu"
 
@@ -18,7 +18,7 @@ defaultContentLanguage = "en"
 [module.hugoVersion]
 [[module.imports]]
 # We need one module import for Hugo to detect us as a Hugo Module.
-path = "github.com/bep/empty-hugo-module"
+path = "github.com/bep/docuapi/v2"
 
 [params]
 search = true
