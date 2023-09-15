@@ -249,10 +249,6 @@ type Command struct {
 	commands []*Command
 	// parent is a parent command for this command.
 	parent *Command
-	// Max lengths of commands' string lengths for use in padding.
-	commandsMaxUseLen         int
-	commandsMaxCommandPathLen int
-	commandsMaxNameLen        int
 
 	// TraverseChildren parses flags on all parents before executing child command.
 	TraverseChildren bool
@@ -527,35 +523,50 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 	}
 }
 
-var minUsagePadding = 25
-
-// UsagePadding return padding for the usage.
-func (c *Command) UsagePadding() int {
-	if c.parent == nil || minUsagePadding > c.parent.commandsMaxUseLen {
-		return minUsagePadding
-	}
-	return c.parent.commandsMaxUseLen
+type padding struct {
+	Usage       int
+	CommandPath int
+	Name        int
 }
+
+// Padding return padding for the usage, command path, and name.
+func (c *Command) Padding() padding {
+	p := padding{
+		Usage:       minUsagePadding,
+		CommandPath: minCommandPathPadding,
+		Name:        minNamePadding,
+	}
+
+	if c.parent == nil {
+		return p
+	}
+
+	for _, x := range c.parent.commands {
+		if len(x.Deprecated) > 0 || x.Hidden {
+			continue
+		}
+
+		if l := len(x.Use); l > p.Usage {
+			p.Usage = l
+		}
+
+		if l := len(x.CommandPath()); l > p.CommandPath {
+			p.CommandPath = l
+		}
+
+		if l := len(x.Name()); l > p.Name {
+			p.Name = l
+		}
+	}
+
+	return p
+}
+
+var minUsagePadding = 25
 
 var minCommandPathPadding = 11
 
-// CommandPathPadding return padding for the command path.
-func (c *Command) CommandPathPadding() int {
-	if c.parent == nil || minCommandPathPadding > c.parent.commandsMaxCommandPathLen {
-		return minCommandPathPadding
-	}
-	return c.parent.commandsMaxCommandPathLen
-}
-
 var minNamePadding = 11
-
-// NamePadding returns padding for the name.
-func (c *Command) NamePadding() int {
-	if c.parent == nil || minNamePadding > c.parent.commandsMaxNameLen {
-		return minNamePadding
-	}
-	return c.parent.commandsMaxNameLen
-}
 
 // UsageTemplate returns usage template for the command.
 func (c *Command) UsageTemplate() string {
@@ -1328,18 +1339,6 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			c.AddGroup(Group{Group: x.Group, Title: x.Group})
 		}
 		// update max lengths
-		usageLen := len(x.Use)
-		if usageLen > c.commandsMaxUseLen {
-			c.commandsMaxUseLen = usageLen
-		}
-		commandPathLen := len(x.CommandPath())
-		if commandPathLen > c.commandsMaxCommandPathLen {
-			c.commandsMaxCommandPathLen = commandPathLen
-		}
-		nameLen := len(x.Name())
-		if nameLen > c.commandsMaxNameLen {
-			c.commandsMaxNameLen = nameLen
-		}
 		// If global normalization function exists, update all children
 		if c.globNormFunc != nil {
 			x.SetGlobalNormalizationFunc(c.globNormFunc)
@@ -1383,24 +1382,6 @@ main:
 		commands = append(commands, command)
 	}
 	c.commands = commands
-	// recompute all lengths
-	c.commandsMaxUseLen = 0
-	c.commandsMaxCommandPathLen = 0
-	c.commandsMaxNameLen = 0
-	for _, command := range c.commands {
-		usageLen := len(command.Use)
-		if usageLen > c.commandsMaxUseLen {
-			c.commandsMaxUseLen = usageLen
-		}
-		commandPathLen := len(command.CommandPath())
-		if commandPathLen > c.commandsMaxCommandPathLen {
-			c.commandsMaxCommandPathLen = commandPathLen
-		}
-		nameLen := len(command.Name())
-		if nameLen > c.commandsMaxNameLen {
-			c.commandsMaxNameLen = nameLen
-		}
-	}
 }
 
 // Print is a convenience method to Print to the defined output, fallback to Stderr if not set.

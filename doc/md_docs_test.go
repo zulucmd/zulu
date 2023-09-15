@@ -11,7 +11,6 @@ import (
 )
 
 func TestGenMdDoc(t *testing.T) {
-	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
 	if err := doc.GenMarkdown(echoCmd, buf); err != nil {
 		t.Fatal(err)
@@ -29,7 +28,6 @@ func TestGenMdDoc(t *testing.T) {
 }
 
 func TestGenMdDocWithNoLongOrSynopsis(t *testing.T) {
-	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
 	if err := doc.GenMarkdown(dummyCmd, buf); err != nil {
 		t.Fatal(err)
@@ -43,7 +41,6 @@ func TestGenMdDocWithNoLongOrSynopsis(t *testing.T) {
 }
 
 func TestGenMdNoHiddenParents(t *testing.T) {
-	// We generate on subcommand so we have both subcommands and parents.
 	for _, name := range []string{"rootflag", "strtwo"} {
 		f := rootCmd.PersistentFlags().Lookup(name)
 		f.Hidden = true

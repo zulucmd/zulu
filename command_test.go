@@ -1891,7 +1891,7 @@ func TestUsageTemplate(t *testing.T) {
 		}
 		child := &zulu.Command{
 			Use:  "child",
-			RunE: func(cmd *zulu.Command, args []string) error { return nil },
+			RunE: noopRun,
 		}
 		root.AddCommand(child)
 		return root, child
@@ -2032,41 +2032,41 @@ Use "root child [command] --help" for more information about a command.
 				sub1 := &zulu.Command{
 					Use:   "sub1",
 					Short: "sub1 short",
-					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
+					RunE:  noopRun,
 				}
 
 				sub2 := &zulu.Command{
 					Use:   "sub2",
 					Short: "sub2 short",
-					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
+					RunE:  noopRun,
 				}
 
 				sub3 := &zulu.Command{
 					Use:   "sub3",
 					Short: "sub3 short in group1",
 					Group: "group1",
-					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
+					RunE:  noopRun,
 				}
 
 				sub4 := &zulu.Command{
 					Use:   "sub4",
 					Short: "sub4 short in group1",
 					Group: "group1",
-					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
+					RunE:  noopRun,
 				}
 
 				sub5 := &zulu.Command{
 					Use:   "sub5",
 					Short: "sub5 short in group2",
 					Group: "group2",
-					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
+					RunE:  noopRun,
 				}
 
 				sub6 := &zulu.Command{
 					Use:   "sub6",
 					Short: "sub6 short in group2",
 					Group: "group2",
-					RunE:  func(cmd *zulu.Command, args []string) error { return nil },
+					RunE:  noopRun,
 				}
 
 				sub7 := &zulu.Command{
@@ -2185,4 +2185,33 @@ func TestFind(t *testing.T) {
 			}
 		})
 	}
+}
+
+// adapted from https://github.com/spf13/cobra/pull/1632/files#diff-4c08781a1c6c69898cdd3a21c0c759d846fc32148e6b5aaf70ad2db146e9f145R2165
+func TestPadding(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	childCmd := &zulu.Command{Use: "child", RunE: noopRun}
+	longChildCmd := &zulu.Command{Use: "long-name-child-abcdefghijklmnopqrstuvwxyz", RunE: noopRun}
+	// For this test to be useful the hiddenChildCmd and deprecatedChildCmd commands need to have a longer `Use` field than the other commands.
+	hiddenChildCmd := &zulu.Command{Use: longChildCmd.Use + "-hidden", Hidden: true, RunE: noopRun}
+	deprecatedChildCmd := &zulu.Command{Use: longChildCmd.Use + "-deprecated", Deprecated: "deprecated", RunE: noopRun}
+
+	rootCmd.AddCommand(childCmd)
+	rootCmd.AddCommand(longChildCmd)
+	rootCmd.AddCommand(hiddenChildCmd)
+	rootCmd.AddCommand(deprecatedChildCmd)
+
+	expectedUsePad := len(longChildCmd.Use)
+	expectedPathPad := len(longChildCmd.CommandPath())
+	expectedNamePad := len(longChildCmd.Name())
+
+	childPadding := childCmd.Padding()
+	longChildPadding := longChildCmd.Padding()
+
+	assertEqual(t, expectedUsePad, childPadding.Usage)
+	assertEqual(t, expectedUsePad, longChildPadding.Usage)
+	assertEqual(t, expectedPathPad, childPadding.CommandPath)
+	assertEqual(t, expectedPathPad, longChildPadding.CommandPath)
+	assertEqual(t, expectedNamePad, childPadding.Name)
+	assertEqual(t, expectedNamePad, longChildPadding.Name)
 }

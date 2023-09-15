@@ -24,7 +24,7 @@ Examples:
 Available Commands:
 {{- range $cmds }}
 {{- if (and (eq .Group "") (or .IsAvailableCommand (eq .Name "help"))) }}
-  {{ rpad .Name .NamePadding }} {{ .Short }}
+  {{ rpad .Name .Padding.Name }} {{ .Short }}
 {{- end }}
 {{- end }}
 
@@ -33,7 +33,7 @@ Available Commands:
 {{ .Title }}
 {{- range $cmds }}
 {{- if (and (eq .Group $group.Group) (or .IsAvailableCommand (eq .Name "help"))) }}
-  {{ rpad .Name .NamePadding }} {{ .Short }}
+  {{ rpad .Name .Padding.Name }} {{ .Short }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -64,7 +64,7 @@ Global {{ if . }}{{ . }} {{ end }}Flags:
 Additional help topics:
 {{- range .Commands }}
 {{- if .IsAdditionalHelpTopicCommand }}
-  {{ rpad .CommandPath .CommandPathPadding }} {{ .Short }}
+  {{ rpad .CommandPath .Padding.CommandPath }} {{ .Short }}
 {{- end }}
 {{- end }}
 {{- end }}
