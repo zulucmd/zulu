@@ -48,7 +48,7 @@ jobs:
     needs: DetermineVersion
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
       - name: Setup go
         run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
       - uses: actions/checkout@v4
