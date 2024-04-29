@@ -85,7 +85,7 @@ jobs:
           key: ${{ runner.os }}-go-${{ needs.DetermineVersion.outputs.go_version }}-${{ hashFiles('**/go.sum') }}
           restore-keys: go-mod
       - name: Run linters
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v5
         with:
           version: ${{ needs.DetermineVersion.outputs.golangci_version }}
 
