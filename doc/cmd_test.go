@@ -105,6 +105,7 @@ func assertContainsf(t *testing.T, str, expected string, msg string, fmt ...inte
 }
 
 func assertMatch(t *testing.T, str, pattern string) {
+	t.Helper()
 	if ok, _ := regexp.MatchString(pattern, str); !ok {
 		t.Errorf("Expected to match: \n%v\nGot:\n %v\n", pattern, str)
 	}

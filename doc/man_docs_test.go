@@ -134,11 +134,14 @@ func TestGenManNoGenTagWithDisabledParent(t *testing.T) {
 }
 
 func TestGenManSeeAlso(t *testing.T) {
-	rootCmd := &zulu.Command{Use: "root", RunE: emptyRun}
-	aCmd := &zulu.Command{Use: "aaa", RunE: emptyRun, Hidden: true} // #229
-	bCmd := &zulu.Command{Use: "bbb", RunE: emptyRun}
-	cCmd := &zulu.Command{Use: "ccc", RunE: emptyRun}
+	rootCmd := &zulu.Command{Use: "git", Short: "the stupid content tracker", Long: "Git is a fast, scalable, distributed revision control system with an unusually rich command set that provides both high-level operations and full access to internals.", RunE: emptyRun}
+	aCmd := &zulu.Command{Use: "clone", RunE: emptyRun, Hidden: true} // #229
+	bCmd := &zulu.Command{Use: "checkout", RunE: emptyRun}
+	cCmd := &zulu.Command{Use: "branch", RunE: emptyRun}
 	rootCmd.AddCommand(aCmd, bCmd, cCmd)
+
+	// todo add the flags in the SYNOPSIS section. Instead of just writing "git [flags]", it should write "git [-C <path>]"
+	rootCmd.Flags().String("chdir", "", "Run as if git was started in <path> instead of the current working directory.", zflag.OptShorthand('C'), zflag.OptShorthandOnly(), zflag.OptUsageType("<path>"))
 
 	buf := new(bytes.Buffer)
 	header := &doc.GenManHeader{}
@@ -150,10 +153,7 @@ func TestGenManSeeAlso(t *testing.T) {
 	if err := assertLineFound(scanner, ".SH SEE ALSO"); err != nil {
 		t.Fatalf("Couldn't find SEE ALSO section header: %v", err)
 	}
-	if err := assertNextLineEquals(scanner, ".PP"); err != nil {
-		t.Fatalf("First line after SEE ALSO wasn't break-indent: %v", err)
-	}
-	if err := assertNextLineEquals(scanner, `\fBroot-bbb(1)\fP, \fBroot-ccc(1)\fP, \fBroot-completion(1)\fP`); err != nil {
+	if err := assertNextLineEquals(scanner, `\fBgit-branch(1)\fP, \fBgit-checkout(1)\fP, \fBgit-completion(1)\fP`); err != nil {
 		t.Fatalf("Second line after SEE ALSO wasn't correct: %v", err)
 	}
 }
@@ -166,7 +166,7 @@ func TestManPrintFlagsHidesShortDeprecated(t *testing.T) {
 	doc.ManPrintFlags(buf, c.Flags())
 
 	got := buf.String()
-	expected := "**--foo**=\"default\"\n\tFoo flag\n\n"
+	expected := "**--foo** string\n\n\tFoo flag\n\tDefaults to: default\n\n"
 	if got != expected {
 		t.Errorf("Expected %v, got %v", expected, got)
 	}
@@ -186,7 +186,12 @@ func TestGenManCommands(t *testing.T) {
 	output := buf.String()
 
 	assertContains(t, output, ".SH COMMANDS")
-	assertMatch(t, output, "\\\\fBecho\\\\fP\n[ \t]+Echo anything to the screen\n[ \t]+See \\\\fBroot\\-echo\\(2\\)\\\\fP\\\\&\\.")
+	assertMatch(t, output, `\\fBecho\\fP
+
+\.EX
+Echo anything to the screen
+See \*\*root\-echo\(2\)\*\*\.
+\.EE`)
 	assertNotContains(t, output, ".PP\n\\fBprint\\fP\n")
 
 	// Echo command
@@ -197,8 +202,18 @@ func TestGenManCommands(t *testing.T) {
 	output = buf.String()
 
 	assertContains(t, output, ".SH COMMANDS")
-	assertMatch(t, output, "\\\\fBtimes\\\\fP\n[ \t]+Echo anything to the screen more times\n[ \t]+See \\\\fBroot\\-echo\\-times\\(2\\)\\\\fP\\\\&\\.")
-	assertMatch(t, output, "\\\\fBechosub\\\\fP\n[ \t]+second sub command for echo\n[ \t]+See \\\\fBroot\\-echo\\-echosub\\(2\\)\\\\fP\\\\&\\.")
+	assertMatch(t, output, `\\fBtimes\\fP
+
+\.EX
+Echo anything to the screen more times
+See \*\*root\-echo\-times\(2\)\*\*\.
+\.EE`)
+	assertMatch(t, output, `\\fBechosub\\fP
+
+\.EX
+second sub command for echo
+See \*\*root\-echo\-echosub\(2\)\*\*\.
+\.EE`)
 	assertNotContains(t, output, ".PP\n\\fBdeprecated\\fP\n")
 
 	// Time command as echo's subcommand

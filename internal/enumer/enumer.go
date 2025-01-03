@@ -169,7 +169,9 @@ type Package struct {
 // parsePackage exits if there is an error.
 func (g *Generator) parsePackage(patterns []string) {
 	cfg := &packages.Config{
-		Mode:  packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles | packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes | packages.NeedSyntax | packages.NeedTypesInfo,
+		Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles |
+			packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes |
+			packages.NeedSyntax | packages.NeedTypesInfo,
 		Tests: false,
 	}
 	pkgs, err := packages.Load(cfg, patterns...)
