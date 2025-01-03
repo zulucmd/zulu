@@ -2,7 +2,9 @@ package zulu_test
 
 import (
 	"bytes"
+	"errors"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/zulucmd/zulu/v2"
@@ -72,12 +74,11 @@ func TestProgWithColon(t *testing.T) {
 }
 
 func TestGenFishCompletionFile(t *testing.T) {
-	err := os.Mkdir("./tmp", 0755)
+	tmpFile, err := os.CreateTemp("", "cobra-test")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-
-	defer os.RemoveAll("./tmp")
+	defer os.RemoveAll(tmpFile.Name())
 
 	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	child := &zulu.Command{
@@ -87,18 +88,17 @@ func TestGenFishCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	assertNil(t, rootCmd.GenFishCompletionFile("./tmp/test", false))
+	assertNil(t, rootCmd.GenFishCompletionFile(tmpFile.Name(), false))
 }
 
 func TestFailGenFishCompletionFile(t *testing.T) {
-	err := os.Mkdir("./tmp", 0755)
+	tmpDir, err := os.MkdirTemp("", "cobra-test")
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+	defer os.RemoveAll(tmpDir)
 
-	defer os.RemoveAll("./tmp")
-
-	f, _ := os.OpenFile("./tmp/test", os.O_CREATE, 0400)
+	f, _ := os.OpenFile(filepath.Join(tmpDir, "test"), os.O_CREATE, 0400)
 	defer f.Close()
 
 	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
@@ -109,7 +109,7 @@ func TestFailGenFishCompletionFile(t *testing.T) {
 	}
 	rootCmd.AddCommand(child)
 
-	got := rootCmd.GenFishCompletionFile("./tmp/test", false)
+	got := rootCmd.GenFishCompletionFile(f.Name(), false)
 	assertNotNilf(t, got, "should raise permission denied error")
-	assertEqual(t, expectedPermissionError, got.Error())
+	assertEqual(t, true, errors.Is(got, os.ErrPermission))
 }
