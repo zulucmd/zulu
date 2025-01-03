@@ -9,28 +9,15 @@ env:
   GO111MODULE: on
 
 jobs:
-  DetermineVersion:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - id: go-version-matrix
-        run: |
-          go_version="$(awk '/^go/{print $2}' go.mod)"
-          echo "go_version=${go_version}.x" >> $GITHUB_OUTPUT
-    outputs:
-      go_version: ${{ steps.go-version-matrix.outputs.go_version }}
-
   Test-Docker:
     needs: DetermineVersion
     runs-on: ubuntu-latest
     name: Docker Tests
     steps:
-      - name: Setup go
-        shell: bash
-        run: curl -sL https://raw.githubusercontent.com/maxatome/install-go/v3.3/install-go.pl | perl - ${{ needs.DetermineVersion.outputs.go_version }} $HOME
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
       - uses: actions/cache@v3
         with:
           path: |
