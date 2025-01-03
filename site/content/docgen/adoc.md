@@ -39,7 +39,7 @@ package main
 
 import (
 	"log"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"k8s.io/kubernetes/pkg/kubectl/cmd"
@@ -49,7 +49,7 @@ import (
 )
 
 func main() {
-	kubectl := cmd.NewKubectlCommand(cmdutil.NewFactory(nil), os.Stdin, ioutil.Discard, ioutil.Discard)
+	kubectl := cmd.NewKubectlCommand(cmdutil.NewFactory(nil), os.Stdin, io.Discard, io.Discard)
 	err := doc.GenAsciidocTree(kubectl, "./")
 	if err != nil {
 		log.Fatal(err)
