@@ -12,7 +12,6 @@ import (
 	gofmt "go/format"
 	"go/token"
 	"go/types"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -100,7 +99,7 @@ func writeSource(typeName, dir, outputName string, src []byte) {
 	}
 
 	// Write to tmpfile first
-	tmpFile, err := ioutil.TempFile(dir, fmt.Sprintf("%s_enumer_", typeName))
+	tmpFile, err := os.CreateTemp(dir, fmt.Sprintf("%s_enumer_", typeName))
 	if err != nil {
 		log.Fatalf("creating temporary file for output: %s", err)
 	}
