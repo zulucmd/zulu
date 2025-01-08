@@ -1,10 +1,11 @@
 package zulu_test
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/zulucmd/zulu/v2"
+	"github.com/zulucmd/zulu/v2/internal/testutil"
 )
 
 func TestArgs(t *testing.T) {
@@ -66,7 +67,6 @@ func TestArgs(t *testing.T) {
 
 	t.Parallel()
 	for name, tc := range tests {
-		tc := tc
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -88,14 +88,14 @@ func TestArgs(t *testing.T) {
 			output, err := executeCommand(c, tc.rargs...)
 
 			if len(tc.exerr) > 0 {
-				assertNotNilf(t, err, "Expected error")
-				assertEqual(t, expected, err.Error())
+				testutil.AssertNotNilf(t, err, "Expected error")
+				testutil.AssertEqual(t, expected, err.Error())
 				return
 			}
 
 			// Expect success
-			assertEqualf(t, "", output, "Unexpected output")
-			assertNilf(t, err, "Unexpected error")
+			testutil.AssertEqualf(t, "", output, "Unexpected output")
+			testutil.AssertNilf(t, err, "Unexpected error")
 		},
 		)
 	}
@@ -109,8 +109,8 @@ func TestRootTakesNoArgs(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "illegal", "args")
-	assertNotNilf(t, err, "Expected an error")
-	assertContains(t, `unknown command "illegal" for "root"`, err.Error())
+	testutil.AssertNotNilf(t, err, "Expected an error")
+	testutil.AssertContains(t, `unknown command "illegal" for "root"`, err.Error())
 }
 
 func TestRootTakesArgs(t *testing.T) {
@@ -119,7 +119,7 @@ func TestRootTakesArgs(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "legal", "args")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestChildTakesNoArgs(t *testing.T) {
@@ -128,8 +128,8 @@ func TestChildTakesNoArgs(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "child", "illegal", "args")
-	assertNotNilf(t, err, "Expected an error")
-	assertContains(t, `unknown command "illegal" for "root child"`, err.Error())
+	testutil.AssertNotNilf(t, err, "Expected an error")
+	testutil.AssertContains(t, `unknown command "illegal" for "root child"`, err.Error())
 }
 
 func TestChildTakesArgs(t *testing.T) {
@@ -138,7 +138,7 @@ func TestChildTakesArgs(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "child", "legal", "args")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestMatchAll(t *testing.T) {
@@ -149,7 +149,7 @@ func TestMatchAll(t *testing.T) {
 		func(cmd *zulu.Command, args []string) error {
 			for _, arg := range args {
 				if len([]byte(arg)) != 2 {
-					return fmt.Errorf("expected to be exactly 2 bytes long")
+					return errors.New("expected to be exactly 2 bytes long")
 				}
 			}
 			return nil
@@ -180,9 +180,9 @@ func TestMatchAll(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			_, err := executeCommand(rootCmd, tc.args...)
 			if !tc.fail {
-				assertNilf(t, err, "Unexpected error")
+				testutil.AssertNilf(t, err, "Unexpected error")
 			} else {
-				assertNotNilf(t, err, "Expected an error")
+				testutil.AssertNotNilf(t, err, "Expected an error")
 			}
 		})
 	}
@@ -196,12 +196,10 @@ func TestLegacyArgsRootAcceptsArgs(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Args: nil, RunE: noopRun}
 
 	_, err := executeCommand(rootCmd, "somearg")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
-// This test make sure we keep backwards-compatibility with respect
-// to the legacyArgs() function.
-// It makes sure a sub-command accepts arguments and further sub-commands
+// It makes sure a sub-command accepts arguments and further sub-commands.
 func TestLegacyArgsSubcmdAcceptsArgs(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Args: nil, RunE: noopRun}
 	childCmd := &zulu.Command{Use: "child", Args: nil, RunE: noopRun}
@@ -210,5 +208,5 @@ func TestLegacyArgsSubcmdAcceptsArgs(t *testing.T) {
 	childCmd.AddCommand(grandchildCmd)
 
 	_, err := executeCommand(rootCmd, "child", "somearg")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }

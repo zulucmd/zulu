@@ -41,6 +41,7 @@ func GenAsciidoc(cmd *zulu.Command, w io.Writer) error {
 func GenAsciidocCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) string) error {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
+	cmd.InitDefaultCompletionCmd()
 
 	buf := new(bytes.Buffer)
 	name := cmd.CommandPath()
@@ -108,7 +109,7 @@ func GenAsciidocCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) 
 // help output will be in the file `cmd-sub-third.1`.
 func GenAsciidocTree(cmd *zulu.Command, dir string) error {
 	identity := func(s string) string { return s }
-	emptyStr := func(s string) string { return "" }
+	emptyStr := func(_ string) string { return "" }
 	return GenAsciidocTreeCustom(cmd, dir, emptyStr, identity)
 }
 
@@ -135,8 +136,6 @@ func GenAsciidocTreeCustom(cmd *zulu.Command, dir string, filePrepender, linkHan
 	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
 		return err
 	}
-	if err := GenAsciidocCustom(cmd, f, linkHandler); err != nil {
-		return err
-	}
-	return nil
+
+	return GenAsciidocCustom(cmd, f, linkHandler)
 }

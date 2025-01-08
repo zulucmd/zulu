@@ -1,3 +1,4 @@
+//nolint:forbidigo // lots of fmt.println's called for testing, but it doesn't matter
 package main
 
 import (
@@ -27,15 +28,13 @@ func getCompsFilteredByPrefix(prefix string) []string {
 
 var rootCmd = &zulu.Command{
 	Use: "testprog",
-	RunE: func(cmd *zulu.Command, args []string) error {
+	RunE: func(_ *zulu.Command, _ []string) error {
 		fmt.Println("rootCmd called")
 		return nil
 	},
 }
 
-// ======================================================
-// Set of commands that filter on the 'toComplete' prefix
-// ======================================================
+// Set of commands that filter on the 'toComplete' prefix.
 var prefixCmd = &zulu.Command{
 	Use:   "prefix",
 	Short: "completions filtered on prefix",
@@ -44,7 +43,7 @@ var prefixCmd = &zulu.Command{
 var defaultCmdPrefix = &zulu.Command{
 	Use:   "default",
 	Short: "Directive: default",
-	ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	ValidArgsFunction: func(_ *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 		return getCompsFilteredByPrefix(toComplete), zulu.ShellCompDirectiveDefault
 	},
 	RunE: noopRun,
@@ -92,9 +91,7 @@ var noFileNoSpaceCmdPrefix = &zulu.Command{
 	RunE: noopRun,
 }
 
-// ======================================================
-// Set of commands that do not filter on prefix
-// ======================================================
+// Set of commands that do not filter on prefix.
 var noPrefixCmd = &zulu.Command{
 	Use:   "noprefix",
 	Short: "completions NOT filtered on prefix",
@@ -136,9 +133,7 @@ var defaultCmdNoPrefix = &zulu.Command{
 	RunE: noopRun,
 }
 
-// ======================================================
-// Command that completes on file extension
-// ======================================================
+// Command that completes on file extension.
 var fileExtCmdPrefix = &zulu.Command{
 	Use:   "fileext",
 	Short: "Directive: fileext",
@@ -148,9 +143,7 @@ var fileExtCmdPrefix = &zulu.Command{
 	RunE: noopRun,
 }
 
-// ======================================================
-// Command that completes on the directories within the current directory
-// ======================================================
+// Command that completes on the directories within the current directory.
 var dirCmd = &zulu.Command{
 	Use:   "dir",
 	Short: "Directive: subdir",
@@ -160,9 +153,7 @@ var dirCmd = &zulu.Command{
 	RunE: noopRun,
 }
 
-// ======================================================
-// Command that completes on the directories within the 'dir' directory
-// ======================================================
+// Command that completes on the directories within the 'dir' directory.
 var subDirCmd = &zulu.Command{
 	Use:   "subdir",
 	Short: "Directive: subdir",
@@ -172,9 +163,7 @@ var subDirCmd = &zulu.Command{
 	RunE: noopRun,
 }
 
-// ======================================================
-// Command that returns an error on completion
-// ======================================================
+// Command that returns an error on completion.
 var errorCmd = &zulu.Command{
 	Use:   "error",
 	Short: "Directive: error",
@@ -184,10 +173,7 @@ var errorCmd = &zulu.Command{
 	RunE: noopRun,
 }
 
-// ======================================================
-// Command that wants an argument starting with a --
-// Such an argument is possible following a '--'
-// ======================================================
+// Such an argument is possible following a '--'.
 var dashArgCmd = &zulu.Command{
 	Use:   "dasharg",
 	Short: "Wants argument --arg",
@@ -197,16 +183,14 @@ var dashArgCmd = &zulu.Command{
 	RunE: noopRun,
 }
 
-// ======================================================
 // Command generates many completions.
 // It can be used to test performance.
-// ======================================================
 var manyCompsCmd = &zulu.Command{
 	Use:   "manycomps",
 	Short: "Outputs a thousand completions",
 	ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 		var comps []string
-		for i := 0; i < 1000; i++ {
+		for i := range 1000 {
 			comps = append(comps, fmt.Sprintf("%[1]d-comp\tThis is comp %[1]d", i))
 		}
 		return comps, zulu.ShellCompDirectiveDefault
@@ -215,9 +199,15 @@ var manyCompsCmd = &zulu.Command{
 }
 
 func setFlags() {
-	completionFunc := zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
-		return []string{"firstComp\tthe first value", "secondComp\tthe second value", "forthComp"}, zulu.ShellCompDirectiveNoFileComp
-	})
+	completionFunc := zulu.FlagOptCompletionFunc(
+		func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{
+				"firstComp\tthe first value",
+				"secondComp\tthe second value",
+				"forthComp",
+			}, zulu.ShellCompDirectiveNoFileComp
+		},
+	)
 
 	rootCmd.Flags().String("customComp", "", "test custom comp for flags", completionFunc)
 	rootCmd.Flags().String("theme", "", "theme to use (located in /dir/THEMENAME/)", zulu.FlagOptDirname("dir"))

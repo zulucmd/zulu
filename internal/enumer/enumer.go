@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"go/ast"
@@ -21,16 +22,12 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
-var (
-	typeName     = flag.String("type", "", "comma-separated list of type names; must be set")
-	output       = flag.String("output", "", "output file name; default srcdir/<type>_string.go")
-	templateFile = flag.String("template", "", "template file to use")
-	format       = flag.Bool("format", false, "format the template, only for code generation")
-)
-
 // Usage is a replacement usage function for the flags package.
 func Usage() {
-	_, _ = fmt.Fprintf(os.Stderr, "Enumer is a tool to generate files based on Go enums (constants with a specific type).\n")
+	_, _ = fmt.Fprintf(
+		os.Stderr,
+		"Enumer is a tool to generate files based on Go enums (constants with a specific type).\n",
+	)
 	_, _ = fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 	_, _ = fmt.Fprintf(os.Stderr, "\tEnumer [flags] -type T [directory]\n")
 	_, _ = fmt.Fprintf(os.Stderr, "\tEnumer [flags] -type T files... # Must be a single package\n")
@@ -43,8 +40,22 @@ func Usage() {
 func main() {
 	log.SetFlags(0)
 	log.SetPrefix("enumer: ")
-	flag.Usage = Usage
-	flag.Parse()
+
+	fs := flag.NewFlagSet("enumer", flag.ContinueOnError)
+	typeName := fs.String("type", "", "comma-separated list of type names; must be set")
+	output := fs.String("output", "", "output file name; default srcdir/<type>_string.go")
+	templateFile := fs.String("template", "", "template file to use")
+	format := fs.Bool("format", false, "format the template, only for code generation")
+	fs.Usage = Usage
+	err := fs.Parse(os.Args[1:])
+	if err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			// usage is already printed
+			os.Exit(0)
+		}
+		os.Exit(1)
+	}
+
 	if len(*typeName) == 0 {
 		flag.Usage()
 		os.Exit(2)
@@ -60,37 +71,51 @@ func main() {
 	// Parse the package once.
 	var g Generator
 
-	dir := getDir(args[0])
-	path, err := filepath.Rel(dir, *templateFile)
+	dir, err := getDir(args[0])
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	g.parsePackage(args)
+	path, err := filepath.Rel(dir, *templateFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	res, err := template.ParseFromFile(os.DirFS(dir), path, map[string]interface{}{
+	err = g.parsePackage(args)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	values, err := g.getValues(*typeName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	res, err := template.ParseFromFile(os.DirFS(dir), path, map[string]any{
 		"pkgName":  g.pkg.name,
 		"args":     strings.Join(os.Args[1:], " "),
 		"typeName": *typeName,
-		"values":   g.getValues(*typeName),
+		"values":   values,
 	}, nil)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
 	g.Print(res)
 
 	src := g.format(*format)
-	writeSource(*typeName, dir, *output, src)
+	if err = writeSource(*typeName, dir, *output, src); err != nil {
+		log.Fatal(err)
+	}
 }
 
-func writeSource(typeName, dir, outputName string, src []byte) {
+func writeSource(typeName, dir, outputName string, src []byte) error {
 	if outputName == "-" {
 		_, err := os.Stdout.Write(src)
 		if err != nil {
-			log.Fatalf("failed to write output: %s", err)
+			return fmt.Errorf("failed to write output: %w", err)
 		}
-		return
+		return nil
 	}
 
 	if outputName == "" {
@@ -101,34 +126,37 @@ func writeSource(typeName, dir, outputName string, src []byte) {
 	// Write to tmpfile first
 	tmpFile, err := os.CreateTemp(dir, fmt.Sprintf("%s_enumer_", typeName))
 	if err != nil {
-		log.Fatalf("creating temporary file for output: %s", err)
+		return fmt.Errorf("creating temporary file for output: %w", err)
 	}
+
 	_, err = tmpFile.Write(src)
 	if err != nil {
-		tmpFile.Close()
-		os.Remove(tmpFile.Name())
-		log.Fatalf("failed to write output: %s", err)
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
+		return fmt.Errorf("failed to write output: %w", err)
 	}
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Rename tmpfile to output file
 	err = os.Rename(tmpFile.Name(), outputName)
 	if err != nil {
-		log.Fatalf("failed to move tempfile to output file: %s", err)
+		return fmt.Errorf("failed to move tempfile to output file: %w", err)
 	}
+
+	return nil
 }
 
-func getDir(fileOrDir string) string {
+func getDir(fileOrDir string) (string, error) {
 	info, err := os.Stat(fileOrDir)
 	if err != nil {
-		log.Fatal(err)
+		return "", err
 	}
 
 	if info.IsDir() {
-		return fileOrDir
+		return fileOrDir, nil
 	}
 
-	return filepath.Dir(fileOrDir)
+	return filepath.Dir(fileOrDir), nil
 }
 
 // Generator holds the state of the analysis. Primarily used to buffer
@@ -138,12 +166,12 @@ type Generator struct {
 	pkg *Package     // Package we are scanning.
 }
 
-// Printf prints the string to the output
-func (g *Generator) Printf(format string, args ...interface{}) {
+// Printf prints the string to the output.
+func (g *Generator) Printf(format string, args ...any) {
 	_, _ = fmt.Fprintf(&g.buf, format, args...)
 }
 
-// Print prints the string to the output
+// Print prints the string to the output.
 func (g *Generator) Print(str string) {
 	_, _ = fmt.Fprint(&g.buf, str)
 }
@@ -155,9 +183,10 @@ type File struct {
 	// These fields are reset for each type being generated.
 	typeName string  // Name of the constant type.
 	values   []Value // Accumulator for constant values of that type.
+	err      error   // Stores any error encountered during processing
 }
 
-// Package holds information about a Go package
+// Package holds information about a Go package.
 type Package struct {
 	name  string
 	defs  map[*ast.Ident]types.Object
@@ -165,8 +194,7 @@ type Package struct {
 }
 
 // parsePackage analyzes the single package constructed from the patterns and tags.
-// parsePackage exits if there is an error.
-func (g *Generator) parsePackage(patterns []string) {
+func (g *Generator) parsePackage(patterns []string) error {
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles |
 			packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes |
@@ -175,12 +203,15 @@ func (g *Generator) parsePackage(patterns []string) {
 	}
 	pkgs, err := packages.Load(cfg, patterns...)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if len(pkgs) != 1 {
-		log.Fatalf("error: %d packages found", len(pkgs))
+		return fmt.Errorf("error: %d packages found", len(pkgs))
 	}
+
 	g.addPackage(pkgs[0])
+
+	return nil
 }
 
 // addPackage adds a type checked Package and its syntax files to the generator.
@@ -200,22 +231,26 @@ func (g *Generator) addPackage(pkg *packages.Package) {
 }
 
 // getValues produces the String method for the named type.
-func (g *Generator) getValues(typeName string) []Value {
+func (g *Generator) getValues(typeName string) ([]Value, error) {
 	values := make([]Value, 0, 100)
 	for _, file := range g.pkg.files {
 		file.typeName = typeName
 		file.values = nil
+		file.err = nil // Reset any previous error
 		if file.file != nil {
 			ast.Inspect(file.file, file.genDecl)
+			if file.err != nil {
+				return nil, file.err
+			}
 			values = append(values, file.values...)
 		}
 	}
 
 	if len(values) == 0 {
-		log.Fatalf("no values defined for type %s", typeName)
+		return nil, fmt.Errorf("no values defined for type %s", typeName)
 	}
 
-	return values
+	return values, nil
 }
 
 // format returns the gofmt-ed contents of the Generator's buffer.
@@ -254,7 +289,72 @@ func (v *Value) String() string {
 	return v.Value
 }
 
+// processConstant handles the processing of a single constant value.
+func (f *File) processConstant(n *ast.Ident, vspec *ast.ValueSpec, typ string) (*Value, error) {
+	// This dance lets the type checker find the values for us. It's a
+	// bit tricky: look up the object declared by the n, find its
+	// types.Const, and extract its value.
+	obj, ok := f.pkg.defs[n]
+	if !ok {
+		return nil, fmt.Errorf("no value for constant %s", n)
+	}
+
+	underlying, ok := obj.Type().Underlying().(*types.Basic)
+	if !ok {
+		return nil, fmt.Errorf("can't handle non-basic underlying type %v", n)
+	}
+
+	info := underlying.Info()
+	if info&types.IsInteger == 0 {
+		return nil, fmt.Errorf("can't handle non-integer constant type %s", typ)
+	}
+
+	c, ok := obj.(*types.Const)
+	if !ok {
+		return nil, fmt.Errorf("can't happen: value is not constant %v", n)
+	}
+
+	value := c.Val()
+	if c.Val().Kind() != exact.Int {
+		return nil, fmt.Errorf("can't happen: constant is not an integer %s", n)
+	}
+
+	v := &Value{
+		Name:     n.Name,
+		Value:    value.String(),
+		Exported: n.IsExported(),
+	}
+
+	if err := processComments(v, vspec, n); err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+// processComments handles the extraction and validation of comments.
+func processComments(v *Value, vspec *ast.ValueSpec, n *ast.Ident) error {
+	if vspec.Comment != nil && vspec.Doc != nil {
+		return fmt.Errorf("cannot work with both doc comment and normal comment: %s", n.Name)
+	}
+
+	if vspec.Comment != nil || vspec.Doc != nil {
+		var comment *ast.CommentGroup
+		switch {
+		case vspec.Comment == nil && vspec.Doc != nil:
+			comment = vspec.Doc
+		case vspec.Comment != nil && vspec.Doc == nil:
+			comment = vspec.Comment
+		}
+		v.Comment = getComment(comment.List)
+	}
+
+	return nil
+}
+
 // genDecl processes one declaration clause.
+//
+//nolint:gocognit // will refactor later
 func (f *File) genDecl(node ast.Node) bool {
 	decl, ok := node.(*ast.GenDecl)
 	if !ok || decl.Tok != token.CONST {
@@ -269,7 +369,7 @@ func (f *File) genDecl(node ast.Node) bool {
 	// If the type and value are both missing, we carry down the type (and value,
 	// but the "go/types" package takes care of that).
 	for _, spec := range decl.Specs {
-		vspec := spec.(*ast.ValueSpec) // Guaranteed to succeed as this is CONST.
+		vspec := spec.(*ast.ValueSpec) //nolint:errcheck // Guaranteed to succeed as this is CONST.
 		if vspec.Type == nil && len(vspec.Values) > 0 {
 			// "X = 1". With no type but a value, the constant is untyped.
 			// Skip this vspec and reset the remembered type.
@@ -296,52 +396,20 @@ func (f *File) genDecl(node ast.Node) bool {
 				continue
 			}
 
-			// This dance lets the type checker find the values for us. It's a
-			// bit tricky: look up the object declared by the n, find its
-			// types.Const, and extract its value.
-			obj, ok := f.pkg.defs[n]
-			if !ok {
-				log.Fatalf("no value for constant %s", n)
+			value, err := f.processConstant(n, vspec, typ)
+			if err != nil {
+				f.err = err
+				return false
 			}
 
-			info := obj.Type().Underlying().(*types.Basic).Info()
-			if info&types.IsInteger == 0 {
-				log.Fatalf("can't handle non-integer constant type %s", typ)
-			}
-
-			value := obj.(*types.Const).Val() // Guaranteed to succeed as this is CONST.
-			if value.Kind() != exact.Int {
-				log.Fatalf("can't happen: constant is not an integer %s", n)
-			}
-
-			v := Value{
-				Name:     n.Name,
-				Value:    value.String(),
-				Exported: n.IsExported(),
-			}
-
-			if vspec.Comment != nil || vspec.Doc != nil {
-				var comment *ast.CommentGroup
-				switch {
-				case vspec.Comment == nil && vspec.Doc != nil:
-					comment = vspec.Doc
-				case vspec.Comment != nil && vspec.Doc == nil:
-					comment = vspec.Comment
-				default:
-					log.Fatalf("cannot work with both doc comment and normal comment: %s", n.Name)
-				}
-
-				v.Comment = getComment(comment.List)
-			}
-
-			f.values = append(f.values, v)
+			f.values = append(f.values, *value)
 		}
 	}
 	return false
 }
 
 func getComment(commentList []*ast.Comment) string {
-	var comment []byte
+	var comment []byte //nolint:prealloc // we don't have the total size
 	for _, c := range commentList {
 		comment = append(comment, c.Text...)
 		comment = append(comment, '\n')

@@ -4,7 +4,6 @@
 package zulu
 
 import (
-	_ "embed"
 	"io"
 	"os"
 )

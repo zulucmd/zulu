@@ -14,28 +14,26 @@
 package doc
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu/v2"
 	"gopkg.in/yaml.v3"
-
-	"github.com/zulucmd/zflag/v2"
 )
 
 type cmdOption struct {
-	Name         string
+	Name         string `yaml:"name"`
 	Shorthand    rune   `yaml:",omitempty"`
 	DefaultValue string `yaml:"default_value,omitempty"`
 	Usage        string `yaml:",omitempty"`
 }
 
 type cmdDoc struct {
-	Name             string
+	Name             string      `yaml:"name"`
 	Synopsis         string      `yaml:",omitempty"`
 	Description      string      `yaml:",omitempty"`
 	Usage            string      `yaml:",omitempty"`
@@ -52,7 +50,7 @@ type cmdDoc struct {
 // it is undefined which help output will be in the file `cmd-sub-third.1`.
 func GenYamlTree(cmd *zulu.Command, dir string) error {
 	identity := func(s string) string { return s }
-	emptyStr := func(s string) string { return "" }
+	emptyStr := func(_ string) string { return "" }
 	return GenYamlTreeCustom(cmd, dir, emptyStr, identity)
 }
 
@@ -78,10 +76,8 @@ func GenYamlTreeCustom(cmd *zulu.Command, dir string, filePrepender, linkHandler
 	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
 		return err
 	}
-	if err := GenYamlCustom(cmd, f, linkHandler); err != nil {
-		return err
-	}
-	return nil
+
+	return GenYamlCustom(cmd, f, linkHandler)
 }
 
 // GenYaml creates yaml output.
@@ -119,7 +115,7 @@ func GenYamlCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) stri
 	}
 
 	if hasSeeAlso(cmd) {
-		result := []string{}
+		var result []string
 		if cmd.HasParent() {
 			parent := cmd.Parent()
 			result = append(result, parent.CommandPath()+" - "+parent.Short)
@@ -137,14 +133,12 @@ func GenYamlCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) stri
 
 	final, err := yaml.Marshal(&yamlDoc)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	if _, err := w.Write(final); err != nil {
 		return err
 	}
-	return nil
+
+	_, err = w.Write(final)
+
+	return err
 }
 
 func genFlagResult(flags *zflag.FlagSet) []cmdOption {

@@ -57,7 +57,7 @@ var MousetrapDisplayDuration = 5 * time.Second
 
 // AddTemplateFunc adds a template function that's available to Usage and Help
 // template generation.
-func AddTemplateFunc(name string, tmplFunc interface{}) {
+func AddTemplateFunc(name string, tmplFunc any) {
 	templateFuncs[name] = tmplFunc
 }
 
@@ -79,8 +79,8 @@ func rpad(s string, padding int) string {
 	return fmt.Sprintf(format, s)
 }
 
-// ld compares two strings and returns the levenshtein distance between them.
-func ld(s, t string, ignoreCase bool) int {
+// calculateLevenshteinDistance compares two strings and returns the levenshtein distance between them.
+func calculateLevenshteinDistance(s, t string, ignoreCase bool) int {
 	if ignoreCase {
 		s = strings.ToLower(s)
 		t = strings.ToLower(t)
@@ -100,17 +100,16 @@ func ld(s, t string, ignoreCase bool) int {
 			if s[i-1] == t[j-1] {
 				d[i][j] = d[i-1][j-1]
 			} else {
-				min := d[i-1][j]
-				if d[i][j-1] < min {
-					min = d[i][j-1]
+				lowest := d[i-1][j]
+				if d[i][j-1] < lowest {
+					lowest = d[i][j-1]
 				}
-				if d[i-1][j-1] < min {
-					min = d[i-1][j-1]
+				if d[i-1][j-1] < lowest {
+					lowest = d[i-1][j-1]
 				}
-				d[i][j] = min + 1
+				d[i][j] = lowest + 1
 			}
 		}
-
 	}
 	return d[len(s)][len(t)]
 }

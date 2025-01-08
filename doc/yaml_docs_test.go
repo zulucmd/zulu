@@ -9,9 +9,11 @@ import (
 
 	"github.com/zulucmd/zulu/v2"
 	"github.com/zulucmd/zulu/v2/doc"
+	"github.com/zulucmd/zulu/v2/internal/testutil"
 )
 
 func TestGenYamlDoc(t *testing.T) {
+	rootCmd, echoCmd, echoSubCmd, _, _, _, _ := getTestCmds()
 	// We generate on s subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
 	if err := doc.GenYaml(echoCmd, buf); err != nil {
@@ -19,18 +21,18 @@ func TestGenYamlDoc(t *testing.T) {
 	}
 	output := buf.String()
 
-	assertContains(t, output, echoCmd.Long)
-	assertContains(t, output, echoCmd.Example)
-	assertContains(t, output, "boolone")
-	assertContains(t, output, "rootflag")
-	assertContains(t, output, rootCmd.Short)
-	assertContains(t, output, echoSubCmd.Short)
-	assertContains(t, output, fmt.Sprintf("- %s - %s", echoSubCmd.CommandPath(), echoSubCmd.Short))
+	testutil.AssertContains(t, output, echoCmd.Long)
+	testutil.AssertContains(t, output, echoCmd.Example)
+	testutil.AssertContains(t, output, "boolone")
+	testutil.AssertContains(t, output, "rootflag")
+	testutil.AssertContains(t, output, rootCmd.Short)
+	testutil.AssertContains(t, output, echoSubCmd.Short)
+	testutil.AssertContains(t, output, fmt.Sprintf("- %s - %s", echoSubCmd.CommandPath(), echoSubCmd.Short))
 }
 
 func TestGenYamlNoTag(t *testing.T) {
+	rootCmd, _, _, _, _, _, _ := getTestCmds()
 	rootCmd.DisableAutoGenTag = true
-	defer func() { rootCmd.DisableAutoGenTag = false }()
 
 	buf := new(bytes.Buffer)
 	if err := doc.GenYaml(rootCmd, buf); err != nil {
@@ -38,17 +40,13 @@ func TestGenYamlNoTag(t *testing.T) {
 	}
 	output := buf.String()
 
-	assertNotContains(t, output, "Auto generated")
+	testutil.AssertNotContains(t, output, "Auto generated")
 }
 
 func TestGenYamlTree(t *testing.T) {
 	c := &zulu.Command{Use: "do [OPTIONS] arg1 arg2"}
 
-	tmpdir, err := os.MkdirTemp("", "test-gen-yaml-tree")
-	if err != nil {
-		t.Fatalf("Failed to create tmpdir: %s", err.Error())
-	}
-	defer os.RemoveAll(tmpdir)
+	tmpdir := t.TempDir()
 
 	if err := doc.GenYamlTree(c, tmpdir); err != nil {
 		t.Fatalf("GenYamlTree failed: %s", err.Error())
@@ -60,6 +58,7 @@ func TestGenYamlTree(t *testing.T) {
 }
 
 func TestGenYamlDocRunnable(t *testing.T) {
+	rootCmd, _, _, _, _, _, _ := getTestCmds()
 	// Testing a runnable command: should contain the "usage" field
 	buf := new(bytes.Buffer)
 	if err := doc.GenYaml(rootCmd, buf); err != nil {
@@ -67,11 +66,12 @@ func TestGenYamlDocRunnable(t *testing.T) {
 	}
 	output := buf.String()
 
-	assertContains(t, output, "usage: "+rootCmd.Use)
+	testutil.AssertContains(t, output, "usage: "+rootCmd.Use)
 }
 
 func BenchmarkGenYamlToFile(b *testing.B) {
-	file, err := os.CreateTemp("", "")
+	rootCmd, _, _, _, _, _, _ := getTestCmds()
+	file, err := os.CreateTemp(b.TempDir(), "")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func BenchmarkGenYamlToFile(b *testing.B) {
 	defer file.Close()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if err := doc.GenYaml(rootCmd, file); err != nil {
 			b.Fatal(err)
 		}

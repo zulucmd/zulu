@@ -32,7 +32,7 @@ ShellCompDirectiveFilterFileExt
 ShellCompDirectiveFilterDirs
 
 // ShellCompDirectiveKeepOrder indicates that the shell should preserve the order
-// in which the completions are provided
+// in which the completions are provided.
 ShellCompDirectiveKeepOrder
 
 // ShellCompDirectiveDefault indicates to let the shell perform its default

@@ -7,8 +7,7 @@ import (
 
 type PositionalArgs func(cmd *Command, args []string) error
 
-// validateArgs returns an error if there are any positional args that are not in
-// the `ValidArgs` field of `Command`
+// the `ValidArgs` field of `Command`.
 func validateArgs(cmd *Command, args []string) error {
 	if len(cmd.ValidArgs) > 0 {
 		// Remove any description that may be included in ValidArgs.
@@ -26,10 +25,7 @@ func validateArgs(cmd *Command, args []string) error {
 	return nil
 }
 
-// legacyArgs validation has the following behaviour:
-// - root commands with no subcommands can take arbitrary arguments
-// - root commands with subcommands will do subcommand validity checking
-// - subcommands will always accept arbitrary arguments
+// - subcommands will always accept arbitrary arguments.
 func legacyArgs(cmd *Command, args []string) error {
 	// no subcommand, always take args
 	if !cmd.HasSubCommands() {
@@ -37,7 +33,7 @@ func legacyArgs(cmd *Command, args []string) error {
 	}
 
 	// root command with subcommands, do subcommand checking.
-	if !cmd.HasParent() && len(args) > 0 {
+	if len(args) > 0 && !cmd.HasParent() {
 		return fmt.Errorf("unknown command %q for %q%s", args[0], cmd.CommandPath(), cmd.findSuggestions(args[0]))
 	}
 	return nil
@@ -87,6 +83,8 @@ func ExactArgs(n int) PositionalArgs {
 }
 
 // RangeArgs returns an error if the number of args is not within the expected range.
+//
+//nolint:predeclared // no real alternative names for min
 func RangeArgs(min int, max int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) < min || len(args) > max {

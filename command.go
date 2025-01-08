@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"context"
 	"embed"
-	_ "embed"
 	"errors"
 	"fmt"
 	"io"
@@ -37,7 +36,7 @@ const FlagSetByZuluAnnotation = "zulu_annotation_flag_set_by_zulu"
 //go:embed templates/*
 var tmplFS embed.FS
 
-// FParseErrAllowList configures Flag parse errors to be ignored
+// FParseErrAllowList configures Flag parse errors to be ignored.
 type FParseErrAllowList zflag.ParseErrorsAllowList
 
 // ErrVersion is the error returned if the flag -version is invoked.
@@ -292,8 +291,7 @@ func (c *Command) Context() context.Context {
 	return c.ctx
 }
 
-// SetContext sets context for the command. It is set to context.Background by default and will be overwritten by
-// Command.ExecuteContext or Command.ExecuteContextC
+// Command.ExecuteContext or Command.ExecuteContextC.
 func (c *Command) SetContext(ctx context.Context) {
 	c.ctx = ctx
 }
@@ -384,17 +382,17 @@ func (c *Command) OutOrStdout() io.Writer {
 	return c.getOut(os.Stdout)
 }
 
-// OutOrStderr returns output to stderr
+// OutOrStderr returns output to stderr.
 func (c *Command) OutOrStderr() io.Writer {
 	return c.getOut(os.Stderr)
 }
 
-// ErrOrStderr returns output to stderr
+// ErrOrStderr returns output to stderr.
 func (c *Command) ErrOrStderr() io.Writer {
 	return c.getErr(os.Stderr)
 }
 
-// InOrStdin returns input to stdin
+// InOrStdin returns input to stdin.
 func (c *Command) InOrStdin() io.Reader {
 	return c.getIn(os.Stdin)
 }
@@ -431,7 +429,7 @@ func (c *Command) getIn(def io.Reader) io.Reader {
 
 // UsageFunc returns either the function set by SetUsageFunc for this command
 // or a parent, or it returns a default usage function.
-func (c *Command) UsageFunc() (f func(*Command) error) {
+func (c *Command) UsageFunc() func(*Command) error {
 	if c.usageFunc != nil {
 		return c.usageFunc
 	}
@@ -502,7 +500,7 @@ func (c *Command) UsageString() string {
 	return bb.String()
 }
 
-// UsageHintString returns a string that describes how to obtain usage instructions
+// UsageHintString returns a string that describes how to obtain usage instructions.
 func (c *Command) UsageHintString() string {
 	return fmt.Sprintf("Run '%v --help' for usage.\n", c.CommandPath())
 }
@@ -510,7 +508,7 @@ func (c *Command) UsageHintString() string {
 // FlagErrorFunc returns either the function set by SetFlagErrorFunc for this
 // command or a parent, or it returns a function which returns the original
 // error.
-func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
+func (c *Command) FlagErrorFunc() func(*Command, error) error {
 	if c.flagErrorFunc != nil {
 		return c.flagErrorFunc
 	}
@@ -522,6 +520,12 @@ func (c *Command) FlagErrorFunc() (f func(*Command, error) error) {
 		return err
 	}
 }
+
+const (
+	minUsagePadding       = 25
+	minCommandPathPadding = 11
+	minNamePadding        = 11
+)
 
 type padding struct {
 	Usage       int
@@ -561,12 +565,6 @@ func (c *Command) Padding() padding {
 
 	return p
 }
-
-var minUsagePadding = 25
-
-var minCommandPathPadding = 11
-
-var minNamePadding = 11
 
 // UsageTemplate returns usage template for the command.
 func (c *Command) UsageTemplate() string {
@@ -795,7 +793,8 @@ func (c *Command) Traverse(args []string) (*Command, []string, error) {
 			flags = append(flags, arg)
 			continue
 		// A short flag with a space separated value
-		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") && len(arg) == 2 && !isShortBoolFlag(arg[1:], c.Flags()):
+		case strings.HasPrefix(arg, "-") && !strings.Contains(arg, "=") &&
+			len(arg) == 2 && !isShortBoolFlag(arg[1:], c.Flags()):
 			inFlag = true
 			flags = append(flags, arg)
 			continue
@@ -828,7 +827,7 @@ func (c *Command) SuggestionsFor(typedName string) []string {
 	var suggestions []string
 	for _, cmd := range c.commands {
 		if cmd.IsAvailableCommand() {
-			levenshteinDistance := ld(typedName, cmd.Name(), true)
+			levenshteinDistance := calculateLevenshteinDistance(typedName, cmd.Name(), true)
 			suggestByLevenshtein := levenshteinDistance <= c.SuggestionsMinimumDistance
 			suggestByPrefix := strings.HasPrefix(strings.ToLower(cmd.Name()), strings.ToLower(typedName))
 			if suggestByLevenshtein || suggestByPrefix {
@@ -872,9 +871,10 @@ func (c *Command) CancelRun() {
 	c.RunE = nil
 }
 
+//nolint:gocognit,funlen // to be broken down later
 func (c *Command) execute(a []string) (err error) {
 	if c == nil {
-		return fmt.Errorf("called Execute() on a nil Command")
+		return errors.New("called Execute() on a nil Command")
 	}
 
 	if len(c.Deprecated) > 0 {
@@ -887,14 +887,14 @@ func (c *Command) execute(a []string) (err error) {
 	var hooks []HookFuncE
 
 	defer func() {
-		var hooks []HookFuncE
-		appendHooks(&hooks, c.FinalizeE, c.finalizeHooks)
+		var finalizeHooks []HookFuncE
+		appendHooks(&finalizeHooks, c.FinalizeE, c.finalizeHooks)
 		for p := c; p != nil; p = p.Parent() {
-			appendHooks(&hooks, p.PersistentFinalizeE, p.persistentFinalizeHooks)
+			appendHooks(&finalizeHooks, p.PersistentFinalizeE, p.persistentFinalizeHooks)
 		}
 
-		for _, x := range hooks {
-			if err := x(c, argWoFlags); err != nil {
+		for _, x := range finalizeHooks {
+			if err = x(c, argWoFlags); err != nil {
 				panic(err)
 			}
 		}
@@ -915,7 +915,7 @@ func (c *Command) execute(a []string) (err error) {
 	})
 
 	hooks = append(hooks, func(cmd *Command, args []string) error {
-		err := c.ParseFlags(a)
+		err = c.ParseFlags(a)
 		if err != nil {
 			return c.FlagErrorFunc()(c, err)
 		}
@@ -1036,7 +1036,7 @@ func (c *Command) OnPersistentInitialize(f ...HookFuncE) {
 // OnInitialize registers one or more hooks on the command to be executed
 // before the flags of the command are parsed.
 func (c *Command) OnInitialize(f ...HookFuncE) {
-	c.initializeHooks = append(c.persistentInitializeHooks, f...)
+	c.initializeHooks = append(c.initializeHooks, f...)
 }
 
 // OnPersistentPreRun registers one or more hooks on the command to be executed
@@ -1103,6 +1103,8 @@ func (c *Command) ExecuteContextC(ctx context.Context) (*Command, error) {
 }
 
 // ExecuteC executes the command.
+//
+//nolint:gocognit // todo later
 func (c *Command) ExecuteC() (cmd *Command, err error) {
 	if c.ctx == nil {
 		c.ctx = context.Background()
@@ -1114,9 +1116,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	}
 
 	// windows hook
-	if preExecHookFn != nil {
-		preExecHookFn(c)
-	}
+	runMouseTrap(c)
 
 	// initialize help at the last point to allow for user overriding
 	c.InitDefaultHelpCmd()
@@ -1146,7 +1146,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		if !c.SilenceErrors {
 			c.PrintErrln("Error:", err.Error())
-			c.PrintErrf(cmd.UsageHintString())
+			c.PrintErrf("%s", cmd.UsageHintString())
 		}
 		return c, err
 	}
@@ -1159,10 +1159,10 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	cmd.ctx = c.ctx
 
 	err = cmd.execute(flags)
-	if err != nil {
+	if err != nil { //nolint:nestif // todo refactor later
 		// Exit without errors when version requested. At this point the
 		// version has already been printed.
-		if err == ErrVersion {
+		if errors.Is(err, ErrVersion) {
 			return cmd, nil
 		}
 
@@ -1185,7 +1185,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c.Println(cmd.UsageString())
 		} else if !cmd.SilenceErrors && !c.SilenceErrors {
 			// if SilenceUsage && !SilenceErrors, we should be consistent with the unknown sub-command case and output a hint
-			c.Printf(cmd.UsageHintString())
+			c.Print(cmd.UsageHintString())
 		}
 	}
 	return cmd, err
@@ -1218,7 +1218,13 @@ func (c *Command) InitDefaultHelpFlag() {
 		} else {
 			usage += c.Name()
 		}
-		c.Flags().Bool("help", false, usage, zflag.OptShorthand('h'), zflag.OptAnnotation(FlagSetByZuluAnnotation, []string{"true"}))
+		c.Flags().Bool(
+			"help",
+			false,
+			usage,
+			zflag.OptShorthand('h'),
+			zflag.OptAnnotation(FlagSetByZuluAnnotation, []string{"true"}),
+		)
 	}
 }
 
@@ -1253,11 +1259,14 @@ func (c *Command) InitDefaultVersionFlag() {
 // InitDefaultHelpCmd adds default help command to c.
 // It is called automatically by executing the c or by calling help and usage.
 // If c already has help command or c has no subcommands, it will do nothing.
+//
+//nolint:gocognit // todo later
 func (c *Command) InitDefaultHelpCmd() {
 	if !c.HasSubCommands() {
 		return
 	}
 
+	//nolint:nestif // todo later
 	if c.helpCommand == nil {
 		c.helpCommand = &Command{
 			Use:   "help [command]",
@@ -1302,7 +1311,7 @@ Simply type ` + c.Name() + ` help [path to command] for full details.`,
 	c.AddCommand(c.helpCommand)
 }
 
-// ResetCommands delete parent, subcommand and help command from c.
+// ResetCommands deletes the parent, subcommand, and help command from c.
 func (c *Command) ResetCommands() {
 	c.parent = nil
 	c.commands = nil
@@ -1385,32 +1394,32 @@ main:
 }
 
 // Print is a convenience method to Print to the defined output, fallback to Stderr if not set.
-func (c *Command) Print(i ...interface{}) {
+func (c *Command) Print(i ...any) {
 	fmt.Fprint(c.OutOrStderr(), i...)
 }
 
 // Println is a convenience method to Println to the defined output, fallback to Stderr if not set.
-func (c *Command) Println(i ...interface{}) {
+func (c *Command) Println(i ...any) {
 	c.Print(fmt.Sprintln(i...))
 }
 
 // Printf is a convenience method to Printf to the defined output, fallback to Stderr if not set.
-func (c *Command) Printf(format string, i ...interface{}) {
+func (c *Command) Printf(format string, i ...any) {
 	c.Print(fmt.Sprintf(format, i...))
 }
 
 // PrintErr is a convenience method to Print to the defined Err output, fallback to Stderr if not set.
-func (c *Command) PrintErr(i ...interface{}) {
+func (c *Command) PrintErr(i ...any) {
 	fmt.Fprint(c.ErrOrStderr(), i...)
 }
 
 // PrintErrln is a convenience method to Println to the defined Err output, fallback to Stderr if not set.
-func (c *Command) PrintErrln(i ...interface{}) {
+func (c *Command) PrintErrln(i ...any) {
 	c.PrintErr(fmt.Sprintln(i...))
 }
 
 // PrintErrf is a convenience method to Printf to the defined Err output, fallback to Stderr if not set.
-func (c *Command) PrintErrf(format string, i ...interface{}) {
+func (c *Command) PrintErrf(format string, i ...any) {
 	c.PrintErr(fmt.Sprintf(format, i...))
 }
 
@@ -1441,6 +1450,8 @@ func (c *Command) UseLine() string {
 
 // DebugFlags used to determine which flags have been assigned to which commands
 // and which persist.
+//
+//nolint:gocognit // todo later
 func (c *Command) DebugFlags() {
 	c.Println("DebugFlags called on", c.Name())
 	var debugflags func(*Command)
@@ -1509,8 +1520,7 @@ func (c *Command) CalledAs() string {
 	return ""
 }
 
-// hasNameOrAliasPrefix returns true if the Name or any of aliases start
-// with prefix
+// with prefix.
 func (c *Command) hasNameOrAliasPrefix(prefix string) bool {
 	if strings.HasPrefix(c.Name(), prefix) {
 		c.commandCalledAs.name = c.Name()
@@ -1525,7 +1535,7 @@ func (c *Command) hasNameOrAliasPrefix(prefix string) bool {
 	return false
 }
 
-// NameAndAliases returns a list of the command name and all aliases
+// NameAndAliases returns a list of the command name and all aliases.
 func (c *Command) NameAndAliases() string {
 	return strings.Join(append([]string{c.Name()}, c.Aliases...), ", ")
 }
@@ -1788,7 +1798,7 @@ func (c *Command) Flag(name string) (flag *zflag.Flag) {
 		flag = c.persistentFlag(name)
 	}
 
-	return
+	return flag
 }
 
 // Recursively find matching persistent zflag.
@@ -1801,7 +1811,7 @@ func (c *Command) persistentFlag(name string) (flag *zflag.Flag) {
 		c.updateParentsPflags()
 		flag = c.parentsPflags.Lookup(name)
 	}
-	return
+	return flag
 }
 
 // ParseFlags parses persistent flag tree and local flags.
