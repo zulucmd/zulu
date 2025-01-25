@@ -10,7 +10,7 @@ import (
 func TestCheckErr(t *testing.T) {
 	tests := []struct {
 		name  string
-		msg   interface{}
+		msg   any
 		panic bool
 	}{
 		{
@@ -42,7 +42,6 @@ func TestCheckErr(t *testing.T) {
 
 	t.Parallel()
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 

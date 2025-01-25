@@ -11,9 +11,7 @@ import (
 	"github.com/inconshreveable/mousetrap"
 )
 
-var preExecHookFn = preExecHook
-
-func preExecHook(c *Command) {
+func runMouseTrap(command *Command) {
 	if MousetrapHelpText != "" && mousetrap.StartedByExplorer() {
 		c.Print(MousetrapHelpText)
 		if MousetrapDisplayDuration > 0 {

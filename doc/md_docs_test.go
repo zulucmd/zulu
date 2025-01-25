@@ -8,43 +8,47 @@ import (
 
 	"github.com/zulucmd/zulu/v2"
 	"github.com/zulucmd/zulu/v2/doc"
+	"github.com/zulucmd/zulu/v2/internal/testutil"
 )
 
 func TestGenMdDoc(t *testing.T) {
+	rootCmd, echoCmd, echoSubCmd, _, deprecatedCmd, _, _ := getTestCmds()
 	buf := new(bytes.Buffer)
 	if err := doc.GenMarkdown(echoCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
 
-	assertContains(t, output, echoCmd.Long)
-	assertContains(t, output, echoCmd.Example)
-	assertContains(t, output, "boolone")
-	assertContains(t, output, "rootflag")
-	assertContains(t, output, rootCmd.Short)
-	assertContains(t, output, echoSubCmd.Short)
-	assertNotContains(t, output, deprecatedCmd.Short)
-	assertContains(t, output, "Options inherited from parent commands")
+	testutil.AssertContains(t, output, echoCmd.Long)
+	testutil.AssertContains(t, output, echoCmd.Example)
+	testutil.AssertContains(t, output, "boolone")
+	testutil.AssertContains(t, output, "rootflag")
+	testutil.AssertContains(t, output, rootCmd.Short)
+	testutil.AssertContains(t, output, echoSubCmd.Short)
+	testutil.AssertNotContains(t, output, deprecatedCmd.Short)
+	testutil.AssertContains(t, output, "Options inherited from parent commands")
 }
 
 func TestGenMdDocWithNoLongOrSynopsis(t *testing.T) {
+	_, _, _, _, _, _, dummyCmd := getTestCmds()
+
 	buf := new(bytes.Buffer)
 	if err := doc.GenMarkdown(dummyCmd, buf); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
 
-	assertContains(t, output, dummyCmd.Example)
-	assertContains(t, output, dummyCmd.Short)
-	assertContains(t, output, "Options inherited from parent commands")
-	assertNotContains(t, output, "### Synopsis")
+	testutil.AssertContains(t, output, dummyCmd.Example)
+	testutil.AssertContains(t, output, dummyCmd.Short)
+	testutil.AssertContains(t, output, "Options inherited from parent commands")
+	testutil.AssertNotContains(t, output, "### Synopsis")
 }
 
 func TestGenMdNoHiddenParents(t *testing.T) {
+	rootCmd, echoCmd, echoSubCmd, _, deprecatedCmd, _, _ := getTestCmds()
 	for _, name := range []string{"rootflag", "strtwo"} {
 		f := rootCmd.PersistentFlags().Lookup(name)
 		f.Hidden = true
-		defer func() { f.Hidden = false }()
 	}
 	buf := new(bytes.Buffer)
 	if err := doc.GenMarkdown(echoCmd, buf); err != nil {
@@ -52,19 +56,19 @@ func TestGenMdNoHiddenParents(t *testing.T) {
 	}
 	output := buf.String()
 
-	assertContains(t, output, echoCmd.Long)
-	assertContains(t, output, echoCmd.Example)
-	assertContains(t, output, "boolone")
-	assertNotContains(t, output, "rootflag")
-	assertContains(t, output, rootCmd.Short)
-	assertContains(t, output, echoSubCmd.Short)
-	assertNotContains(t, output, deprecatedCmd.Short)
-	assertNotContains(t, output, "Options inherited from parent commands")
+	testutil.AssertContains(t, output, echoCmd.Long)
+	testutil.AssertContains(t, output, echoCmd.Example)
+	testutil.AssertContains(t, output, "boolone")
+	testutil.AssertNotContains(t, output, "rootflag")
+	testutil.AssertContains(t, output, rootCmd.Short)
+	testutil.AssertContains(t, output, echoSubCmd.Short)
+	testutil.AssertNotContains(t, output, deprecatedCmd.Short)
+	testutil.AssertNotContains(t, output, "Options inherited from parent commands")
 }
 
 func TestGenMdNoTag(t *testing.T) {
+	rootCmd, _, _, _, _, _, _ := getTestCmds()
 	rootCmd.DisableAutoGenTag = true
-	defer func() { rootCmd.DisableAutoGenTag = false }()
 
 	buf := new(bytes.Buffer)
 	if err := doc.GenMarkdown(rootCmd, buf); err != nil {
@@ -72,16 +76,12 @@ func TestGenMdNoTag(t *testing.T) {
 	}
 	output := buf.String()
 
-	assertNotContains(t, output, "Auto generated")
+	testutil.AssertNotContains(t, output, "Auto generated")
 }
 
 func TestGenMdTree(t *testing.T) {
 	c := &zulu.Command{Use: "do [OPTIONS] arg1 arg2"}
-	tmpdir, err := os.MkdirTemp("", "test-gen-md-tree")
-	if err != nil {
-		t.Fatalf("Failed to create tmpdir: %v", err)
-	}
-	defer os.RemoveAll(tmpdir)
+	tmpdir := t.TempDir()
 
 	if err := doc.GenMarkdownTree(c, tmpdir); err != nil {
 		t.Fatalf("GenMarkdownTree failed: %v", err)
@@ -93,7 +93,8 @@ func TestGenMdTree(t *testing.T) {
 }
 
 func BenchmarkGenMarkdownToFile(b *testing.B) {
-	file, err := os.CreateTemp("", "")
+	rootCmd, _, _, _, _, _, _ := getTestCmds()
+	file, err := os.CreateTemp(b.TempDir(), "")
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -101,7 +102,7 @@ func BenchmarkGenMarkdownToFile(b *testing.B) {
 	defer file.Close()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if err := doc.GenMarkdown(rootCmd, file); err != nil {
 			b.Fatal(err)
 		}

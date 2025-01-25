@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/zulucmd/zulu/v2"
+	"github.com/zulucmd/zulu/v2/internal/testutil"
 )
 
 func TestValidateFlagGroups(t *testing.T) {
@@ -111,7 +112,6 @@ func TestValidateFlagGroups(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
 			t.Parallel()
 
@@ -153,12 +153,12 @@ func TestValidateFlagGroups(t *testing.T) {
 			err := cmd.Execute()
 
 			if len(tc.expectErr) > 0 {
-				assertNotNilf(t, err, "Expected an error")
-				assertEqual(t, tc.expectErr, err.Error())
+				testutil.AssertNotNilf(t, err, "Expected an error")
+				testutil.AssertEqual(t, tc.expectErr, err.Error())
 				return
 			}
 
-			assertNilf(t, err, "Unexpected error")
+			testutil.AssertNilf(t, err, "Unexpected error")
 		})
 	}
 }

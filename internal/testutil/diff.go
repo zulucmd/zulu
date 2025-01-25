@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Copied from golang.org/x/build/internal/diff
-package zulu_test
+//nolint:gocognit,gocritic,funlen,predeclared // Copied from golang.org/x/build/internal/diff
+package testutil
 
 import (
 	"bytes"
@@ -232,7 +232,7 @@ func tgs(x, y []string) []pair {
 	for i := range T {
 		T[i] = n + 1
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		k := sort.Search(n, func(k int) bool {
 			return T[k] >= J[i]
 		})

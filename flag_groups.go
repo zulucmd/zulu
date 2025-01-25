@@ -171,7 +171,7 @@ func (s setFlagsSet) selectSetFlagNamesFrom(flagNames []string) (setFlagNames []
 			setFlagNames = append(setFlagNames, flagName)
 		}
 	}
-	return
+	return setFlagNames
 }
 func (s setFlagsSet) selectUnsetFlagNamesFrom(flagNames []string) (unsetFlagNames []string) {
 	for _, flagName := range flagNames {
@@ -179,5 +179,5 @@ func (s setFlagsSet) selectUnsetFlagNamesFrom(flagNames []string) (unsetFlagName
 			unsetFlagNames = append(unsetFlagNames, flagName)
 		}
 	}
-	return
+	return unsetFlagNames
 }

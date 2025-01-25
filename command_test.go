@@ -13,6 +13,7 @@ import (
 
 	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu/v2"
+	"github.com/zulucmd/zulu/v2/internal/testutil"
 )
 
 func noopRun(*zulu.Command, []string) error { return nil }
@@ -22,14 +23,13 @@ func executeCommand(root *zulu.Command, args ...string) (output string, err erro
 	return output, err
 }
 
-func executeCommandWithContext(ctx context.Context, root *zulu.Command, args ...string) (output string, err error) {
+func executeCommandWithContext(ctx context.Context, root *zulu.Command, args ...string) (string, error) {
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
 	root.SetArgs(args)
 
-	err = root.ExecuteContext(ctx)
-
+	err := root.ExecuteContext(ctx)
 	return buf.String(), err
 }
 
@@ -44,7 +44,11 @@ func executeCommandC(root *zulu.Command, args ...string) (c *zulu.Command, outpu
 	return c, buf.String(), err
 }
 
-func executeCommandWithContextC(ctx context.Context, root *zulu.Command, args ...string) (c *zulu.Command, output string, err error) {
+func executeCommandWithContextC(
+	ctx context.Context,
+	root *zulu.Command,
+	args ...string,
+) (c *zulu.Command, output string, err error) {
 	buf := new(bytes.Buffer)
 	root.SetOut(buf)
 	root.SetErr(buf)
@@ -72,9 +76,9 @@ func TestSingleCommand(t *testing.T) {
 	rootCmd.AddCommand(aCmd, bCmd)
 
 	output, err := executeCommand(rootCmd, "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, onetwo, strings.Join(rootCmdArgs, " "), "rootCmdArgs unexpected")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, onetwo, strings.Join(rootCmdArgs, " "), "rootCmdArgs unexpected")
 }
 
 func TestChildCommand(t *testing.T) {
@@ -89,15 +93,15 @@ func TestChildCommand(t *testing.T) {
 	rootCmd.AddCommand(child1Cmd, child2Cmd)
 
 	output, err := executeCommand(rootCmd, "child1", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, onetwo, strings.Join(child1CmdArgs, " "), "child1CmdArgs unexpected")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, onetwo, strings.Join(child1CmdArgs, " "), "child1CmdArgs unexpected")
 }
 
 func TestCallCommandWithoutSubcommands(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	_, err := executeCommand(rootCmd)
-	assertNilf(t, err, "Calling command without subcommands should not have error")
+	testutil.AssertNilf(t, err, "Calling command without subcommands should not have error")
 }
 
 func TestRootExecuteUnknownCommand(t *testing.T) {
@@ -107,7 +111,7 @@ func TestRootExecuteUnknownCommand(t *testing.T) {
 	output, _ := executeCommand(rootCmd, "unknown")
 
 	expected := "Error: unknown command \"unknown\" for \"root\"\nRun 'root --help' for usage.\n"
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestSubcommandExecuteC(t *testing.T) {
@@ -116,16 +120,16 @@ func TestSubcommandExecuteC(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	c, output, err := executeCommandC(rootCmd, "child")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, "child", c.Name(), "`invalid command returned from ExecuteC")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, "child", c.Name(), "`invalid command returned from ExecuteC")
 }
 
 func TestExecuteContext(t *testing.T) {
 	ctx := context.TODO()
 
 	ctxRun := func(cmd *zulu.Command, args []string) error {
-		assertEqualf(t, ctx, cmd.Context(), "Command %q must have context when called with ExecuteContext", cmd.Use)
+		testutil.AssertEqualf(t, ctx, cmd.Context(), "Command %q must have context when called with ExecuteContext", cmd.Use)
 		return nil
 	}
 
@@ -137,20 +141,20 @@ func TestExecuteContext(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommandWithContext(ctx, rootCmd, "")
-	assertNilf(t, err, "Root command must not fail")
+	testutil.AssertNilf(t, err, "Root command must not fail")
 
 	_, err = executeCommandWithContext(ctx, rootCmd, "child")
-	assertNilf(t, err, "Subcommand must not fail")
+	testutil.AssertNilf(t, err, "Subcommand must not fail")
 
 	_, err = executeCommandWithContext(ctx, rootCmd, "child", "grandchild")
-	assertNilf(t, err, "Command child must not fail")
+	testutil.AssertNilf(t, err, "Command child must not fail")
 }
 
 func TestExecuteContextC(t *testing.T) {
 	ctx := context.TODO()
 
 	ctxRun := func(cmd *zulu.Command, args []string) error {
-		assertEqualf(t, ctx, cmd.Context(), "Command %q must have context when called with ExecuteContext", cmd.Use)
+		testutil.AssertEqualf(t, ctx, cmd.Context(), "Command %q must have context when called with ExecuteContext", cmd.Use)
 		return nil
 	}
 
@@ -162,18 +166,18 @@ func TestExecuteContextC(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	_, _, err := executeCommandWithContextC(ctx, rootCmd, "")
-	assertNilf(t, err, "Root command must not fail")
+	testutil.AssertNilf(t, err, "Root command must not fail")
 
 	_, _, err = executeCommandWithContextC(ctx, rootCmd, "child")
-	assertNilf(t, err, "Subcommand must not fail")
+	testutil.AssertNilf(t, err, "Subcommand must not fail")
 
 	_, _, err = executeCommandWithContextC(ctx, rootCmd, "child", "grandchild")
-	assertNilf(t, err, "Command child must not fail")
+	testutil.AssertNilf(t, err, "Command child must not fail")
 }
 
 func TestExecute_NoContext(t *testing.T) {
 	run := func(cmd *zulu.Command, args []string) error {
-		assertEqualf(t, context.Background(), cmd.Context(), "Command %s must have background context", cmd.Use)
+		testutil.AssertEqualf(t, context.Background(), cmd.Context(), "Command %s must have background context", cmd.Use)
 		return nil
 	}
 
@@ -185,13 +189,13 @@ func TestExecute_NoContext(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "")
-	assertNilf(t, err, "Root command must not fail")
+	testutil.AssertNilf(t, err, "Root command must not fail")
 
 	_, err = executeCommand(rootCmd, "child")
-	assertNilf(t, err, "Subcommand must not fail")
+	testutil.AssertNilf(t, err, "Subcommand must not fail")
 
 	_, err = executeCommand(rootCmd, "child", "grandchild")
-	assertNilf(t, err, "Command child must not fail")
+	testutil.AssertNilf(t, err, "Command child must not fail")
 }
 
 func TestRootUnknownCommandSilenced(t *testing.T) {
@@ -201,7 +205,7 @@ func TestRootUnknownCommandSilenced(t *testing.T) {
 	rootCmd.AddCommand(&zulu.Command{Use: "child", RunE: noopRun})
 
 	output, _ := executeCommand(rootCmd, "unknown")
-	assertEqualf(t, "", output, "Expected blank output, because of silenced usage")
+	testutil.AssertEqualf(t, "", output, "Expected blank output, because of silenced usage")
 }
 
 func TestCommandAlias(t *testing.T) {
@@ -222,9 +226,9 @@ func TestCommandAlias(t *testing.T) {
 	rootCmd.AddCommand(echoCmd)
 
 	output, err := executeCommand(rootCmd, "tell", "times", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, onetwo, strings.Join(timesCmdArgs, " "), "timesCmdArgs unexpected")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, onetwo, strings.Join(timesCmdArgs, " "), "timesCmdArgs unexpected")
 }
 
 func TestEnablePrefixMatching(t *testing.T) {
@@ -241,9 +245,9 @@ func TestEnablePrefixMatching(t *testing.T) {
 	rootCmd.AddCommand(aCmd, bCmd)
 
 	output, err := executeCommand(rootCmd, "a", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, onetwo, strings.Join(aCmdArgs, " "), "aCmdArgs unexpected")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, onetwo, strings.Join(aCmdArgs, " "), "aCmdArgs unexpected")
 
 	zulu.EnablePrefixMatching = false
 }
@@ -268,9 +272,9 @@ func TestAliasPrefixMatching(t *testing.T) {
 	rootCmd.AddCommand(echoCmd)
 
 	output, err := executeCommand(rootCmd, "sa", "times", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, onetwo, strings.Join(timesCmdArgs, " "), "timesCmdArgs unexpected")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, onetwo, strings.Join(timesCmdArgs, " "), "timesCmdArgs unexpected")
 
 	zulu.EnablePrefixMatching = false
 }
@@ -290,9 +294,9 @@ func TestChildSameName(t *testing.T) {
 	rootCmd.AddCommand(fooCmd, barCmd)
 
 	output, err := executeCommand(rootCmd, "foo", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, onetwo, strings.Join(fooCmdArgs, " "), "fooCmdArgs unexpected")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, onetwo, strings.Join(fooCmdArgs, " "), "fooCmdArgs unexpected")
 }
 
 // TestGrandChildSameName checks the correct behaviour of zulu in cases,
@@ -311,9 +315,9 @@ func TestGrandChildSameName(t *testing.T) {
 	rootCmd.AddCommand(barCmd)
 
 	output, err := executeCommand(rootCmd, "bar", "foo", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, onetwo, strings.Join(fooCmdArgs, " "), "fooCmdArgs unexpected")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, onetwo, strings.Join(fooCmdArgs, " "), "fooCmdArgs unexpected")
 }
 
 func TestFlagLong(t *testing.T) {
@@ -330,12 +334,12 @@ func TestFlagLong(t *testing.T) {
 	c.Flags().StringVar(&stringFlagValue, "sf", "", "")
 
 	output, err := executeCommand(c, "--intf=7", "--sf=abc", "one", "--", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, 1, c.ArgsLenAtDash(), "Unexpected ArgsLenAtDash")
-	assertEqualf(t, 7, intFlagValue, "Unexpected intFlagValue")
-	assertEqualf(t, "abc", stringFlagValue, "Unexpected stringFlagValue")
-	assertEqualf(t, onetwo, strings.Join(cArgs, " "), "rootCmdArgs unexpected")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, 1, c.ArgsLenAtDash(), "Unexpected ArgsLenAtDash")
+	testutil.AssertEqualf(t, 7, intFlagValue, "Unexpected intFlagValue")
+	testutil.AssertEqualf(t, "abc", stringFlagValue, "Unexpected stringFlagValue")
+	testutil.AssertEqualf(t, onetwo, strings.Join(cArgs, " "), "rootCmdArgs unexpected")
 }
 
 func TestFlagShort(t *testing.T) {
@@ -352,11 +356,11 @@ func TestFlagShort(t *testing.T) {
 	c.Flags().StringVar(&stringFlagValue, "sf", "", "", zflag.OptShorthand('s'))
 
 	output, err := executeCommand(c, "-i", "7", "-sabc", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, 7, intFlagValue, "Unexpected intFlagValue")
-	assertEqualf(t, "abc", stringFlagValue, "Unexpected stringFlagValue")
-	assertEqualf(t, onetwo, strings.Join(cArgs, " "), "rootCmdArgs unexpected")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, 7, intFlagValue, "Unexpected intFlagValue")
+	testutil.AssertEqualf(t, "abc", stringFlagValue, "Unexpected stringFlagValue")
+	testutil.AssertEqualf(t, onetwo, strings.Join(cArgs, " "), "rootCmdArgs unexpected")
 }
 
 func TestChildFlag(t *testing.T) {
@@ -368,9 +372,9 @@ func TestChildFlag(t *testing.T) {
 	childCmd.Flags().IntVar(&intFlagValue, "intf", -1, "", zflag.OptShorthand('i'))
 
 	output, err := executeCommand(rootCmd, "child", "-i7")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, 7, intFlagValue, "Unexpected flag value:")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, 7, intFlagValue, "Unexpected flag value:")
 }
 
 func TestChildFlagWithParentLocalFlag(t *testing.T) {
@@ -383,9 +387,9 @@ func TestChildFlagWithParentLocalFlag(t *testing.T) {
 	childCmd.Flags().IntVar(&intFlagValue, "intf", -1, "", zflag.OptShorthand('i'))
 
 	_, err := executeCommand(rootCmd, "child", "-i7", "-sabc")
-	assertNotNilf(t, err, "Invalid flag value should generate error")
-	assertContains(t, err.Error(), "unknown shorthand")
-	assertEqualf(t, 7, intFlagValue, "Unexpected flag value:")
+	testutil.AssertNotNilf(t, err, "Invalid flag value should generate error")
+	testutil.AssertContains(t, err.Error(), "unknown shorthand")
+	testutil.AssertEqualf(t, 7, intFlagValue, "Unexpected flag value:")
 }
 
 func TestFlagInvalidInput(t *testing.T) {
@@ -393,8 +397,8 @@ func TestFlagInvalidInput(t *testing.T) {
 	rootCmd.Flags().Int("intf", -1, "", zflag.OptShorthand('i'))
 
 	_, err := executeCommand(rootCmd, "-iabc")
-	assertNotNilf(t, err, "Invalid flag value should generate error")
-	assertContains(t, err.Error(), "invalid syntax")
+	testutil.AssertNotNilf(t, err, "Invalid flag value should generate error")
+	testutil.AssertContains(t, err.Error(), "invalid syntax")
 }
 
 func TestFlagBeforeCommand(t *testing.T) {
@@ -407,13 +411,13 @@ func TestFlagBeforeCommand(t *testing.T) {
 
 	// With short flag.
 	_, err := executeCommand(rootCmd, "-i7", "child")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, 7, flagValue, "Unexpected flag value:")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, 7, flagValue, "Unexpected flag value:")
 
 	// With long flag.
 	_, err = executeCommand(rootCmd, "--intf=8", "child")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, 8, flagValue, "Unexpected flag value:")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, 8, flagValue, "Unexpected flag value:")
 }
 
 func TestStripFlags(t *testing.T) {
@@ -499,8 +503,8 @@ func TestDisableFlagParsing(t *testing.T) {
 
 	args := []string{"cmd", "-v", "-race", "-file", "foo.go"}
 	output, err := executeCommand(c, args...)
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
 
 	if !reflect.DeepEqual(args, cArgs) {
 		t.Errorf("Expected: %v, got: %v", args, cArgs)
@@ -519,10 +523,10 @@ func TestPersistentFlagsOnSameCommand(t *testing.T) {
 	rootCmd.PersistentFlags().IntVar(&flagValue, "intf", -1, "", zflag.OptShorthand('i'))
 
 	output, err := executeCommand(rootCmd, "-i7", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, onetwo, strings.Join(rootCmdArgs, " "), "rootCmdArgs unexpected")
-	assertEqualf(t, 7, flagValue, "Unexpected flag value:")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, onetwo, strings.Join(rootCmdArgs, " "), "rootCmdArgs unexpected")
+	testutil.AssertEqualf(t, 7, flagValue, "Unexpected flag value:")
 }
 
 // TestEmptyInputs checks,
@@ -534,9 +538,9 @@ func TestEmptyInputs(t *testing.T) {
 	c.Flags().IntVar(&flagValue, "intf", -1, "", zflag.OptShorthand('i'))
 
 	output, err := executeCommand(c, "", "-i7", "")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, 7, flagValue, "Unexpected flag value:")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, 7, flagValue, "Unexpected flag value:")
 }
 
 func TestChildFlagShadowsParentPersistentFlag(t *testing.T) {
@@ -553,10 +557,10 @@ func TestChildFlagShadowsParentPersistentFlag(t *testing.T) {
 	childInherited := child.InheritedFlags()
 	childLocal := child.LocalFlags()
 
-	assertNotNilf(t, childLocal.Lookup("strf"), `LocalFlags expected to contain "strf"`)
-	assertNotNilf(t, childInherited.Lookup("boolf"), `InheritedFlags expected to contain "boolf"`)
-	assertNilf(t, childInherited.Lookup("intf"), `InheritedFlags should not contain shadowed flag "intf"`)
-	assertNotNilf(t, childLocal.Lookup("intf"), `LocalFlags expected to contain "intf"`)
+	testutil.AssertNotNilf(t, childLocal.Lookup("strf"), `LocalFlags expected to contain "strf"`)
+	testutil.AssertNotNilf(t, childInherited.Lookup("boolf"), `InheritedFlags expected to contain "boolf"`)
+	testutil.AssertNilf(t, childInherited.Lookup("intf"), `InheritedFlags should not contain shadowed flag "intf"`)
+	testutil.AssertNotNilf(t, childLocal.Lookup("intf"), `LocalFlags expected to contain "intf"`)
 }
 
 func TestPersistentFlagsOnChild(t *testing.T) {
@@ -575,11 +579,11 @@ func TestPersistentFlagsOnChild(t *testing.T) {
 	childCmd.Flags().IntVar(&childFlagValue, "childf", -1, "", zflag.OptShorthand('c'))
 
 	output, err := executeCommand(rootCmd, "child", "-c7", "-p8", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, onetwo, strings.Join(childCmdArgs, " "), "rootCmdArgs unexpected")
-	assertEqualf(t, 8, parentFlagValue, "Unexpected parentFlagValue:")
-	assertEqualf(t, 7, childFlagValue, "Unexpected childFlagValue:")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, onetwo, strings.Join(childCmdArgs, " "), "rootCmdArgs unexpected")
+	testutil.AssertEqualf(t, 8, parentFlagValue, "Unexpected parentFlagValue:")
+	testutil.AssertEqualf(t, 7, childFlagValue, "Unexpected childFlagValue:")
 }
 
 func TestRequiredFlags(t *testing.T) {
@@ -590,7 +594,7 @@ func TestRequiredFlags(t *testing.T) {
 	expected := fmt.Sprintf("required flag(s) %q, %q not set", "--foo1", "--foo2")
 
 	_, err := executeCommand(c)
-	assertEqualf(t, expected, err.Error(), "Unexpected error")
+	testutil.AssertEqualf(t, expected, err.Error(), "Unexpected error")
 }
 
 func TestRequiredFlagsWithCustomFlagErrorFunc(t *testing.T) {
@@ -605,9 +609,9 @@ func TestRequiredFlagsWithCustomFlagErrorFunc(t *testing.T) {
 	requiredFlagErrorMessage := fmt.Sprintf("required flag(s) %q not set", "--foo1")
 
 	output, err := executeCommand(c)
-	assertEqualf(t, silentError, err.Error(), "Unexpected error:")
-	assertContains(t, output, requiredFlagErrorMessage)
-	assertContains(t, output, c.UsageString())
+	testutil.AssertEqualf(t, silentError, err.Error(), "Unexpected error:")
+	testutil.AssertContains(t, output, requiredFlagErrorMessage)
+	testutil.AssertContains(t, output, c.UsageString())
 }
 
 func TestPersistentRequiredFlags(t *testing.T) {
@@ -626,7 +630,7 @@ func TestPersistentRequiredFlags(t *testing.T) {
 	expected := fmt.Sprintf("required flag(s) %q, %q, %q, %q not set", "--bar1", "--bar2", "--foo1", "--foo2")
 
 	_, err := executeCommand(parent, "child")
-	assertEqualf(t, expected, err.Error(), "Unexpected error:")
+	testutil.AssertEqualf(t, expected, err.Error(), "Unexpected error:")
 }
 
 func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
@@ -643,17 +647,17 @@ func TestPersistentRequiredFlagsWithDisableFlagParsing(t *testing.T) {
 	parent.AddCommand(child)
 
 	_, err := executeCommand(parent, "--foo", "child")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 
 	// Reset the flag or else it will remember the state from the previous command
 	flag.Changed = false
 	_, err = executeCommand(parent, "child", "--foo")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 
 	// Reset the flag or else it will remember the state from the previous command
 	flag.Changed = false
 	_, err = executeCommand(parent, "child")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestInitHelpFlagMergesFlags(t *testing.T) {
@@ -665,7 +669,7 @@ func TestInitHelpFlagMergesFlags(t *testing.T) {
 
 	childCmd.InitDefaultHelpFlag()
 	got := childCmd.Flags().Lookup("help").Usage
-	assertEqualf(t, usage, got, "Unexpected help flag usage of root command:")
+	testutil.AssertEqualf(t, usage, got, "Unexpected help flag usage of root command:")
 }
 
 func TestHelpCommandExecuted(t *testing.T) {
@@ -673,8 +677,8 @@ func TestHelpCommandExecuted(t *testing.T) {
 	rootCmd.AddCommand(&zulu.Command{Use: "child", RunE: noopRun})
 
 	output, err := executeCommand(rootCmd, "help")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, rootCmd.Long)
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, rootCmd.Long)
 }
 
 func TestHelpCommandExecutedOnChild(t *testing.T) {
@@ -683,8 +687,8 @@ func TestHelpCommandExecutedOnChild(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, "help", "child")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, childCmd.Long)
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, childCmd.Long)
 }
 
 func TestHelpCommandExecutedOnChildWithFlagThatShadowsParentFlag(t *testing.T) {
@@ -698,7 +702,7 @@ func TestHelpCommandExecutedOnChildWithFlagThatShadowsParentFlag(t *testing.T) {
 	child.Flags().Bool("baz", false, "child baz usage")
 
 	got, err := executeCommand(parent, "help", "child")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 
 	expected := `Usage:
   parent child [flags]
@@ -712,7 +716,7 @@ Global Flags:
       --bar   parent bar usage
 `
 
-	assertEqualf(t, expected, rmCarriageRet(got), "Unexpected help text")
+	testutil.AssertEqualf(t, expected, rmCarriageRet(got), "Unexpected help text")
 }
 
 func TestSetHelpCommand(t *testing.T) {
@@ -729,16 +733,16 @@ func TestSetHelpCommand(t *testing.T) {
 	})
 
 	got, err := executeCommand(c, "help")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, expected, rmCarriageRet(got), "Unexpected help text")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, expected, rmCarriageRet(got), "Unexpected help text")
 }
 
 func TestHelpFlagExecuted(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Long: "Long description", RunE: noopRun}
 
 	output, err := executeCommand(rootCmd, "--help")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, rootCmd.Long)
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, rootCmd.Long)
 }
 
 func TestHelpFlagExecutedOnChild(t *testing.T) {
@@ -747,8 +751,8 @@ func TestHelpFlagExecutedOnChild(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, "child", "--help")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, childCmd.Long)
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, childCmd.Long)
 }
 
 // TestHelpFlagInHelp checks,
@@ -762,15 +766,15 @@ func TestHelpFlagInHelp(t *testing.T) {
 	parentCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(parentCmd, "help", "child")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "[flags]")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "[flags]")
 }
 
 func TestFlagsInUsage(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: func(*zulu.Command, []string) error { return nil }}
 	output, err := executeCommand(rootCmd, "--help")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "[flags]")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "[flags]")
 }
 
 func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
@@ -779,32 +783,32 @@ func TestHelpExecutedOnNonRunnableChild(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, "child")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, childCmd.Long)
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, childCmd.Long)
 }
 
 func TestVersionFlagExecuted(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: noopRun}
 
 	output, err := executeCommand(rootCmd, "--version", "arg1")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "root version 1.0.0")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "root version 1.0.0")
 }
 
 func TestVersionFlagExecutedWithNoName(t *testing.T) {
 	rootCmd := &zulu.Command{Version: "1.0.0", RunE: noopRun}
 
 	output, err := executeCommand(rootCmd, "--version", "arg1")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "version 1.0.0")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "version 1.0.0")
 }
 
 func TestShortAndLongVersionFlagInHelp(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: noopRun}
 
 	output, err := executeCommand(rootCmd, "--help")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "-v, --version")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "-v, --version")
 }
 
 func TestLongVersionFlagOnlyInHelpWhenShortPredefined(t *testing.T) {
@@ -812,17 +816,17 @@ func TestLongVersionFlagOnlyInHelpWhenShortPredefined(t *testing.T) {
 	rootCmd.Flags().String("foo", "", "not a version flag", zflag.OptShorthand('v'))
 
 	output, err := executeCommand(rootCmd, "--help")
-	assertNilf(t, err, "Unexpected error")
-	assertNotContains(t, output, "-v, --version")
-	assertContains(t, output, "--version")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertNotContains(t, output, "-v, --version")
+	testutil.AssertContains(t, output, "--version")
 }
 
 func TestShorthandVersionFlagExecuted(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0", RunE: noopRun}
 
 	output, err := executeCommand(rootCmd, "-v", "arg1")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "root version 1.0.0")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "root version 1.0.0")
 }
 
 func TestVersionTemplate(t *testing.T) {
@@ -830,8 +834,8 @@ func TestVersionTemplate(t *testing.T) {
 	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
 
 	output, err := executeCommand(rootCmd, "--version", "arg1")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "customized version: 1.0.0")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "customized version: 1.0.0")
 }
 
 func TestShorthandVersionTemplate(t *testing.T) {
@@ -839,8 +843,8 @@ func TestShorthandVersionTemplate(t *testing.T) {
 	rootCmd.SetVersionTemplate(`customized version: {{.Version}}`)
 
 	output, err := executeCommand(rootCmd, "-v", "arg1")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "customized version: 1.0.0")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "customized version: 1.0.0")
 }
 
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
@@ -848,8 +852,8 @@ func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: noopRun})
 
 	output, err := executeCommand(rootCmd, "--version", "sub")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "root version 1.0.0")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "root version 1.0.0")
 }
 
 func TestShorthandVersionFlagExecutedOnSubcommand(t *testing.T) {
@@ -857,8 +861,8 @@ func TestShorthandVersionFlagExecutedOnSubcommand(t *testing.T) {
 	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: noopRun})
 
 	output, err := executeCommand(rootCmd, "-v", "sub")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "root version 1.0.0")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "root version 1.0.0")
 }
 
 func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
@@ -866,8 +870,8 @@ func TestVersionFlagOnlyAddedToRoot(t *testing.T) {
 	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: noopRun})
 
 	_, err := executeCommand(rootCmd, "sub", "--version")
-	assertNotNilf(t, err, "Expected an error")
-	assertContains(t, err.Error(), "unknown flag: --version")
+	testutil.AssertNotNilf(t, err, "Expected an error")
+	testutil.AssertContains(t, err.Error(), "unknown flag: --version")
 }
 
 func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
@@ -875,24 +879,24 @@ func TestShortVersionFlagOnlyAddedToRoot(t *testing.T) {
 	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: noopRun})
 
 	_, err := executeCommand(rootCmd, "sub", "-v")
-	assertNotNilf(t, err, "Expected an error")
-	assertContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
+	testutil.AssertNotNilf(t, err, "Expected an error")
+	testutil.AssertContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
 }
 
 func TestVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
 
 	_, err := executeCommand(rootCmd, "--version")
-	assertNotNilf(t, err, "Expected an error")
-	assertContains(t, err.Error(), "unknown flag: --version")
+	testutil.AssertNotNilf(t, err, "Expected an error")
+	testutil.AssertContains(t, err.Error(), "unknown flag: --version")
 }
 
 func TestShorthandVersionFlagOnlyExistsIfVersionNonEmpty(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
 
 	_, err := executeCommand(rootCmd, "-v")
-	assertNotNilf(t, err, "Expected an error")
-	assertContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
+	testutil.AssertNotNilf(t, err, "Expected an error")
+	testutil.AssertContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
 }
 
 func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
@@ -900,9 +904,9 @@ func TestShorthandVersionFlagOnlyAddedIfShorthandNotDefined(t *testing.T) {
 	rootCmd.Flags().String("notversion", "", "not a version flag", zflag.OptShorthand('v'))
 
 	_, err := executeCommand(rootCmd, "-v")
-	assertNotNilf(t, err, "Expected an error")
-	assertContains(t, rootCmd.Flags().ShorthandLookupStr("v").Name, "notversion")
-	assertContains(t, err.Error(), "flag needs an argument: 'v' in -v")
+	testutil.AssertNotNilf(t, err, "Expected an error")
+	testutil.AssertContains(t, rootCmd.Flags().ShorthandLookupStr("v").Name, "notversion")
+	testutil.AssertContains(t, err.Error(), "flag needs an argument: 'v' in -v")
 }
 
 func TestShorthandVersionFlagOnlyAddedIfVersionNotDefined(t *testing.T) {
@@ -910,8 +914,8 @@ func TestShorthandVersionFlagOnlyAddedIfVersionNotDefined(t *testing.T) {
 	rootCmd.Flags().Bool("version", false, "a different kind of version flag")
 
 	_, err := executeCommand(rootCmd, "-v")
-	assertNotNilf(t, err, "Expected an error")
-	assertContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
+	testutil.AssertNotNilf(t, err, "Expected an error")
+	testutil.AssertContains(t, err.Error(), "unknown shorthand flag: 'v' in -v")
 }
 
 func TestUsageIsNotPrintedTwice(t *testing.T) {
@@ -920,7 +924,7 @@ func TestUsageIsNotPrintedTwice(t *testing.T) {
 	cmd.AddCommand(sub)
 
 	output, _ := executeCommand(cmd, "")
-	assertEqualf(t, strings.Count(output, "Usage:"), 1, "Usage output is not printed exactly once")
+	testutil.AssertEqualf(t, strings.Count(output, "Usage:"), 1, "Usage output is not printed exactly once")
 }
 
 func TestVisitParents(t *testing.T) {
@@ -935,15 +939,15 @@ func TestVisitParents(t *testing.T) {
 		total++
 	}
 	sub.VisitParents(add)
-	assertEqualf(t, 1, total, "Unexpected parent visits")
+	testutil.AssertEqualf(t, 1, total, "Unexpected parent visits")
 
 	total = 0
 	dsub.VisitParents(add)
-	assertEqualf(t, 2, total, "Unexpected parent visits")
+	testutil.AssertEqualf(t, 2, total, "Unexpected parent visits")
 
 	total = 0
 	c.VisitParents(add)
-	assertEqualf(t, 0, total, "Unexpected parent visits")
+	testutil.AssertEqualf(t, 0, total, "Unexpected parent visits")
 }
 
 func TestSuggestions(t *testing.T) {
@@ -955,8 +959,16 @@ func TestSuggestions(t *testing.T) {
 	}
 	rootCmd.AddCommand(timesCmd)
 
-	templateWithSuggestions := "Error: unknown command \"%s\" for \"root\"\n\nDid you mean this?\n\t%s\n\nRun 'root --help' for usage.\n"
-	templateWithoutSuggestions := "Error: unknown command \"%s\" for \"root\"\nRun 'root --help' for usage.\n"
+	templateWithSuggestions := `Error: unknown command "%s" for "root"
+
+Did you mean this?
+	%s
+
+Run 'root --help' for usage.
+`
+	templateWithoutSuggestions := `Error: unknown command "%s" for "root"
+Run 'root --help' for usage.
+`
 
 	tests := map[string]string{
 		"time":     "times",
@@ -980,11 +992,11 @@ func TestSuggestions(t *testing.T) {
 			output, _ := executeCommand(rootCmd, typo)
 
 			if suggestion == "" || suggestionsDisabled {
-				assertEqualf(t, fmt.Sprintf(templateWithoutSuggestions, typo), output, "Unexpected response")
+				testutil.AssertEqualf(t, fmt.Sprintf(templateWithoutSuggestions, typo), output, "Unexpected response")
 				continue
 			}
 
-			assertEqualf(t, fmt.Sprintf(templateWithSuggestions, typo, suggestion), output, "Unexpected response")
+			testutil.AssertEqualf(t, fmt.Sprintf(templateWithSuggestions, typo, suggestion), output, "Unexpected response")
 		}
 	}
 }
@@ -996,7 +1008,7 @@ func TestRemoveCommand(t *testing.T) {
 	rootCmd.RemoveCommand(childCmd)
 
 	_, err := executeCommand(rootCmd, "child")
-	assertNotNilf(t, err, "Expected error on calling removed command.")
+	testutil.AssertNotNilf(t, err, "Expected error on calling removed command.")
 }
 
 func TestReplaceCommandWithRemove(t *testing.T) {
@@ -1015,10 +1027,10 @@ func TestReplaceCommandWithRemove(t *testing.T) {
 	rootCmd.AddCommand(child2Cmd)
 
 	output, err := executeCommand(rootCmd, "child")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertNotEqualf(t, 1, childUsed, "Removed command shouldn't be called")
-	assertEqualf(t, 2, childUsed, "Replacing command should have been called but didn't")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertNotEqualf(t, 1, childUsed, "Removed command shouldn't be called")
+	testutil.AssertEqualf(t, 2, childUsed, "Replacing command should have been called but didn't")
 }
 
 func TestDeprecatedCommand(t *testing.T) {
@@ -1031,8 +1043,8 @@ func TestDeprecatedCommand(t *testing.T) {
 	rootCmd.AddCommand(deprecatedCmd)
 
 	output, err := executeCommand(rootCmd, "deprecated")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, deprecatedCmd.Deprecated)
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, deprecatedCmd.Deprecated)
 }
 
 func TestHooks(t *testing.T) {
@@ -1069,8 +1081,8 @@ func TestHooks(t *testing.T) {
 	}
 
 	output, err := executeCommand(c, "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
 
 	for _, v := range []struct {
 		name string
@@ -1082,7 +1094,7 @@ func TestHooks(t *testing.T) {
 		{"postArgs", postArgs},
 		{"persPostArgs", persPostArgs},
 	} {
-		assertEqualf(t, onetwo, v.got, "%s unexpected", v.name)
+		testutil.AssertEqualf(t, onetwo, v.got, "%s unexpected", v.name)
 	}
 }
 
@@ -1099,8 +1111,8 @@ func TestHooksVersionFlagAddedWhenVersionSetOnInitialize(t *testing.T) {
 	}
 
 	output, err := executeCommand(c, "--version")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, "c version (devel)\n", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, "c version (devel)\n", output, "Unexpected output")
 }
 
 func TestPersistentHooks(t *testing.T) {
@@ -1159,8 +1171,8 @@ func TestPersistentHooks(t *testing.T) {
 	childCmd.OnPersistentFinalize(getTestHookFn("persChildPersFinArgs"))
 
 	output, err := executeCommand(parentCmd, "child", "one", "two")
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
 
 	for _, v := range []struct {
 		name     string
@@ -1210,11 +1222,11 @@ func TestPersistentHooks(t *testing.T) {
 	} {
 		got, ok := hooksArgs[v.name]
 		if !ok {
-			assertEqualf(t, v.expected, "", "Expected %q to be called, but it wasn't", v.name)
+			testutil.AssertEqualf(t, v.expected, "", "Expected %q to be called, but it wasn't", v.name)
 			continue
 		}
 
-		assertEqualf(t, v.expected, got, "Expected %q %s, got %q", v.expected, v.name, got)
+		testutil.AssertEqualf(t, v.expected, got, "Expected %q %s, got %q", v.expected, v.name, got)
 	}
 }
 
@@ -1229,8 +1241,18 @@ func TestGlobalNormFuncPropagation(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	rootCmd.SetGlobalNormalizationFunc(normFunc)
-	assertEqualf(t, reflect.ValueOf(normFunc).Pointer(), reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer(), "rootCmd seems to have a wrong normalization function")
-	assertEqualf(t, reflect.ValueOf(normFunc).Pointer(), reflect.ValueOf(childCmd.GlobalNormalizationFunc()).Pointer(), "childCmd should have had the normalization function of rootCmd")
+	testutil.AssertEqualf(
+		t,
+		reflect.ValueOf(normFunc).Pointer(),
+		reflect.ValueOf(rootCmd.GlobalNormalizationFunc()).Pointer(),
+		"rootCmd seems to have a wrong normalization function",
+	)
+	testutil.AssertEqualf(
+		t,
+		reflect.ValueOf(normFunc).Pointer(),
+		reflect.ValueOf(childCmd.GlobalNormalizationFunc()).Pointer(),
+		"childCmd should have had the normalization function of rootCmd",
+	)
 }
 
 // Related to https://github.com/spf13/cobra/issues/521.
@@ -1242,7 +1264,12 @@ func TestNormPassedOnLocal(t *testing.T) {
 	c := &zulu.Command{}
 	c.Flags().Bool("flagname", true, "this is a dummy flag")
 	c.SetGlobalNormalizationFunc(toUpper)
-	assertEqualf(t, c.LocalFlags().Lookup("flagname"), c.LocalFlags().Lookup("FLAGNAME"), "Normalization function should be passed on to Local flag set")
+	testutil.AssertEqualf(
+		t,
+		c.LocalFlags().Lookup("flagname"),
+		c.LocalFlags().Lookup("FLAGNAME"),
+		"Normalization function should be passed on to Local flag set",
+	)
 }
 
 // Related to https://github.com/spf13/cobra/issues/521.
@@ -1263,12 +1290,30 @@ func TestNormPassedOnInherited(t *testing.T) {
 	c.AddCommand(child2)
 
 	inherited := child1.InheritedFlags()
-	assertNotNilf(t, inherited.Lookup("flagname"), "Normalization function passed on inherited flag should not be nil")
-	assertEqualf(t, inherited.Lookup("flagname"), inherited.Lookup("FLAGNAME"), "Normalization function should be passed on to inherited flag set in command added before flag")
+	testutil.AssertNotNilf(
+		t,
+		inherited.Lookup("flagname"),
+		"Normalization function passed on inherited flag should not be nil",
+	)
+	testutil.AssertEqualf(
+		t,
+		inherited.Lookup("flagname"),
+		inherited.Lookup("FLAGNAME"),
+		"Normalization function should be passed on to inherited flag set in command added before flag",
+	)
 
 	inherited = child2.InheritedFlags()
-	assertNotNilf(t, inherited.Lookup("flagname"), "Normalization function passed on inherited flag should not be nil")
-	assertEqualf(t, inherited.Lookup("flagname"), inherited.Lookup("FLAGNAME"), "Normalization function should be passed on to inherited flag set in command added after flag")
+	testutil.AssertNotNilf(
+		t,
+		inherited.Lookup("flagname"),
+		"Normalization function passed on inherited flag should not be nil",
+	)
+	testutil.AssertEqualf(
+		t,
+		inherited.Lookup("flagname"),
+		inherited.Lookup("FLAGNAME"),
+		"Normalization function should be passed on to inherited flag set in command added after flag",
+	)
 }
 
 // Related to https://github.com/spf13/cobra/issues/521.
@@ -1285,7 +1330,12 @@ func TestConsistentNormalizedName(t *testing.T) {
 	c.SetGlobalNormalizationFunc(toUpper)
 	c.SetGlobalNormalizationFunc(n)
 
-	assertNotEqualf(t, c.LocalFlags().Lookup("flagname"), c.LocalFlags().Lookup("FLAGNAME"), "Normalizing flag names should not result in duplicate flags")
+	testutil.AssertNotEqualf(
+		t,
+		c.LocalFlags().Lookup("flagname"),
+		c.LocalFlags().Lookup("FLAGNAME"),
+		"Normalizing flag names should not result in duplicate flags",
+	)
 }
 
 func TestFlagOnZflagCommandLine(t *testing.T) {
@@ -1296,7 +1346,7 @@ func TestFlagOnZflagCommandLine(t *testing.T) {
 	c.AddCommand(&zulu.Command{Use: "child", RunE: noopRun})
 
 	output, _ := executeCommand(c, "--help")
-	assertContains(t, output, flagName)
+	testutil.AssertContains(t, output, flagName)
 
 	resetCommandLineFlagSet()
 }
@@ -1312,15 +1362,15 @@ func TestHiddenCommandExecutes(t *testing.T) {
 	}
 
 	output, err := executeCommand(c)
-	assertEqualf(t, "", output, "Unexpected output")
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, true, executed, "Hidden command should have been executed")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, true, executed, "Hidden command should have been executed")
 }
 
-// test to ensure hidden commands do not show up in usage/help text
+// test to ensure hidden commands do not show up in usage/help text.
 func TestHiddenCommandIsHidden(t *testing.T) {
 	c := &zulu.Command{Use: "c", Hidden: true, RunE: noopRun}
-	assertEqualf(t, false, c.IsAvailableCommand(), "Hidden command should be unavailable")
+	testutil.AssertEqualf(t, false, c.IsAvailableCommand(), "Hidden command should be unavailable")
 }
 
 func TestCommandsAreSorted(t *testing.T) {
@@ -1336,7 +1386,7 @@ func TestCommandsAreSorted(t *testing.T) {
 	}
 
 	for i, c := range rootCmd.Commands() {
-		assertEqual(t, expectedNames[i], c.Name())
+		testutil.AssertEqual(t, expectedNames[i], c.Name())
 	}
 
 	zulu.EnableCommandSorting = true
@@ -1354,41 +1404,51 @@ func TestEnableCommandSortingIsDisabled(t *testing.T) {
 	}
 
 	for i, c := range rootCmd.Commands() {
-		assertEqual(t, originalNames[i], c.Name())
+		testutil.AssertEqual(t, originalNames[i], c.Name())
 	}
 
 	zulu.EnableCommandSorting = true
 }
 
 func TestUsageWithGroup(t *testing.T) {
-	var rootCmd = &zulu.Command{Use: "root", Short: "test", CompletionOptions: zulu.CompletionOptions{DisableDefaultCmd: true}, RunE: noopRun}
+	var rootCmd = &zulu.Command{
+		Use:               "root",
+		Short:             "test",
+		CompletionOptions: zulu.CompletionOptions{DisableDefaultCmd: true},
+		RunE:              noopRun,
+	}
 
 	rootCmd.AddCommand(&zulu.Command{Use: "cmd1", Group: "group1", RunE: noopRun})
 	rootCmd.AddCommand(&zulu.Command{Use: "cmd2", Group: "group2", RunE: noopRun})
 
 	output, err := executeCommand(rootCmd, "--help")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 
 	output = rmCarriageRet(output)
 	// help should be ungrouped here
-	assertContains(t, output, "\nAvailable Commands:\n  help")
-	assertContains(t, output, "\ngroup1\n  cmd1")
-	assertContains(t, output, "\ngroup2\n  cmd2")
+	testutil.AssertContains(t, output, "\nAvailable Commands:\n  help")
+	testutil.AssertContains(t, output, "\ngroup1\n  cmd1")
+	testutil.AssertContains(t, output, "\ngroup2\n  cmd2")
 }
 
 func TestUsageHelpGroup(t *testing.T) {
-	var rootCmd = &zulu.Command{Use: "root", Short: "test", CompletionOptions: zulu.CompletionOptions{DisableDefaultCmd: true}, RunE: noopRun}
+	var rootCmd = &zulu.Command{
+		Use:               "root",
+		Short:             "test",
+		CompletionOptions: zulu.CompletionOptions{DisableDefaultCmd: true},
+		RunE:              noopRun,
+	}
 
 	rootCmd.AddCommand(&zulu.Command{Use: "xxx", Group: "group", RunE: noopRun})
 	rootCmd.SetHelpCommandGroup("group")
 
 	output, err := executeCommand(rootCmd, "--help")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 
 	output = rmCarriageRet(output)
 	// now help should be grouped under "group"
-	assertNotContains(t, output, "\nAvailable Commands:\n  help")
-	assertContains(t, output, "\nAvailable Commands:\n\ngroup\n  help")
+	testutil.AssertNotContains(t, output, "\nAvailable Commands:\n  help")
+	testutil.AssertContains(t, output, "\nAvailable Commands:\n\ngroup\n  help")
 }
 
 func TestAddGroup(t *testing.T) {
@@ -1398,10 +1458,10 @@ func TestAddGroup(t *testing.T) {
 	rootCmd.AddCommand(&zulu.Command{Use: "cmd", Group: "group", RunE: noopRun})
 
 	output, err := executeCommand(rootCmd, "--help")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 
 	output = rmCarriageRet(output)
-	assertContains(t, output, "\nTest group\n  cmd")
+	testutil.AssertContains(t, output, "\nTest group\n  cmd")
 }
 
 func TestInOutErr(t *testing.T) {
@@ -1410,16 +1470,16 @@ func TestInOutErr(t *testing.T) {
 	c.SetIn(b)
 	c.SetOut(b)
 	c.SetErr(b)
-	assertEqualf(t, b, c.InOrStdin(), "Expected setting input to be set correctly")
-	assertEqualf(t, b, c.OutOrStdout(), "Expected setting output to be set correctly")
-	assertEqualf(t, b, c.ErrOrStderr(), "Expected setting error to be set correctly")
+	testutil.AssertEqualf(t, b, c.InOrStdin(), "Expected setting input to be set correctly")
+	testutil.AssertEqualf(t, b, c.OutOrStdout(), "Expected setting output to be set correctly")
+	testutil.AssertEqualf(t, b, c.ErrOrStderr(), "Expected setting error to be set correctly")
 
 	c.SetIn(nil)
 	c.SetOut(nil)
 	c.SetErr(nil)
-	assertEqualf(t, os.Stdin, c.InOrStdin(), "Expected setting input to nil to revert back to stdin")
-	assertEqualf(t, os.Stdout, c.OutOrStdout(), "Expected setting output to nil to revert back to stdout")
-	assertEqualf(t, os.Stderr, c.ErrOrStderr(), "Expected setting error to nil to revert back to stderr")
+	testutil.AssertEqualf(t, os.Stdin, c.InOrStdin(), "Expected setting input to nil to revert back to stdin")
+	testutil.AssertEqualf(t, os.Stdout, c.OutOrStdout(), "Expected setting output to nil to revert back to stdout")
+	testutil.AssertEqualf(t, os.Stderr, c.ErrOrStderr(), "Expected setting error to nil to revert back to stderr")
 }
 
 func TestUsageStringRedirected(t *testing.T) {
@@ -1433,14 +1493,13 @@ func TestUsageStringRedirected(t *testing.T) {
 	})
 
 	expected := "[stdout1][stderr2][stdout3]"
-	assertEqualf(t, expected, c.UsageString(), "Expected usage string to consider both stdout and stderr")
+	testutil.AssertEqualf(t, expected, c.UsageString(), "Expected usage string to consider both stdout and stderr")
 }
 
 func TestCommandPrintRedirection(t *testing.T) {
 	errBuff, outBuff := bytes.NewBuffer(nil), bytes.NewBuffer(nil)
 	root := &zulu.Command{
 		RunE: func(cmd *zulu.Command, args []string) error {
-
 			cmd.PrintErr("PrintErr")
 			cmd.PrintErrln("PrintErr", "line")
 			cmd.PrintErrf("PrintEr%s", "r")
@@ -1456,16 +1515,16 @@ func TestCommandPrintRedirection(t *testing.T) {
 	root.SetOut(outBuff)
 
 	err := root.Execute()
-	assertNil(t, err)
+	testutil.AssertNil(t, err)
 
 	gotErrBytes, err := io.ReadAll(errBuff)
-	assertNil(t, err)
+	testutil.AssertNil(t, err)
 
 	gotOutBytes, err := io.ReadAll(outBuff)
-	assertNil(t, err)
+	testutil.AssertNil(t, err)
 
-	assertEqual(t, "PrintErrPrintErr line\nPrintErr", string(gotErrBytes))
-	assertEqual(t, "PrintPrint line\nPrint", string(gotOutBytes))
+	testutil.AssertEqual(t, "PrintErrPrintErr line\nPrintErr", string(gotErrBytes))
+	testutil.AssertEqual(t, "PrintPrint line\nPrint", string(gotOutBytes))
 }
 
 func TestFlagErrorFunc(t *testing.T) {
@@ -1477,7 +1536,7 @@ func TestFlagErrorFunc(t *testing.T) {
 	})
 
 	_, err := executeCommand(c, "--unknown-flag")
-	assertEqual(t, fmt.Sprintf(expectedFmt, "unknown flag: --unknown-flag"), err.Error())
+	testutil.AssertEqual(t, fmt.Sprintf(expectedFmt, "unknown flag: --unknown-flag"), err.Error())
 }
 
 func TestFlagErrorFuncHelp(t *testing.T) {
@@ -1492,12 +1551,12 @@ func TestFlagErrorFuncHelp(t *testing.T) {
 	expected := "Usage:\n  c [flags]\n\nFlags:\n      --help   help for c\n"
 
 	out, err := executeCommand(c, "--help")
-	assertNil(t, err)
-	assertEqual(t, expected, rmCarriageRet(out))
+	testutil.AssertNil(t, err)
+	testutil.AssertEqual(t, expected, rmCarriageRet(out))
 
 	out, err = executeCommand(c, "-h")
-	assertNil(t, err)
-	assertEqual(t, expected, rmCarriageRet(out))
+	testutil.AssertNil(t, err)
+	testutil.AssertEqual(t, expected, rmCarriageRet(out))
 }
 
 // TestSortedFlags checks,
@@ -1517,7 +1576,7 @@ func TestSortedFlags(t *testing.T) {
 			return
 		}
 		if zulu.StringInSlice(f.Name, names) {
-			assertEqualf(t, names[i], f.Name, "Unexpected order")
+			testutil.AssertEqualf(t, names[i], f.Name, "Unexpected order")
 			i++
 		}
 	})
@@ -1533,7 +1592,7 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 	// help flag is not actually needed here, it's a way to enforce
 	// zulu.Command.mergePersistentFlags is called.
 	c.InitDefaultHelpFlag()
-	assertNotNilf(t, c.Flags().Lookup("boolflag"), "Expecting to have flag from CommandLine in c.Flags()")
+	testutil.AssertNotNilf(t, c.Flags().Lookup("boolflag"), "Expecting to have flag from CommandLine in c.Flags()")
 
 	resetCommandLineFlagSet()
 }
@@ -1543,11 +1602,17 @@ func TestMergeCommandLineToFlags(t *testing.T) {
 // Related to https://github.com/spf13/cobra/issues/463.
 func TestUseDeprecatedFlags(t *testing.T) {
 	c := &zulu.Command{Use: "c", RunE: noopRun}
-	c.Flags().Bool("deprecated", false, "deprecated flag", zflag.OptShorthand('d'), zflag.OptDeprecated("This flag is deprecated"))
+	c.Flags().Bool(
+		"deprecated",
+		false,
+		"deprecated flag",
+		zflag.OptShorthand('d'),
+		zflag.OptDeprecated("This flag is deprecated"),
+	)
 
 	output, err := executeCommand(c, "c", "-d")
-	assertNilf(t, err, "Unexpected error")
-	assertContains(t, output, "This flag is deprecated")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "This flag is deprecated")
 }
 
 func TestTraverseWithParentFlags(t *testing.T) {
@@ -1561,10 +1626,10 @@ func TestTraverseWithParentFlags(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	c, args, err := rootCmd.Traverse([]string{"-b", "--str", "ok", "child", "--int"})
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, 1, len(args), "Unexpected args length")
-	// assertEqualf(t, "--add", args[0], "Wrong args") // unclear what this test was meant to do, `--add` was never added and `args[0]` == `--int`
-	assertEqualf(t, childCmd.Name(), c.Name(), "Expected command:")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, 1, len(args), "Unexpected args length")
+	testutil.AssertEqualf(t, "--int", args[0], "Wrong args")
+	testutil.AssertEqualf(t, childCmd.Name(), c.Name(), "Expected command:")
 }
 
 func TestTraverseNoParentFlags(t *testing.T) {
@@ -1576,9 +1641,9 @@ func TestTraverseNoParentFlags(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	c, args, err := rootCmd.Traverse([]string{"child"})
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, 0, len(args), "Wrong args %v", args)
-	assertEqualf(t, childCmd.Name(), c.Name(), "Unexpected command")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, 0, len(args), "Wrong args %v", args)
+	testutil.AssertEqualf(t, childCmd.Name(), c.Name(), "Unexpected command")
 }
 
 func TestTraverseWithBadParentFlags(t *testing.T) {
@@ -1591,9 +1656,9 @@ func TestTraverseWithBadParentFlags(t *testing.T) {
 	expected := "unknown flag: --str"
 
 	c, _, err := rootCmd.Traverse([]string{"--str", "ok", "child"})
-	assertNotNilf(t, err, "Expected error")
-	assertEqualf(t, expected, err.Error(), "Wrong error")
-	assertNilf(t, c, "Expected nil command")
+	testutil.AssertNotNilf(t, err, "Expected error")
+	testutil.AssertEqualf(t, expected, err.Error(), "Wrong error")
+	testutil.AssertNilf(t, c, "Expected nil command")
 }
 
 func TestTraverseWithBadChildFlag(t *testing.T) {
@@ -1606,10 +1671,10 @@ func TestTraverseWithBadChildFlag(t *testing.T) {
 	// Expect no error because the last commands args shouldn't be parsed in
 	// Traverse.
 	c, args, err := rootCmd.Traverse([]string{"child", "--str"})
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, 1, len(args), "Unexpected args length")
-	assertEqualf(t, "--str", args[0], "Wrong args")
-	assertEqualf(t, childCmd.Name(), c.Name(), "Expected command:")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, 1, len(args), "Unexpected args length")
+	testutil.AssertEqualf(t, "--str", args[0], "Wrong args")
+	testutil.AssertEqualf(t, childCmd.Name(), c.Name(), "Expected command:")
 }
 
 func TestTraverseWithTwoSubcommands(t *testing.T) {
@@ -1624,8 +1689,8 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	subCmd.AddCommand(subsubCmd)
 
 	c, _, err := rootCmd.Traverse([]string{"sub", "subsub"})
-	assertNilf(t, err, "Unexpected error")
-	assertEqualf(t, subsubCmd.Name(), c.Name(), "Expected command:")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, subsubCmd.Name(), c.Name(), "Expected command:")
 }
 
 // TestUpdateName checks if c.Name() updates on changed c.Use.
@@ -1633,7 +1698,7 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 func TestUpdateName(t *testing.T) {
 	c := &zulu.Command{Use: "name xyz"}
 	c.Use = "changedName abc"
-	assertEqualf(t, "changedName", c.Name(), "c.Name() should be updated on changed c.Use")
+	testutil.AssertEqualf(t, "changedName", c.Name(), "c.Name() should be updated on changed c.Use")
 }
 
 func TestCalledAs(t *testing.T) {
@@ -1658,7 +1723,6 @@ func TestCalledAs(t *testing.T) {
 	}
 
 	for name, tc := range tests {
-		tc := tc
 		t.Run(name, func(t *testing.T) {
 			defer func(ov bool) { zulu.EnablePrefixMatching = ov }(zulu.EnablePrefixMatching)
 			zulu.EnablePrefixMatching = tc.epm
@@ -1687,8 +1751,8 @@ func TestCalledAs(t *testing.T) {
 				return
 			}
 
-			assertEqual(t, tc.call, called.Name())
-			assertEqual(t, tc.want, called.CalledAs())
+			testutil.AssertEqual(t, tc.call, called.Name())
+			testutil.AssertEqual(t, tc.want, called.CalledAs())
 		},
 		)
 	}
@@ -1699,8 +1763,8 @@ func TestFParseErrWhitelistBackwardCompatibility(t *testing.T) {
 	c.Flags().Bool("boola", false, "a boolean flag", zflag.OptShorthand('a'))
 
 	output, err := executeCommand(c, "c", "-a", "--unknown", "flag")
-	assertNotNilf(t, err, "expected unknown flag error")
-	assertContains(t, output, "unknown flag: --unknown")
+	testutil.AssertNotNilf(t, err, "expected unknown flag error")
+	testutil.AssertContains(t, output, "unknown flag: --unknown")
 }
 
 func TestFParseErrWhitelistSameCommand(t *testing.T) {
@@ -1714,7 +1778,7 @@ func TestFParseErrWhitelistSameCommand(t *testing.T) {
 	c.Flags().Bool("boola", false, "a boolean flag", zflag.OptShorthand('a'))
 
 	_, err := executeCommand(c, "c", "-a", "--unknown", "flag")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestFParseErrWhitelistParentCommand(t *testing.T) {
@@ -1735,8 +1799,8 @@ func TestFParseErrWhitelistParentCommand(t *testing.T) {
 	root.AddCommand(c)
 
 	output, err := executeCommand(root, "child", "-a", "--unknown", "flag")
-	assertNotNilf(t, err, "expected unknown flag error")
-	assertContains(t, output, "unknown flag: --unknown")
+	testutil.AssertNotNilf(t, err, "expected unknown flag error")
+	testutil.AssertContains(t, output, "unknown flag: --unknown")
 }
 
 func TestFParseErrWhitelistChildCommand(t *testing.T) {
@@ -1757,7 +1821,7 @@ func TestFParseErrWhitelistChildCommand(t *testing.T) {
 	root.AddCommand(c)
 
 	_, err := executeCommand(root, "child", "-a", "--unknown", "flag")
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
@@ -1785,13 +1849,13 @@ func TestFParseErrWhitelistSiblingCommand(t *testing.T) {
 	root.AddCommand(s)
 
 	output, err := executeCommand(root, "sibling", "-b", "--unknown", "flag")
-	assertNotNilf(t, err, "expected unknown flag error")
-	assertContains(t, output, "unknown flag: --unknown")
+	testutil.AssertNotNilf(t, err, "expected unknown flag error")
+	testutil.AssertContains(t, output, "unknown flag: --unknown")
 }
 
 func TestContext(t *testing.T) {
 	root := &zulu.Command{}
-	assertNotNilf(t, root.Context(), "expected root.Context() != nil")
+	testutil.AssertNotNilf(t, root.Context(), "expected root.Context() != nil")
 }
 
 func TestSetContext(t *testing.T) {
@@ -1801,8 +1865,8 @@ func TestSetContext(t *testing.T) {
 		RunE: func(cmd *zulu.Command, args []string) error {
 			key := cmd.Context().Value(key)
 			got, ok := key.(string)
-			assertEqualf(t, true, ok, "key not found in context")
-			assertEqual(t, val, got)
+			testutil.AssertEqualf(t, true, ok, "key not found in context")
+			testutil.AssertEqual(t, val, got)
 			return nil
 		},
 	}
@@ -1811,7 +1875,7 @@ func TestSetContext(t *testing.T) {
 	ctx := context.WithValue(context.Background(), key, val)
 	root.SetContext(ctx)
 	err := root.Execute()
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestSetContextPreRun(t *testing.T) {
@@ -1819,7 +1883,6 @@ func TestSetContextPreRun(t *testing.T) {
 	root := &zulu.Command{
 		Use: "root",
 		PreRunE: func(cmd *zulu.Command, args []string) error {
-
 			//nolint:staticcheck // not necessary to create separate type for this
 			ctx := context.WithValue(cmd.Context(), key, val)
 			cmd.SetContext(ctx)
@@ -1828,13 +1891,13 @@ func TestSetContextPreRun(t *testing.T) {
 		RunE: func(cmd *zulu.Command, args []string) error {
 			key := cmd.Context().Value(key)
 			got, ok := key.(string)
-			assertEqualf(t, true, ok, "key not found in context")
-			assertEqual(t, val, got)
+			testutil.AssertEqualf(t, true, ok, "key not found in context")
+			testutil.AssertEqual(t, val, got)
 			return nil
 		},
 	}
 	err := root.Execute()
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestSetContextPreRunOverwrite(t *testing.T) {
@@ -1844,7 +1907,7 @@ func TestSetContextPreRunOverwrite(t *testing.T) {
 		RunE: func(cmd *zulu.Command, args []string) error {
 			key := cmd.Context().Value(key)
 			_, ok := key.(string)
-			assertEqualf(t, false, ok, "key found in context")
+			testutil.AssertEqualf(t, false, ok, "key found in context")
 			return nil
 		},
 	}
@@ -1853,7 +1916,7 @@ func TestSetContextPreRunOverwrite(t *testing.T) {
 	ctx := context.WithValue(context.Background(), key, val)
 	root.SetContext(ctx)
 	err := root.ExecuteContext(context.Background())
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestSetContextPersistentPreRun(t *testing.T) {
@@ -1861,7 +1924,6 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 	root := &zulu.Command{
 		Use: "root",
 		PersistentPreRunE: func(cmd *zulu.Command, args []string) error {
-
 			//nolint:staticcheck // not necessary to create separate type for this
 			ctx := context.WithValue(cmd.Context(), key, val)
 			cmd.SetContext(ctx)
@@ -1873,15 +1935,15 @@ func TestSetContextPersistentPreRun(t *testing.T) {
 		RunE: func(cmd *zulu.Command, args []string) error {
 			key := cmd.Context().Value(key)
 			got, ok := key.(string)
-			assertEqualf(t, true, ok, "key not found in context")
-			assertEqual(t, val, got)
+			testutil.AssertEqualf(t, true, ok, "key not found in context")
+			testutil.AssertEqual(t, val, got)
 			return nil
 		},
 	}
 	root.AddCommand(child)
 	root.SetArgs([]string{"child"})
 	err := root.Execute()
-	assertNilf(t, err, "Unexpected error")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestUsageTemplate(t *testing.T) {
@@ -2088,33 +2150,20 @@ Use "root child [command] --help" for more information about a command.
 
 	t.Parallel()
 	for _, test := range tests {
-		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			var buf bytes.Buffer
 			cmd := test.testCmd(&buf)
 
 			err := cmd.Usage()
-			assertNilf(t, err, "Unexpected error")
+			testutil.AssertNilf(t, err, "Unexpected error")
 			output := rmCarriageRet(buf.String())
-			assertEqual(t, test.expectedUsage, output)
+			testutil.AssertEqual(t, test.expectedUsage, output)
 		})
 	}
 }
 
 func TestFind(t *testing.T) {
-	var foo, bar string
-	root := &zulu.Command{
-		Use: "root",
-	}
-	root.PersistentFlags().StringVar(&foo, "foo", "", "", zflag.OptShorthand('f'))
-	root.PersistentFlags().StringVar(&bar, "bar", "something", "", zflag.OptShorthand('b'))
-
-	child := &zulu.Command{
-		Use: "child",
-	}
-	root.AddCommand(child)
-
 	testCases := []struct {
 		args              []string
 		expectedFoundArgs []string
@@ -2176,9 +2225,22 @@ func TestFind(t *testing.T) {
 	t.Parallel()
 	for _, tc := range testCases {
 		t.Run(fmt.Sprintf("%v", tc.args), func(t *testing.T) {
+			t.Parallel()
+
+			root := &zulu.Command{
+				Use: "root",
+			}
+			root.PersistentFlags().String("foo", "", "", zflag.OptShorthand('f'))
+			root.PersistentFlags().String("bar", "something", "", zflag.OptShorthand('b'))
+
+			child := &zulu.Command{
+				Use: "child",
+			}
+			root.AddCommand(child)
+
 			cmd, foundArgs, err := root.Find(tc.args)
-			assertNil(t, err)
-			assertEqualf(t, child, cmd, "Expected cmd to be child, but it was not")
+			testutil.AssertNil(t, err)
+			testutil.AssertEqualf(t, child, cmd, "Expected cmd to be child, but it was not")
 
 			if !reflect.DeepEqual(tc.expectedFoundArgs, foundArgs) {
 				t.Fatalf("Wrong args\nExpected: %v\nGot: %v", tc.expectedFoundArgs, foundArgs)
@@ -2188,13 +2250,20 @@ func TestFind(t *testing.T) {
 }
 
 // adapted from https://github.com/spf13/cobra/pull/1632/files#diff-4c08781a1c6c69898cdd3a21c0c759d846fc32148e6b5aaf70ad2db146e9f145R2165
+//
+//nolint:lll // can't cut it up
 func TestPadding(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
 	childCmd := &zulu.Command{Use: "child", RunE: noopRun}
 	longChildCmd := &zulu.Command{Use: "long-name-child-abcdefghijklmnopqrstuvwxyz", RunE: noopRun}
-	// For this test to be useful the hiddenChildCmd and deprecatedChildCmd commands need to have a longer `Use` field than the other commands.
+	// For this test to be useful the hiddenChildCmd and deprecatedChildCmd commands need to
+	// have a longer `Use` field than the other commands.
 	hiddenChildCmd := &zulu.Command{Use: longChildCmd.Use + "-hidden", Hidden: true, RunE: noopRun}
-	deprecatedChildCmd := &zulu.Command{Use: longChildCmd.Use + "-deprecated", Deprecated: "deprecated", RunE: noopRun}
+	deprecatedChildCmd := &zulu.Command{
+		Use:        longChildCmd.Use + "-deprecated",
+		Deprecated: "deprecated",
+		RunE:       noopRun,
+	}
 
 	rootCmd.AddCommand(childCmd)
 	rootCmd.AddCommand(longChildCmd)
@@ -2208,10 +2277,10 @@ func TestPadding(t *testing.T) {
 	childPadding := childCmd.Padding()
 	longChildPadding := longChildCmd.Padding()
 
-	assertEqual(t, expectedUsePad, childPadding.Usage)
-	assertEqual(t, expectedUsePad, longChildPadding.Usage)
-	assertEqual(t, expectedPathPad, childPadding.CommandPath)
-	assertEqual(t, expectedPathPad, longChildPadding.CommandPath)
-	assertEqual(t, expectedNamePad, childPadding.Name)
-	assertEqual(t, expectedNamePad, longChildPadding.Name)
+	testutil.AssertEqual(t, expectedUsePad, childPadding.Usage)
+	testutil.AssertEqual(t, expectedUsePad, longChildPadding.Usage)
+	testutil.AssertEqual(t, expectedPathPad, childPadding.CommandPath)
+	testutil.AssertEqual(t, expectedPathPad, longChildPadding.CommandPath)
+	testutil.AssertEqual(t, expectedNamePad, childPadding.Name)
+	testutil.AssertEqual(t, expectedNamePad, longChildPadding.Name)
 }

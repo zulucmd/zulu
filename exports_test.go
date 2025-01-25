@@ -1,3 +1,4 @@
+//nolint:testpackage // this is explicitly design to expose some functions in tests
 package zulu
 
 const (

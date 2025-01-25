@@ -1,6 +1,7 @@
 package zulu
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -21,10 +22,13 @@ const (
 	ShellCompNoDescRequestCmd = "__completeNoDesc"
 )
 
-// A global map of flag completion functions. Make sure to use flagCompletionMutex before you try to read and write from it.
-var flagCompletionFunctions = map[*zflag.Flag]func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective){}
+type FlagCompletionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
 
-// Lock for reading and writing from flagCompletionFunctions
+// flagCompletionFunctions contains a global map of flag completion functions.
+// Make sure to use flagCompletionMutex before you try to read and write from it.
+var flagCompletionFunctions = map[*zflag.Flag]FlagCompletionFn{}
+
+// Lock for reading and writing from flagCompletionFunctions.
 var flagCompletionMutex = &sync.RWMutex{}
 
 var logger *log.Logger
@@ -80,7 +84,7 @@ const (
 	ShellCompDirectiveFilterDirs
 
 	// ShellCompDirectiveKeepOrder indicates that the shell should preserve the order
-	// in which the completions are provided
+	// in which the completions are provided.
 	ShellCompDirectiveKeepOrder
 
 	// ===========================================================================
@@ -95,14 +99,14 @@ const (
 )
 
 const (
-	// Constants for the completion command
+	// Constants for the completion command.
 	compCmdName            = "completion"
 	compCmdDescFlagName    = "descriptions"
 	compCmdDescFlagDesc    = "enable or disable completion descriptions"
 	compCmdDescFlagDefault = true
 )
 
-// CompletionOptions are the options to control shell completion
+// CompletionOptions are the options to control shell completion.
 type CompletionOptions struct {
 	// DisableDefaultCmd prevents Zulu from creating a default 'completion' command
 	DisableDefaultCmd bool
@@ -118,19 +122,21 @@ type CompletionOptions struct {
 
 // NoFileCompletions can be used to disable file completion for commands that should
 // not trigger file completions.
-func NoFileCompletions(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
-	return nil, ShellCompDirectiveNoFileComp
+func NoFileCompletions() FlagCompletionFn {
+	return func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+		return nil, ShellCompDirectiveNoFileComp
+	}
 }
 
 // FixedCompletions can be used to create a completion function which always
 // returns the same results.
-func FixedCompletions(choices []string, directive ShellCompDirective) func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
+func FixedCompletions(choices []string, directive ShellCompDirective) FlagCompletionFn {
 	return func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 		return choices, directive
 	}
 }
 
-// ListDirectives returns a string listing the different directive enabled in the specified parameter
+// ListDirectives returns a string listing the different directive enabled in the specified parameter.
 func (d ShellCompDirective) ListDirectives() string {
 	var directives []string
 
@@ -224,6 +230,7 @@ func (c *Command) initCompleteCmd(args []string) {
 	}
 }
 
+//nolint:gocognit,cyclop,gocyclo,funlen // todo refactor later
 func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDirective, error) {
 	// The last argument, which is not completely typed by the user,
 	// should not be part of the list of arguments
@@ -252,7 +259,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	}
 	if err != nil {
 		// Unable to find the real command. E.g., <program> someInvalidCmd <TAB>
-		return c, []string{}, ShellCompDirectiveDefault, fmt.Errorf("Unable to find a command for arguments: %v", trimmedArgs)
+		return c, []string{}, ShellCompDirectiveDefault, fmt.Errorf("unable to find a command for arguments: %v", trimmedArgs)
 	}
 	finalCmd.ctx = c.ctx
 
@@ -279,7 +286,10 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 
 	// Parse the flags early, so we can check if required flags are set
 	if err = finalCmd.ParseFlags(finalArgs); err != nil {
-		return finalCmd, []string{}, ShellCompDirectiveDefault, fmt.Errorf("Error while parsing flags from args %v: %s", finalArgs, err.Error())
+		return finalCmd,
+			[]string{},
+			ShellCompDirectiveDefault,
+			fmt.Errorf("error while parsing flags from args %v: %s", finalArgs, err.Error())
 	}
 
 	realArgCount := finalCmd.Flags().NArg()
@@ -290,7 +300,8 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// Error while attempting to parse flags
 	if flagErr != nil {
 		// If error type is flagCompError, and we don't want flagCompletion we should ignore the error
-		if _, ok := flagErr.(*flagCompError); !(ok && !flagCompletion) {
+		var flagCompErr *flagCompError
+		if !(errors.As(flagErr, &flagCompErr) && !flagCompletion) {
 			return finalCmd, []string{}, ShellCompDirectiveDefault, flagErr
 		}
 	}
@@ -307,6 +318,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 		finalArgs = finalCmd.Flags().Args()
 	}
 
+	//nolint:nestif // todo refactor later
 	if flag != nil && flagCompletion {
 		// Check if we are completing a flag value subject to annotations
 		if validExts, present := flag.Annotations[BashCompFilenameExt]; present {
@@ -343,6 +355,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	// When doing completion of a flag name, as soon as an argument starts with
 	// a '-' we know it is a flag.  We cannot use isFlagArg() here as it requires
 	// the flag name to be complete
+	//nolint:nestif // todo refactor later
 	if flag == nil && len(toComplete) > 0 && toComplete[0] == '-' && !strings.Contains(toComplete, "=") && flagCompletion {
 		// First check for required flags
 		completions = completeRequireFlags(finalCmd, toComplete)
@@ -451,7 +464,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 	}
 
 	// Find the completion function for the flag or command
-	var completionFn func(cmd *Command, args []string, toComplete string) ([]string, ShellCompDirective)
+	var completionFn FlagCompletionFn
 	if flag != nil && flagCompletion {
 		flagCompletionMutex.RLock()
 		completionFn = flagCompletionFunctions[flag]
@@ -538,6 +551,7 @@ func completeRequireFlags(finalCmd *Command, toComplete string) []string {
 	return completions
 }
 
+//nolint:gocognit // old function, needs to be done later
 func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*zflag.Flag, []string, string, error) {
 	if finalCmd.DisableFlagParsing {
 		// We only do flag completion if we are allowed to parse flags
@@ -554,48 +568,48 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*z
 	// a '-' we know it is a flag.  We cannot use isFlagArg() here as that function
 	// requires the flag name to be complete
 	if len(lastArg) > 0 && lastArg[0] == '-' {
-		if index := strings.Index(lastArg, "="); index >= 0 {
-			// Flag with an =
-			if strings.HasPrefix(lastArg[:index], "--") {
-				// Flag has full name
-				flagName = lastArg[2:index]
-			} else {
-				// Flag is shorthand
-				// We have to get the last shorthand flag name
-				// e.g. `-asd` => d to provide the correct completion
-				// https://github.com/spf13/cobra/issues/1257
-				flagName = lastArg[index-1 : index]
-			}
-			lastArg = lastArg[index+1:]
-			flagWithEqual = true
-		} else {
+		index := strings.Index(lastArg, "=")
+		if index == -1 {
 			// Normal flag completion
 			return nil, args, lastArg, nil
 		}
+
+		// Flag with an =
+		if strings.HasPrefix(lastArg[:index], "--") {
+			// Flag has full name
+			flagName = lastArg[2:index]
+		} else {
+			// Flag is shorthand
+			// We have to get the last shorthand flag name
+			// e.g. `-asd` => d to provide the correct completion
+			// https://github.com/spf13/cobra/issues/1257
+			flagName = lastArg[index-1 : index]
+		}
+		lastArg = lastArg[index+1:]
+		flagWithEqual = true
 	}
 
-	if len(flagName) == 0 {
-		if len(args) > 0 {
-			prevArg := args[len(args)-1]
-			if isFlagArg(prevArg) {
-				// Only consider the case where the flag does not contain an =.
-				// If the flag contains an = it means it has already been fully processed,
-				// so we don't need to deal with it here.
-				if index := strings.Index(prevArg, "="); index < 0 {
-					if strings.HasPrefix(prevArg, "--") {
-						// Flag has full name
-						flagName = prevArg[2:]
-					} else {
-						// Flag is shorthand
-						// We have to get the last shorthand flag name
-						// e.g. `-asd` => d to provide the correct completion
-						// https://github.com/spf13/cobra/issues/1257
-						flagName = prevArg[len(prevArg)-1:]
-					}
-					// Remove the uncompleted flag or else there could be an error created
-					// for an invalid value for that flag
-					trimmedArgs = args[:len(args)-1]
+	//nolint:nestif // todo refactor later
+	if len(flagName) == 0 && len(args) > 0 {
+		prevArg := args[len(args)-1]
+		if isFlagArg(prevArg) {
+			// Only consider the case where the flag does not contain an =.
+			// If the flag contains an = it means it has already been fully processed,
+			// so we don't need to deal with it here.
+			if index := strings.Index(prevArg, "="); index < 0 {
+				if strings.HasPrefix(prevArg, "--") {
+					// Flag has full name
+					flagName = prevArg[2:]
+				} else {
+					// Flag is shorthand
+					// We have to get the last shorthand flag name
+					// e.g. `-asd` => d to provide the correct completion
+					// https://github.com/spf13/cobra/issues/1257
+					flagName = prevArg[len(prevArg)-1:]
 				}
+				// Remove the uncompleted flag or else there could be an error created
+				// for an invalid value for that flag
+				trimmedArgs = args[:len(args)-1]
 			}
 		}
 	}
@@ -641,7 +655,12 @@ func (c *Command) InitDefaultCompletionCmd() {
 		}
 	}
 
-	long, err := template.ParseFromFile(tmplFS, "templates/usage_completion_root.txt.gotmpl", map[string]string{"CMDName": c.Root().Name()}, templateFuncs)
+	long, err := template.ParseFromFile(
+		tmplFS,
+		"templates/usage_completion_root.txt.gotmpl",
+		map[string]string{"CMDName": c.Root().Name()},
+		templateFuncs,
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -651,34 +670,64 @@ func (c *Command) InitDefaultCompletionCmd() {
 		Short:             "Generate the autocompletion script for the specified shell",
 		Long:              long,
 		Args:              NoArgs,
-		ValidArgsFunction: NoFileCompletions,
+		ValidArgsFunction: NoFileCompletions(),
 		Hidden:            c.CompletionOptions.HiddenDefaultCmd,
 	}
 	c.AddCommand(completionCmd)
 
 	out := c.OutOrStdout()
 	includeDescriptions := !c.CompletionOptions.DisableDescriptions
-	bash := c.createCompletionCommand("bash", "templates/usage_completion_bash.txt.gotmpl", &includeDescriptions, func(cmd *Command, args []string) error {
-		return cmd.Root().GenBashCompletion(out, includeDescriptions)
-	})
+	bash := c.createCompletionCommand(
+		"bash",
+		"templates/usage_completion_bash.txt.gotmpl",
+		&includeDescriptions,
+		func(cmd *Command, args []string) error {
+			return cmd.Root().GenBashCompletion(out, includeDescriptions)
+		},
+	)
 
-	zsh := c.createCompletionCommand("zsh", "templates/usage_completion_zsh.txt.gotmpl", &includeDescriptions, func(cmd *Command, args []string) error {
-		return cmd.Root().GenZshCompletion(out, includeDescriptions)
-	})
+	zsh := c.createCompletionCommand(
+		"zsh",
+		"templates/usage_completion_zsh.txt.gotmpl",
+		&includeDescriptions,
+		func(cmd *Command, args []string) error {
+			return cmd.Root().GenZshCompletion(out, includeDescriptions)
+		},
+	)
 
-	fish := c.createCompletionCommand("fish", "templates/usage_completion_fish.txt.gotmpl", &includeDescriptions, func(cmd *Command, args []string) error {
-		return cmd.Root().GenFishCompletion(out, includeDescriptions)
-	})
+	fish := c.createCompletionCommand(
+		"fish",
+		"templates/usage_completion_fish.txt.gotmpl",
+		&includeDescriptions,
+		func(cmd *Command, args []string) error {
+			return cmd.Root().GenFishCompletion(out, includeDescriptions)
+		},
+	)
 
-	powershell := c.createCompletionCommand("powershell", "templates/usage_completion_pwsh.txt.gotmpl", &includeDescriptions, func(cmd *Command, args []string) error {
-		return cmd.Root().GenPowershellCompletion(out, includeDescriptions)
-	})
+	powershell := c.createCompletionCommand(
+		"powershell",
+		"templates/usage_completion_pwsh.txt.gotmpl",
+		&includeDescriptions,
+		func(cmd *Command, args []string) error {
+			return cmd.Root().GenPowershellCompletion(out, includeDescriptions)
+		},
+	)
 
 	completionCmd.AddCommand(bash, zsh, fish, powershell)
 }
 
-func (c *Command) createCompletionCommand(shellName string, usageTemplate string, includeDescriptions *bool, runFn HookFuncE) *Command {
-	long, err := template.ParseFromFile(tmplFS, usageTemplate, map[string]string{"CMDName": c.Root().Name()}, templateFuncs)
+func (c *Command) createCompletionCommand(
+	shellName string,
+	usageTemplate string,
+	includeDescriptions *bool,
+	runFn HookFuncE,
+) *Command {
+	long, err := template.ParseFromFile(
+		tmplFS,
+		usageTemplate,
+		map[string]string{"CMDName": c.Root().Name()},
+		templateFuncs,
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -688,35 +737,41 @@ func (c *Command) createCompletionCommand(shellName string, usageTemplate string
 		Short:             fmt.Sprintf("Generate the autocompletion script for %s", shellName),
 		Long:              long,
 		Args:              NoArgs,
-		ValidArgsFunction: NoFileCompletions,
+		ValidArgsFunction: NoFileCompletions(),
 		RunE:              runFn,
 	}
 
 	haveDescriptionsFlag := !c.CompletionOptions.DisableDescriptionsFlag && !c.CompletionOptions.DisableDescriptions
 	if haveDescriptionsFlag {
-		completionCMD.Flags().BoolVar(includeDescriptions, compCmdDescFlagName, compCmdDescFlagDefault, compCmdDescFlagDesc, zflag.OptAddNegative())
+		completionCMD.Flags().BoolVar(
+			includeDescriptions,
+			compCmdDescFlagName,
+			compCmdDescFlagDefault,
+			compCmdDescFlagDesc,
+			zflag.OptAddNegative(),
+		)
 	}
 
 	return completionCMD
 }
 
 func findFlag(cmd *Command, name string) *zflag.Flag {
-	flagSet := cmd.Flags()
-	if len(name) == 1 {
-		// First convert the short flag into a long flag
-		// as the cmd.Flag() search only accepts long flags
-		if short := flagSet.ShorthandLookupStr(name); short != nil {
-			name = short.Name
-		} else {
-			set := cmd.InheritedFlags()
-			if short = set.ShorthandLookupStr(name); short != nil {
-				name = short.Name
-			} else {
-				return nil
-			}
-		}
+	if len(name) != 1 {
+		return cmd.Flag(name)
 	}
-	return cmd.Flag(name)
+
+	// First convert the short flag into a long flag
+	// as the cmd.Flag() search only accepts long flags
+	short := cmd.Flags().ShorthandLookupStr(name)
+	if short == nil {
+		short = cmd.InheritedFlags().ShorthandLookupStr(name)
+	}
+
+	if short != nil {
+		return cmd.Flag(short.Name)
+	}
+
+	return nil
 }
 
 // CompLogger gets or creates a logger that prints to stderr or the completion log file.
@@ -724,6 +779,7 @@ func findFlag(cmd *Command, name string) *zflag.Flag {
 // to true. The logs can be optionally output to a file by setting `BASH_COMP_DEBUG_FILE` to
 // a file location.
 func CompLogger() *log.Logger {
+	//nolint:nestif // todo refactor later
 	if logger == nil {
 		var f io.Writer
 		debugFile := os.Getenv("BASH_COMP_DEBUG_FILE")
@@ -756,7 +812,7 @@ func genTemplateCompletion(buf io.Writer, templateFile string, name string, incl
 	nameForVar = strings.ReplaceAll(nameForVar, "-", "_")
 	nameForVar = strings.ReplaceAll(nameForVar, ":", "_")
 
-	res, err := template.ParseFromFile(tmplFS, templateFile, map[string]interface{}{
+	res, err := template.ParseFromFile(tmplFS, templateFile, map[string]any{
 		"CMDVarName":                      nameForVar,
 		"CMDName":                         name,
 		"CompletionCommand":               compCmd,

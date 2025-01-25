@@ -8,6 +8,7 @@ import (
 
 	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu/v2"
+	"github.com/zulucmd/zulu/v2/internal/testutil"
 )
 
 func validArgsFunc(_ *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
@@ -73,7 +74,7 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 
 	// Test that sub-command names are completed
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"aliased",
@@ -84,33 +85,33 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that sub-command names are completed with prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "s")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"secondChild",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that even with no valid sub-command matches, hidden, deprecated and
 	// aliases are not completed
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "test")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that sub-command names are completed with description
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"aliased\tA command with aliases",
@@ -121,7 +122,7 @@ func TestCmdNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestNoCmdNameCompletionInGo(t *testing.T) {
@@ -151,17 +152,17 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 
 	// Test that sub-command names are not completed if there is an argument already
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "arg1", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that sub-command names are not completed if a local non-persistent flag is present
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "--nonPersistent", "value", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	nonPersistentFlag.Changed = false
 
@@ -169,14 +170,15 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
-	// Test that sub-command names are completed if a local non-persistent flag is present and TraverseChildren is set to true
+	// Test that sub-command names are completed if a local non-persistent flag is present
+	// and TraverseChildren is set to true
 	// set TraverseChildren to true on the root cmd
 	rootCmd.TraverseChildren = true
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--localroot", "value", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset TraverseChildren for next command
 	rootCmd.TraverseChildren = false
 
@@ -187,14 +189,23 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that sub-command names from a child cmd are completed if a local non-persistent flag is present
 	// and TraverseChildren is set to true on the root cmd
 	rootCmd.TraverseChildren = true
 
-	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--localroot", "value", "childCmd1", "--nonPersistent", "value", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	output, err = executeCommand(
+		rootCmd,
+		zulu.ShellCompNoDescRequestCmd,
+		"--localroot",
+		"value",
+		"childCmd1",
+		"--nonPersistent",
+		"value",
+		"",
+	)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset TraverseChildren for next command
 	rootCmd.TraverseChildren = false
 	// Reset the flag for the next command
@@ -205,22 +216,22 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that we don't use Traverse when we shouldn't.
 	// This command should not return a completion since the command line is invalid without TraverseChildren.
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--localroot", "value", "childCmd1", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that sub-command names are not completed if a local non-persistent short flag is present
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "-n", "value", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	nonPersistentFlag.Changed = false
 
@@ -228,11 +239,11 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that sub-command names are completed with a persistent flag
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "--persistent", "value", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	persistentFlag.Changed = false
 
@@ -241,11 +252,11 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that sub-command names are completed with a persistent short flag
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd1", "-p", "value", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	persistentFlag.Changed = false
 
@@ -254,7 +265,7 @@ func TestNoCmdNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsCompletionInGo(t *testing.T) {
@@ -266,7 +277,7 @@ func TestValidArgsCompletionInGo(t *testing.T) {
 
 	// Test that validArgs are completed
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"one",
@@ -275,28 +286,28 @@ func TestValidArgsCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that validArgs are completed with prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "o")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"one",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that validArgs don't repeat
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "one", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
@@ -315,7 +326,7 @@ func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 
 	// Test that both sub-commands and validArgs are completed
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"completion",
@@ -326,11 +337,11 @@ func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that both sub-commands and validArgs are completed with prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"thechild",
@@ -338,7 +349,7 @@ func TestValidArgsAndCmdCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
@@ -358,7 +369,7 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 
 	// Test that both sub-commands and validArgsFunction are completed
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"completion",
@@ -369,11 +380,11 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that both sub-commands and validArgs are completed with prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"thechild",
@@ -381,11 +392,11 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that both sub-commands and validArgs are completed with description
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"thechild\tThe child command",
@@ -393,7 +404,7 @@ func TestValidArgsFuncAndCmdCompletionInGo(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestFlagNameCompletionInGo(t *testing.T) {
@@ -414,7 +425,7 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 
 	// Test that flag names are not shown if the user has not given the '-' prefix
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"childCmd",
@@ -423,11 +434,11 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are completed
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--first",
@@ -439,22 +450,22 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are completed when a prefix is given
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--f")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--first",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are completed in a sub-cmd
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--second",
@@ -467,7 +478,7 @@ func TestFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
@@ -489,7 +500,7 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 
 	// Test that flag names are not shown if the user has not given the '-' prefix
 	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"childCmd\tfirst command",
@@ -498,11 +509,11 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are completed
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--first\tfirst flag",
@@ -514,22 +525,22 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are completed when a prefix is given
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--f")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--first\tfirst flag",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are completed in a sub-cmd
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "childCmd", "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--second\tsecond flag",
@@ -542,7 +553,7 @@ func TestFlagNameCompletionInGoWithDesc(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestFlagNameCompletionRepeat(t *testing.T) {
@@ -568,7 +579,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 
 	// Test that flag names are not repeated unless they are an array or slice
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--first", "1", "--")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	firstFlag.Changed = false
 
@@ -580,11 +591,11 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are not repeated unless they are an array or slice
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--first", "1", "--second=false", "--")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	firstFlag.Changed = false
 	secondFlag.Changed = false
@@ -596,29 +607,43 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are not repeated unless they are an array or slice
-	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--slice", "1", "--slice=2", "--bslice", "true", "--")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	output, err = executeCommand(
+		rootCmd,
+		zulu.ShellCompNoDescRequestCmd,
+		"--slice",
+		"1",
+		"--slice=2",
+		"--bslice",
+		"true",
+		"--",
+	)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	sliceFlag.Changed = false
 	bsliceFlag.Changed = false
 
-	expected = strings.Join([]string{
-		"--bslice",
-		"--first",
-		"--help",
-		"--second",
-		"--slice",
-		":4",
-		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	expected = strings.Join(
+		[]string{
+			"--bslice",
+			"--first",
+			"--help",
+			"--second",
+			"--slice",
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp",
+			"",
+		},
+		"\n",
+	)
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are not repeated unless they are an array or slice, using shortname
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	sliceFlag.Changed = false
 
@@ -636,11 +661,11 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that flag names are not repeated unless they are an array or slice, using shortname with prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-l", "1", "-l=2", "-a")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	sliceFlag.Changed = false
 
@@ -648,7 +673,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestRequiredFlagNameCompletionInGo(t *testing.T) {
@@ -669,17 +694,34 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 	rootCmd.Flags().Int("requiredFlag", -1, "required flag", zflag.OptShorthand('r'), zflag.OptRequired())
 	requiredFlag := rootCmd.Flags().Lookup("requiredFlag")
 
-	rootCmd.PersistentFlags().Int("requiredPersistent", -1, "required persistent", zflag.OptShorthand('p'), zflag.OptRequired())
+	rootCmd.PersistentFlags().Int(
+		"requiredPersistent",
+		-1,
+		"required persistent",
+		zflag.OptShorthand('p'),
+		zflag.OptRequired(),
+	)
 	requiredPersistent := rootCmd.PersistentFlags().Lookup("requiredPersistent")
 
 	rootCmd.Flags().String("release", "", "Release name", zflag.OptShorthand('R'))
 
-	childCmd.Flags().Bool("subRequired", false, "sub required flag", zflag.OptShorthand('s'), zflag.OptRequired())
-	childCmd.Flags().Bool("subNotRequired", false, "sub not required flag", zflag.OptShorthand('n'))
+	childCmd.Flags().Bool(
+		"subRequired",
+		false,
+		"sub required flag",
+		zflag.OptShorthand('s'),
+		zflag.OptRequired(),
+	)
+	childCmd.Flags().Bool(
+		"subNotRequired",
+		false,
+		"sub not required flag",
+		zflag.OptShorthand('n'),
+	)
 
 	// Test that a required flag is suggested even without the - prefix
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"childCmd",
@@ -693,11 +735,11 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that a required flag is suggested without other flags when using the '-' prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--requiredFlag",
@@ -707,22 +749,22 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that if no required flag matches, the normal flags are suggested
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--relea")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--release",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test required flags for sub-commands
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--requiredPersistent",
@@ -733,10 +775,10 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--requiredPersistent",
@@ -746,21 +788,21 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "--subNot")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--subNotRequired",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that when a required flag is present, it is not suggested anymore
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--requiredFlag", "1", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	requiredFlag.Changed = false
 
@@ -771,11 +813,11 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that when a persistent required flag is present, it is not suggested anymore
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--requiredPersistent", "1", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	requiredPersistent.Changed = false
 
@@ -789,11 +831,19 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that when all required flags are present, normal completion is done
-	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--requiredFlag", "1", "--requiredPersistent", "1", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	output, err = executeCommand(
+		rootCmd,
+		zulu.ShellCompNoDescRequestCmd,
+		"--requiredFlag",
+		"1",
+		"--requiredPersistent",
+		"1",
+		"",
+	)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flags for the next command
 	requiredFlag.Changed = false
 	requiredPersistent.Changed = false
@@ -803,7 +853,7 @@ func TestRequiredFlagNameCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
@@ -813,87 +863,111 @@ func TestFlagFileExtFilterCompletionInGo(t *testing.T) {
 	}
 
 	// No extensions.  Should be ignored.
-	rootCmd.Flags().String("file", "", "file flag", zflag.OptShorthand('f'), zulu.FlagOptFilename())
+	rootCmd.Flags().String(
+		"file",
+		"",
+		"file flag",
+		zflag.OptShorthand('f'),
+		zulu.FlagOptFilename(),
+	)
 
 	// Single extension
-	rootCmd.Flags().String("log", "", "log flag", zflag.OptShorthand('l'), zulu.FlagOptFilename("log"))
+	rootCmd.Flags().String(
+		"log",
+		"",
+		"log flag",
+		zflag.OptShorthand('l'),
+		zulu.FlagOptFilename("log"),
+	)
 
 	// Multiple extensions
-	rootCmd.Flags().String("yaml", "", "yaml flag", zflag.OptShorthand('y'), zulu.FlagOptFilename("yaml", "yml"))
+	rootCmd.Flags().String(
+		"yaml",
+		"",
+		"yaml flag",
+		zflag.OptShorthand('y'),
+		zulu.FlagOptFilename("yaml", "yml"),
+	)
 
 	// Directly using annotation
-	rootCmd.Flags().String("text", "", "text flag", zflag.OptShorthand('t'), zflag.OptAnnotation(zulu.BashCompFilenameExt, []string{"txt"}))
+	rootCmd.Flags().String(
+		"text",
+		"",
+		"text flag",
+		zflag.OptShorthand('t'),
+		zflag.OptAnnotation(zulu.BashCompFilenameExt, []string{"txt"}),
+	)
 
 	// Test that the completion logic returns the proper info for the completion
 	// script to handle the file filtering
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--file", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--log", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"log",
 		":8",
 		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--yaml", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"yaml", "yml",
 		":8",
 		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--yaml=")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"yaml", "yml",
 		":8",
 		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-y", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"yaml", "yml",
 		":8",
 		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-y=")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"yaml", "yml",
 		":8",
 		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--text", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"txt",
 		":8",
 		"Completion ended with directive: ShellCompDirectiveFilterFileExt", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestFlagDirFilterCompletionInGo(t *testing.T) {
@@ -903,90 +977,108 @@ func TestFlagDirFilterCompletionInGo(t *testing.T) {
 	}
 
 	// Filter directories
-	rootCmd.Flags().String("dir", "", "dir flag", zflag.OptShorthand('d'), zulu.FlagOptDirname())
+	rootCmd.Flags().String(
+		"dir",
+		"",
+		"dir flag",
+		zflag.OptShorthand('d'),
+		zulu.FlagOptDirname(),
+	)
 
 	// Filter directories within a directory
-	rootCmd.Flags().String("subdir", "", "subdir", zflag.OptShorthand('s'), zulu.FlagOptDirname("themes"))
+	rootCmd.Flags().String(
+		"subdir",
+		"",
+		"subdir",
+		zflag.OptShorthand('s'),
+		zulu.FlagOptDirname("themes"),
+	)
 
 	// Multiple directory specification get ignored
-	rootCmd.Flags().String("manydir", "", "manydir", zflag.OptShorthand('m'), zflag.OptAnnotation(zulu.BashCompSubdirsInDir, []string{"themes", "colors"}))
+	rootCmd.Flags().String(
+		"manydir",
+		"",
+		"manydir",
+		zflag.OptShorthand('m'),
+		zflag.OptAnnotation(zulu.BashCompSubdirsInDir, []string{"themes", "colors"}),
+	)
 
 	// Test that the completion logic returns the proper info for the completion
 	// script to handle the directory filtering
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--dir", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		":16",
 		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-d", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":16",
 		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--subdir", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"themes",
 		":16",
 		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--subdir=")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"themes",
 		":16",
 		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-s", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"themes",
 		":16",
 		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-s=")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"themes",
 		":16",
 		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--manydir", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":16",
 		"Completion ended with directive: ShellCompDirectiveFilterDirs", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsFuncCmdContext(t *testing.T) {
-	validArgsFunc := func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	validArgsFuncCtx := func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 		ctx := cmd.Context()
 
-		assertNotNilf(t, ctx, "Received nil context in completion func")
-		assertEqualf(t, "123", ctx.Value("testKey"), "Received invalid context")
+		testutil.AssertNotNilf(t, ctx, "Received nil context in completion func")
+		testutil.AssertEqualf(t, "123", ctx.Value("testKey"), "Received invalid context")
 
 		return nil, zulu.ShellCompDirectiveDefault
 	}
@@ -997,7 +1089,7 @@ func TestValidArgsFuncCmdContext(t *testing.T) {
 	}
 	childCmd := &zulu.Command{
 		Use:               "childCmd",
-		ValidArgsFunction: validArgsFunc,
+		ValidArgsFunction: validArgsFuncCtx,
 		RunE:              noopRun,
 	}
 	rootCmd.AddCommand(childCmd)
@@ -1007,13 +1099,13 @@ func TestValidArgsFuncCmdContext(t *testing.T) {
 
 	// Test completing an empty string on the childCmd
 	_, output, err := executeCommandWithContextC(ctx, rootCmd, zulu.ShellCompNoDescRequestCmd, "childCmd", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsFuncSingleCmd(t *testing.T) {
@@ -1025,7 +1117,7 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 
 	// Test completing an empty string
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"one",
@@ -1033,18 +1125,18 @@ func TestValidArgsFuncSingleCmd(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with a prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"two",
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
@@ -1061,13 +1153,13 @@ func TestValidArgsFuncSingleCmdInvalidArg(t *testing.T) {
 
 	// Check completing with wrong number of args
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "unexpectedArg", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsFuncChildCmds(t *testing.T) {
@@ -1086,7 +1178,7 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 
 	// Test completion of first sub-command with empty argument
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child1", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"one",
@@ -1094,32 +1186,32 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test completion of first sub-command with a prefix to complete
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child1", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"two",
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with wrong number of args
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child1", "unexpectedArg", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test completion of second sub-command with empty argument
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child2", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"three",
@@ -1127,27 +1219,27 @@ func TestValidArgsFuncChildCmds(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child2", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"three",
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with wrong number of args
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child2", "unexpectedArg", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsFuncAliases(t *testing.T) {
@@ -1162,7 +1254,7 @@ func TestValidArgsFuncAliases(t *testing.T) {
 
 	// Test completion of first sub-command with empty argument
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "son", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"one",
@@ -1170,28 +1262,28 @@ func TestValidArgsFuncAliases(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test completion of first sub-command with a prefix to complete
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "daughter", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"two",
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with wrong number of args
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "son", "unexpectedArg", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestCompleteNoDesCmdInZshScript(t *testing.T) {
@@ -1204,10 +1296,10 @@ func TestCompleteNoDesCmdInZshScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	assertNil(t, rootCmd.GenZshCompletion(buf, false))
+	testutil.AssertNil(t, rootCmd.GenZshCompletion(buf, false))
 	output := buf.String()
 
-	assertContains(t, output, zulu.ShellCompNoDescRequestCmd)
+	testutil.AssertContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestCompleteCmdInZshScript(t *testing.T) {
@@ -1220,11 +1312,11 @@ func TestCompleteCmdInZshScript(t *testing.T) {
 	rootCmd.AddCommand(child)
 
 	buf := new(bytes.Buffer)
-	assertNil(t, rootCmd.GenZshCompletion(buf, true))
+	testutil.AssertNil(t, rootCmd.GenZshCompletion(buf, true))
 	output := buf.String()
 
-	assertContains(t, output, zulu.ShellCompRequestCmd+" ")
-	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
+	testutil.AssertContains(t, output, zulu.ShellCompRequestCmd+" ")
+	testutil.AssertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 }
 
 func TestFlagCompletionInGo(t *testing.T) {
@@ -1232,8 +1324,16 @@ func TestFlagCompletionInGo(t *testing.T) {
 		Use:  "root",
 		RunE: noopRun,
 	}
-	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
-		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	rootCmd.Flags().Int(
+		"introot",
+		-1,
+		"help message for flag introot",
+		zflag.OptShorthand('i'),
+		zulu.FlagOptCompletionFunc(func(
+			cmd *zulu.Command,
+			args []string,
+			toComplete string,
+		) ([]string, zulu.ShellCompDirective) {
 			completions := make([]string, 0)
 			for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
 				if strings.HasPrefix(comp, toComplete) {
@@ -1243,8 +1343,15 @@ func TestFlagCompletionInGo(t *testing.T) {
 			return completions, zulu.ShellCompDirectiveDefault
 		}),
 	)
-	rootCmd.Flags().String("filename", "", "Enter a filename",
-		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	rootCmd.Flags().String(
+		"filename",
+		"",
+		"Enter a filename",
+		zulu.FlagOptCompletionFunc(func(
+			cmd *zulu.Command,
+			args []string,
+			toComplete string,
+		) ([]string, zulu.ShellCompDirective) {
 			completions := make([]string, 0)
 			for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
 				if strings.HasPrefix(comp, toComplete) {
@@ -1257,7 +1364,7 @@ func TestFlagCompletionInGo(t *testing.T) {
 
 	// Test completing an empty string
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--introot", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"1",
@@ -1266,11 +1373,11 @@ func TestFlagCompletionInGo(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with a prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--introot", "1")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"1",
@@ -1278,32 +1385,41 @@ func TestFlagCompletionInGo(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test completing an empty string
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--filename", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
-	expected = strings.Join([]string{
-		"file.yaml",
-		"myfile.json",
-		"file.xml",
-		":6",
-		"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp", ""}, "\n")
+	expected = strings.Join(
+		[]string{
+			"file.yaml",
+			"myfile.json",
+			"file.xml",
+			":6",
+			"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp",
+			"",
+		},
+		"\n",
+	)
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with a prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--filename", "f")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
-	expected = strings.Join([]string{
-		"file.yaml",
-		"file.xml",
-		":6",
-		"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp", ""}, "\n")
+	expected = strings.Join(
+		[]string{
+			"file.yaml",
+			"file.xml",
+			":6",
+			"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp",
+			""},
+		"\n",
+	)
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
@@ -1322,7 +1438,7 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 
 	// Test completion of first sub-command with empty argument
 	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child1", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"one\tThe first",
@@ -1330,32 +1446,32 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test completion of first sub-command with a prefix to complete
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child1", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"two\tThe second",
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with wrong number of args
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child1", "unexpectedArg", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test completion of second sub-command with empty argument
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child2", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"three\tThe third",
@@ -1363,27 +1479,27 @@ func TestValidArgsFuncChildCmdsWithDesc(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child2", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"three\tThe third",
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with wrong number of args
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child2", "unexpectedArg", "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
@@ -1403,14 +1519,18 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 	rootCmd.AddCommand(childCmd, childCmd2)
 	childCmd.Flags().Bool("bool", false, "test bool flag")
 	childCmd.Flags().String("string", "", "test string flag",
-		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+		zulu.FlagOptCompletionFunc(func(
+			cmd *zulu.Command,
+			args []string,
+			toComplete string,
+		) ([]string, zulu.ShellCompDirective) {
 			return []string{"myval"}, zulu.ShellCompDirectiveDefault
 		}),
 	)
 
 	// Test flag completion with no argument
 	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"--bool\ttest bool flag",
@@ -1419,11 +1539,11 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that no flags are completed after the -- arg
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
@@ -1431,11 +1551,11 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that no flags are completed after the -- arg with a flag set
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--bool", "--", "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
@@ -1443,14 +1563,14 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// set Interspersed to false which means that no flags should be completed after the first arg
 	childCmd.Flags().SetInterspersed(false)
 
 	// Test that no flags are completed after the first arg
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "arg", "--")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
@@ -1458,11 +1578,11 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that no flags are completed after the fist arg with a flag set
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--string", "t", "arg", "--")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
@@ -1470,11 +1590,11 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check that args are still completed after --
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
@@ -1482,11 +1602,11 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check that args are still completed even if flagname with ValidArgsFunction exists
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "--string", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
@@ -1494,11 +1614,11 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check that args are still completed even if flagname with ValidArgsFunction exists
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child2", "--", "a")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"arg1",
@@ -1506,11 +1626,11 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check that --validarg is not parsed as flag after --
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "--validarg", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
@@ -1518,11 +1638,11 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check that --validarg is not parsed as flag after an arg
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "arg", "--validarg", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
@@ -1530,28 +1650,36 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check that --validarg is added to args for the ValidArgsFunction
-	childCmd.ValidArgsFunction = func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	childCmd.ValidArgsFunction = func(
+		cmd *zulu.Command,
+		args []string,
+		toComplete string,
+	) ([]string, zulu.ShellCompDirective) {
 		return args, zulu.ShellCompDirectiveDefault
 	}
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "--validarg", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check that --validarg is added to args for the ValidArgsFunction and toComplete is also set correctly
-	childCmd.ValidArgsFunction = func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	childCmd.ValidArgsFunction = func(
+		cmd *zulu.Command,
+		args []string,
+		toComplete string,
+	) ([]string, zulu.ShellCompDirective) {
 		return append(args, toComplete), zulu.ShellCompDirectiveDefault
 	}
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--", "--validarg", "--toComp=ab")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"--validarg",
@@ -1559,7 +1687,7 @@ func TestFlagCompletionWithNotInterspersedArgs(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
@@ -1573,7 +1701,11 @@ func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
 	}
 	childCmd.Flags().Bool("bool", false, "test bool flag")
 	childCmd.Flags().String("string", "", "test string flag",
-		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+		zulu.FlagOptCompletionFunc(func(
+			cmd *zulu.Command,
+			args []string,
+			toComplete string,
+		) ([]string, zulu.ShellCompDirective) {
 			return []string{"myval"}, zulu.ShellCompDirectiveDefault
 		}),
 	)
@@ -1584,14 +1716,14 @@ func TestFlagCompletionWorksRootCommandAddedAfterFlags(t *testing.T) {
 
 	// Test that flag completion works for the subcmd
 	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--string", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"myval",
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestFlagCompletionInGoWithDesc(t *testing.T) {
@@ -1600,7 +1732,11 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 		RunE: noopRun,
 	}
 	rootCmd.Flags().Int("introot", -1, "help message for flag introot", zflag.OptShorthand('i'),
-		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+		zulu.FlagOptCompletionFunc(func(
+			cmd *zulu.Command,
+			args []string,
+			toComplete string,
+		) ([]string, zulu.ShellCompDirective) {
 			completions := []string{}
 			for _, comp := range []string{"1\tThe first", "2\tThe second", "10\tThe tenth"} {
 				if strings.HasPrefix(comp, toComplete) {
@@ -1611,7 +1747,11 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 		}),
 	)
 	rootCmd.Flags().String("filename", "", "Enter a filename",
-		zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+		zulu.FlagOptCompletionFunc(func(
+			cmd *zulu.Command,
+			args []string,
+			toComplete string,
+		) ([]string, zulu.ShellCompDirective) {
 			completions := []string{}
 			for _, comp := range []string{"file.yaml\tYAML format", "myfile.json\tJSON format", "file.xml\tXML format"} {
 				if strings.HasPrefix(comp, toComplete) {
@@ -1624,7 +1764,7 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 
 	// Test completing an empty string
 	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--introot", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"1\tThe first",
@@ -1633,11 +1773,11 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with a prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--introot", "1")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"1\tThe first",
@@ -1645,24 +1785,29 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 		":0",
 		"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test completing an empty string
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--filename", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
-	expected = strings.Join([]string{
-		"file.yaml\tYAML format",
-		"myfile.json\tJSON format",
-		"file.xml\tXML format",
-		":6",
-		"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp", ""}, "\n")
+	expected = strings.Join(
+		[]string{
+			"file.yaml\tYAML format",
+			"myfile.json\tJSON format",
+			"file.xml\tXML format",
+			":6",
+			"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp",
+			"",
+		},
+		"\n",
+	)
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with a prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--filename", "f")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"file.yaml\tYAML format",
@@ -1670,7 +1815,7 @@ func TestFlagCompletionInGoWithDesc(t *testing.T) {
 		":6",
 		"Completion ended with directive: ShellCompDirectiveNoSpace, ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestValidArgsNotValidArgsFunc(t *testing.T) {
@@ -1686,7 +1831,7 @@ func TestValidArgsNotValidArgsFunc(t *testing.T) {
 	// Test that if both ValidArgs and ValidArgsFunction are present
 	// only ValidArgs is considered
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"one",
@@ -1694,18 +1839,18 @@ func TestValidArgsNotValidArgsFunc(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Check completing with a prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"two",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestArgAliasesCompletionInGo(t *testing.T) {
@@ -1719,7 +1864,7 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 
 	// Test that argaliases are not completed when there are validargs that match
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"one",
@@ -1728,11 +1873,11 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that argaliases are not completed when there are validargs that match using a prefix
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "t")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"two",
@@ -1740,18 +1885,18 @@ func TestArgAliasesCompletionInGo(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that argaliases are completed when there are no validargs that match
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "tr")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"trois",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestCompleteHelp(t *testing.T) {
@@ -1774,7 +1919,7 @@ func TestCompleteHelp(t *testing.T) {
 
 	// Test that completion includes the help command
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"child1",
@@ -1784,11 +1929,11 @@ func TestCompleteHelp(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test sub-commands are completed on first level of help command
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "help", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"child1",
@@ -1798,18 +1943,18 @@ func TestCompleteHelp(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test sub-commands are completed on first level of help command
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "help", "child1", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"child3",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func removeCompCmd(rootCmd *zulu.Command) {
@@ -1830,9 +1975,14 @@ func TestDefaultCompletionCmd(t *testing.T) {
 	}
 
 	// Test that no completion command is created if there are not other sub-commands
-	assertNil(t, rootCmd.Execute())
+	testutil.AssertNil(t, rootCmd.Execute())
 	for _, cmd := range rootCmd.Commands() {
-		assertNotEqualf(t, zulu.CompCmdName, cmd.Name(), "Should not have a 'completion' command when there are no other sub-commands of root")
+		testutil.AssertNotEqualf(
+			t,
+			zulu.CompCmdName,
+			cmd.Name(),
+			"Should not have a 'completion' command when there are no other sub-commands of root",
+		)
 	}
 
 	subCmd := &zulu.Command{
@@ -1843,41 +1993,51 @@ func TestDefaultCompletionCmd(t *testing.T) {
 
 	// Test that a completion command is created if there are other sub-commands
 	found := false
-	assertNil(t, rootCmd.Execute())
+	testutil.AssertNil(t, rootCmd.Execute())
 	for _, cmd := range rootCmd.Commands() {
 		if cmd.Name() == zulu.CompCmdName {
 			found = true
 			break
 		}
 	}
-	assertEqualf(t, true, found, "Should have a 'completion' command when there are other sub-commands of root")
+	testutil.AssertEqualf(
+		t,
+		true,
+		found,
+		"Should have a 'completion' command when there are other sub-commands of root",
+	)
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
 
 	// Test that the default completion command can be disabled
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
-	assertNil(t, rootCmd.Execute())
+	testutil.AssertNil(t, rootCmd.Execute())
 	for _, cmd := range rootCmd.Commands() {
-		assertNotEqualf(t, zulu.CompCmdName, cmd.Name(), "Should not have a 'completion' command when the feature is disabled")
+		testutil.AssertNotEqualf(
+			t,
+			zulu.CompCmdName,
+			cmd.Name(),
+			"Should not have a 'completion' command when the feature is disabled",
+		)
 	}
 	// Re-enable for next test
 	rootCmd.CompletionOptions.DisableDefaultCmd = false
 
 	// Test that completion descriptions are enabled by default
 	output, err := executeCommand(rootCmd, zulu.CompCmdName, "zsh")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
-	assertContains(t, output, zulu.ShellCompRequestCmd+" ")
-	assertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
+	testutil.AssertContains(t, output, zulu.ShellCompRequestCmd+" ")
+	testutil.AssertNotContains(t, output, zulu.ShellCompNoDescRequestCmd)
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
 
 	// Test that completion descriptions can be disabled completely
 	rootCmd.CompletionOptions.DisableDescriptions = true
 	output, err = executeCommand(rootCmd, zulu.CompCmdName, "zsh")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
-	assertContains(t, output, zulu.ShellCompNoDescRequestCmd)
+	testutil.AssertContains(t, output, zulu.ShellCompNoDescRequestCmd)
 	// Re-enable for next test
 	rootCmd.CompletionOptions.DisableDescriptions = false
 	// Remove completion command for the next test
@@ -1885,24 +2045,24 @@ func TestDefaultCompletionCmd(t *testing.T) {
 
 	var compCmd *zulu.Command
 	// Test that the --no-descriptions flag is present on all shells
-	assertNil(t, rootCmd.Execute())
+	testutil.AssertNil(t, rootCmd.Execute())
 	for _, shell := range []string{"bash", "fish", "powershell", "zsh"} {
 		compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell})
-		assertNilf(t, err, "Unexpected error")
+		testutil.AssertNilf(t, err, "Unexpected error")
 		flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName)
-		assertNotNilf(t, flag, "Missing --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
+		testutil.AssertNotNilf(t, flag, "Missing --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
 	}
 	// Remove completion command for the next test
 	removeCompCmd(rootCmd)
 
 	// Test that the '--no-descriptions' flag can be disabled
 	rootCmd.CompletionOptions.DisableDescriptionsFlag = true
-	assertNil(t, rootCmd.Execute())
+	testutil.AssertNil(t, rootCmd.Execute())
 	for _, shell := range []string{"fish", "zsh", "bash", "powershell"} {
 		compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell})
-		assertNilf(t, err, "Unexpected error")
+		testutil.AssertNilf(t, err, "Unexpected error")
 		flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName)
-		assertNilf(t, flag, "Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
+		testutil.AssertNilf(t, flag, "Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
 	}
 	// Re-enable for next test
 	rootCmd.CompletionOptions.DisableDescriptionsFlag = false
@@ -1911,12 +2071,12 @@ func TestDefaultCompletionCmd(t *testing.T) {
 
 	// Test that the '--no-descriptions' flag is disabled when descriptions are disabled
 	rootCmd.CompletionOptions.DisableDescriptions = true
-	assertNil(t, rootCmd.Execute())
+	testutil.AssertNil(t, rootCmd.Execute())
 	for _, shell := range []string{"fish", "zsh", "bash", "powershell"} {
 		compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName, shell})
-		assertNilf(t, err, "Unexpected error")
+		testutil.AssertNilf(t, err, "Unexpected error")
 		flag := compCmd.Flags().Lookup(zulu.CompCmdNoDescFlagName)
-		assertNilf(t, flag, "Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
+		testutil.AssertNilf(t, flag, "Unexpected --%s flag for %s shell", zulu.CompCmdNoDescFlagName, shell)
 	}
 	// Re-enable for next test
 	rootCmd.CompletionOptions.DisableDescriptions = false
@@ -1925,10 +2085,15 @@ func TestDefaultCompletionCmd(t *testing.T) {
 
 	// Test that the 'completion' command can be hidden
 	rootCmd.CompletionOptions.HiddenDefaultCmd = true
-	assertNil(t, rootCmd.Execute())
+	testutil.AssertNil(t, rootCmd.Execute())
 	compCmd, _, err = rootCmd.Find([]string{zulu.CompCmdName})
-	assertNilf(t, err, "Unexpected error: %v", err)
-	assertEqualf(t, true, compCmd.Hidden, "Default 'completion' command should be hidden but it is not")
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertEqualf(
+		t,
+		true,
+		compCmd.Hidden,
+		"Default 'completion' command should be hidden but it is not",
+	)
 	// Re-enable for next test
 	rootCmd.CompletionOptions.HiddenDefaultCmd = false
 	// Remove completion command for the next test
@@ -1945,7 +2110,7 @@ func TestCompleteCompletion(t *testing.T) {
 
 	// Test sub-commands of the completion command
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "completion", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"bash",
@@ -1955,7 +2120,7 @@ func TestCompleteCompletion(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test there are no completions for the sub-commands of the completion command
 	var compCmd *zulu.Command
@@ -1967,15 +2132,21 @@ func TestCompleteCompletion(t *testing.T) {
 	}
 
 	for _, shell := range compCmd.Commands() {
-		output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, zulu.CompCmdName, shell.Name(), "")
-		assertNilf(t, err, "Unexpected error: %v", err)
+		output, err = executeCommand(
+			rootCmd,
+			zulu.ShellCompNoDescRequestCmd,
+			zulu.CompCmdName,
+			shell.Name(),
+			"",
+		)
+		testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 		expected = strings.Join([]string{
 			":4",
 			"Completion ended with directive: ShellCompDirectiveNoFileComp",
 			"",
 		}, "\n")
-		assertEqual(t, expected, output)
+		testutil.AssertEqual(t, expected, output)
 	}
 }
 
@@ -1996,7 +2167,7 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 
 	// Test that a single shorthand flag works
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-s", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"foo",
@@ -2004,11 +2175,11 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that multiple boolean shorthand flags work
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-sd", "")
-	assertNilf(t, err, "Unexpected error %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error %v", err)
 
 	expected = strings.Join([]string{
 		"foo",
@@ -2016,33 +2187,33 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that multiple boolean + string shorthand flags work
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-sdf", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"works",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that multiple boolean + string with equal sign shorthand flags work
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-sdf=")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"works",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that multiple boolean + string with equal sign with value shorthand flags work
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "-sdf=abc", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"foo",
@@ -2050,12 +2221,15 @@ func TestMultipleShorthandFlagCompletion(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestCompleteWithDisableFlagParsing(t *testing.T) {
-
-	flagValidArgs := func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	flagValidArgs := func(
+		cmd *zulu.Command,
+		args []string,
+		toComplete string,
+	) ([]string, zulu.ShellCompDirective) {
 		return []string{"--flag", "-f"}, zulu.ShellCompDirectiveNoFileComp
 	}
 
@@ -2068,33 +2242,48 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 	}
 	rootCmd.AddCommand(childCmd)
 
-	rootCmd.PersistentFlags().String("persistent", "", "persistent flag", zflag.OptShorthand('p'))
-	childCmd.Flags().String("nonPersistent", "", "non-persistent flag", zflag.OptShorthand('n'))
+	rootCmd.PersistentFlags().String(
+		"persistent",
+		"",
+		"persistent flag",
+		zflag.OptShorthand('p'),
+	)
+	childCmd.Flags().String(
+		"nonPersistent",
+		"",
+		"non-persistent flag",
+		zflag.OptShorthand('n'),
+	)
 
 	// Test that when DisableFlagParsing==true, ValidArgsFunction is called to complete flag names,
 	// after Zulu tried to complete the flags it knows about.
 	childCmd.DisableFlagParsing = true
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child", "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
-	expected := strings.Join([]string{
-		"--persistent",
-		"-p",
-		"--help",
-		"-h",
-		"--nonPersistent",
-		"-n",
-		"--flag",
-		"-f",
-		":4",
-		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	expected := strings.Join(
+		[]string{
+			"--persistent",
+			"-p",
+			"--help",
+			"-h",
+			"--nonPersistent",
+			"-n",
+			"--flag",
+			"-f",
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp",
+			"",
+		},
+		"\n",
+	)
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Test that when DisableFlagParsing==false, Zulu completes the flags itself and ValidArgsFunction is not called
 	childCmd.DisableFlagParsing = false
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child", "-")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	// Zulu was not told of any flags, so it returns nothing
 	expected = strings.Join([]string{
@@ -2107,7 +2296,7 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
@@ -2124,7 +2313,7 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 
 	// Make sure the first arg is completed
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"arg1",
@@ -2132,11 +2321,11 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 
 	// Make sure the completion of arguments continues
 	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "arg1", "")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected = strings.Join([]string{
 		"arg1",
@@ -2144,7 +2333,7 @@ func TestCompleteWithRootAndLegacyArgs(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestFixedCompletions(t *testing.T) {
@@ -2158,7 +2347,7 @@ func TestFixedCompletions(t *testing.T) {
 	rootCmd.AddCommand(childCmd)
 
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child", "a")
-	assertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 
 	expected := strings.Join([]string{
 		"apple",
@@ -2167,7 +2356,7 @@ func TestFixedCompletions(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 
-	assertEqual(t, expected, output)
+	testutil.AssertEqual(t, expected, output)
 }
 
 func TestCompletionForGroupedFlags(t *testing.T) {
@@ -2260,8 +2449,8 @@ func TestCompletionForGroupedFlags(t *testing.T) {
 			args := []string{zulu.ShellCompNoDescRequestCmd}
 			args = append(args, tc.args...)
 			output, err := executeCommand(c, args...)
-			assertNilf(t, err, "Unexpected error %q", err)
-			assertEqual(t, tc.expectedOutput, output)
+			testutil.AssertNilf(t, err, "Unexpected error %q", err)
+			testutil.AssertEqual(t, tc.expectedOutput, output)
 		})
 	}
 }
@@ -2321,7 +2510,8 @@ func TestCompletionForMutuallyExclusiveFlags(t *testing.T) {
 				"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n"),
 		},
 		{
-			desc: "when flag in mutually exclusive group present, other flags in group not suggested even with the - prefix",
+			desc: "when flag in mutually exclusive group present," +
+				"other flags in group not suggested even with the - prefix",
 			args: []string{"child", "--ingroup1", "8", "-"},
 			expectedOutput: strings.Join([]string{
 				"--ingroup1", // Should be suggested again since it is a slice
@@ -2351,8 +2541,8 @@ func TestCompletionForMutuallyExclusiveFlags(t *testing.T) {
 			args = append(args, tc.args...)
 			output, err := executeCommand(c, args...)
 
-			assertNilf(t, err, "Unexpected error %q", err)
-			assertEqual(t, tc.expectedOutput, output)
+			testutil.AssertNilf(t, err, "Unexpected error %q", err)
+			testutil.AssertEqual(t, tc.expectedOutput, output)
 		})
 	}
 }
@@ -2368,7 +2558,11 @@ func TestCompletionZuluFlags(t *testing.T) {
 			Use:     "child",
 			Version: "1.1.1",
 			RunE:    noopRun,
-			ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			ValidArgsFunction: func(
+				cmd *zulu.Command,
+				args []string,
+				toComplete string,
+			) ([]string, zulu.ShellCompDirective) {
 				return []string{"extra"}, zulu.ShellCompDirectiveNoFileComp
 			},
 		}
@@ -2376,7 +2570,11 @@ func TestCompletionZuluFlags(t *testing.T) {
 			Use:     "child2",
 			Version: "1.1.1",
 			RunE:    noopRun,
-			ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			ValidArgsFunction: func(
+				cmd *zulu.Command,
+				args []string,
+				toComplete string,
+			) ([]string, zulu.ShellCompDirective) {
 				return []string{"extra2"}, zulu.ShellCompDirectiveNoFileComp
 			},
 		}
@@ -2384,7 +2582,11 @@ func TestCompletionZuluFlags(t *testing.T) {
 			Use:     "child3",
 			Version: "1.1.1",
 			RunE:    noopRun,
-			ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			ValidArgsFunction: func(
+				cmd *zulu.Command,
+				args []string,
+				toComplete string,
+			) ([]string, zulu.ShellCompDirective) {
 				return []string{"extra3"}, zulu.ShellCompDirectiveNoFileComp
 			},
 		}
@@ -2395,10 +2597,20 @@ func TestCompletionZuluFlags(t *testing.T) {
 
 		// Have a command that adds its own help and version flag
 		_ = childCmd2.Flags().Bool("help", false, "My own help", zflag.OptShorthand('h'))
-		_ = childCmd2.Flags().Bool("version", false, "My own version", zflag.OptShorthand('v'))
+		_ = childCmd2.Flags().Bool(
+			"version",
+			false,
+			"My own version",
+			zflag.OptShorthand('v'),
+		)
 
 		// Have a command that only adds its own -v flag
-		_ = childCmd3.Flags().Bool("verbose", false, "Not a version flag", zflag.OptShorthand('v'))
+		_ = childCmd3.Flags().Bool(
+			"verbose",
+			false,
+			"Not a version flag",
+			zflag.OptShorthand('v'),
+		)
 
 		return rootCmd
 	}
@@ -2539,8 +2751,8 @@ func TestCompletionZuluFlags(t *testing.T) {
 			args = append(args, tc.args...)
 			output, err := executeCommand(c, args...)
 
-			assertNilf(t, err, "Unexpected error %q", err)
-			assertEqual(t, tc.expectedOutput, output)
+			testutil.AssertNilf(t, err, "Unexpected error %q", err)
+			testutil.AssertEqual(t, tc.expectedOutput, output)
 		})
 	}
 }
@@ -2575,7 +2787,7 @@ func TestShellCompDirective_ListDirectives(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.d.ListDirectives()
-			assertEqual(t, tt.want, got)
+			testutil.AssertEqual(t, tt.want, got)
 		})
 	}
 }

@@ -3,4 +3,4 @@
 
 package zulu
 
-var preExecHookFn func(*Command)
+func runMouseTrap(command *Command) {}

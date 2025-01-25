@@ -8,9 +8,12 @@ import (
 
 	"github.com/zulucmd/zulu/v2"
 	"github.com/zulucmd/zulu/v2/doc"
+	"github.com/zulucmd/zulu/v2/internal/testutil"
 )
 
 func TestGenAsciidoc(t *testing.T) {
+	rootCmd, echoCmd, echoSubCmd, _, deprecatedCmd, _, _ := getTestCmds()
+
 	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
 	if err := doc.GenAsciidoc(echoCmd, buf); err != nil {
@@ -18,17 +21,18 @@ func TestGenAsciidoc(t *testing.T) {
 	}
 	output := buf.String()
 
-	assertContains(t, output, echoCmd.Long)
-	assertContains(t, output, echoCmd.Example)
-	assertContains(t, output, "boolone")
-	assertContains(t, output, "rootflag")
-	assertContains(t, output, rootCmd.Short)
-	assertContains(t, output, echoSubCmd.Short)
-	assertNotContains(t, output, deprecatedCmd.Short)
-	assertContains(t, output, "Options inherited from parent commands")
+	testutil.AssertContains(t, output, echoCmd.Long)
+	testutil.AssertContains(t, output, echoCmd.Example)
+	testutil.AssertContains(t, output, "boolone")
+	testutil.AssertContains(t, output, "rootflag")
+	testutil.AssertContains(t, output, rootCmd.Short)
+	testutil.AssertContains(t, output, echoSubCmd.Short)
+	testutil.AssertNotContains(t, output, deprecatedCmd.Short)
+	testutil.AssertContains(t, output, "Options inherited from parent commands")
 }
 
 func TestGenAsciidocWithNoLongOrSynopsis(t *testing.T) {
+	_, _, _, _, _, _, dummyCmd := getTestCmds()
 	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
 	if err := doc.GenAsciidoc(dummyCmd, buf); err != nil {
@@ -36,18 +40,18 @@ func TestGenAsciidocWithNoLongOrSynopsis(t *testing.T) {
 	}
 	output := buf.String()
 
-	assertContains(t, output, dummyCmd.Example)
-	assertContains(t, output, dummyCmd.Short)
-	assertContains(t, output, "Options inherited from parent commands")
-	assertNotContains(t, output, "### Synopsis")
+	testutil.AssertContains(t, output, dummyCmd.Example)
+	testutil.AssertContains(t, output, dummyCmd.Short)
+	testutil.AssertContains(t, output, "Options inherited from parent commands")
+	testutil.AssertNotContains(t, output, "### Synopsis")
 }
 
 func TestGenAsciidocNoHiddenParents(t *testing.T) {
+	rootCmd, echoCmd, echoSubCmd, _, deprecatedCmd, _, _ := getTestCmds()
 	// We generate on subcommand so we have both subcommands and parents.
 	for _, name := range []string{"rootflag", "strtwo"} {
 		f := rootCmd.PersistentFlags().Lookup(name)
 		f.Hidden = true
-		defer func() { f.Hidden = false }()
 	}
 	buf := new(bytes.Buffer)
 	if err := doc.GenAsciidoc(echoCmd, buf); err != nil {
@@ -55,19 +59,20 @@ func TestGenAsciidocNoHiddenParents(t *testing.T) {
 	}
 	output := buf.String()
 
-	assertContains(t, output, echoCmd.Long)
-	assertContains(t, output, echoCmd.Example)
-	assertContains(t, output, "boolone")
-	assertNotContains(t, output, "rootflag")
-	assertContains(t, output, rootCmd.Short)
-	assertContains(t, output, echoSubCmd.Short)
-	assertNotContains(t, output, deprecatedCmd.Short)
-	assertNotContains(t, output, "Options inherited from parent commands")
+	testutil.AssertContains(t, output, echoCmd.Long)
+	testutil.AssertContains(t, output, echoCmd.Example)
+	testutil.AssertContains(t, output, "boolone")
+	testutil.AssertNotContains(t, output, "rootflag")
+	testutil.AssertContains(t, output, rootCmd.Short)
+	testutil.AssertContains(t, output, echoSubCmd.Short)
+	testutil.AssertNotContains(t, output, deprecatedCmd.Short)
+	testutil.AssertNotContains(t, output, "Options inherited from parent commands")
 }
 
 func TestGenAsciidocNoTag(t *testing.T) {
+	rootCmd, _, _, _, _, _, _ := getTestCmds()
+
 	rootCmd.DisableAutoGenTag = true
-	defer func() { rootCmd.DisableAutoGenTag = false }()
 
 	buf := new(bytes.Buffer)
 	if err := doc.GenAsciidoc(rootCmd, buf); err != nil {
@@ -75,16 +80,13 @@ func TestGenAsciidocNoTag(t *testing.T) {
 	}
 	output := buf.String()
 
-	assertNotContains(t, output, "Auto generated")
+	testutil.AssertNotContains(t, output, "Auto generated")
 }
 
 func TestGenAsciidocTree(t *testing.T) {
 	c := &zulu.Command{Use: "do [OPTIONS] arg1 arg2"}
-	tmpdir, err := os.MkdirTemp("", "test-gen-md-tree")
-	if err != nil {
-		t.Fatalf("Failed to create tmpdir: %v", err)
-	}
-	defer os.RemoveAll(tmpdir)
+
+	tmpdir := t.TempDir()
 
 	if err := doc.GenAsciidocTree(c, tmpdir); err != nil {
 		t.Fatalf("GenAsciidocTree failed: %v", err)
@@ -96,15 +98,15 @@ func TestGenAsciidocTree(t *testing.T) {
 }
 
 func BenchmarkGenAsciidocToFile(b *testing.B) {
-	file, err := os.CreateTemp("", "")
+	rootCmd, _, _, _, _, _, _ := getTestCmds()
+	file, err := os.CreateTemp(b.TempDir(), "")
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer os.Remove(file.Name())
 	defer file.Close()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		if err := doc.GenAsciidoc(rootCmd, file); err != nil {
 			b.Fatal(err)
 		}
