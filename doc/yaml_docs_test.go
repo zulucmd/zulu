@@ -27,7 +27,16 @@ func TestGenYamlDoc(t *testing.T) {
 	testutil.AssertContains(t, output, "rootflag")
 	testutil.AssertContains(t, output, rootCmd.Short)
 	testutil.AssertContains(t, output, echoSubCmd.Short)
-	testutil.AssertContains(t, output, fmt.Sprintf("- %s - %s", echoSubCmd.CommandPath(), echoSubCmd.Short))
+
+	subCmdFmt := `
+    - name: %s
+      short: %s
+`
+	testutil.AssertContains(
+		t,
+		output,
+		fmt.Sprintf(subCmdFmt, echoSubCmd.CommandPath(), echoSubCmd.Short),
+	)
 }
 
 func TestGenYamlNoTag(t *testing.T) {
@@ -48,7 +57,7 @@ func TestGenYamlTree(t *testing.T) {
 
 	tmpdir := t.TempDir()
 
-	if err := doc.GenYamlTree(c, tmpdir); err != nil {
+	if err := doc.GenYamlTree(c, tmpdir, nil); err != nil {
 		t.Fatalf("GenYamlTree failed: %s", err.Error())
 	}
 

@@ -25,6 +25,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func defaultYamlLinkHandler(s string) string {
+	return strings.ReplaceAll(s, " ", "_") + ".yaml"
+}
+
 type cmdOption struct {
 	Name         string `yaml:"name"`
 	Shorthand    rune   `yaml:",omitempty"`
@@ -32,15 +36,20 @@ type cmdOption struct {
 	Usage        string `yaml:",omitempty"`
 }
 
+type yamlRelatedCmd struct {
+	Name  string `yaml:"name"`
+	Short string `yaml:"short"`
+}
+
 type cmdDoc struct {
-	Name             string      `yaml:"name"`
-	Synopsis         string      `yaml:",omitempty"`
-	Description      string      `yaml:",omitempty"`
-	Usage            string      `yaml:",omitempty"`
-	Options          []cmdOption `yaml:",omitempty"`
-	InheritedOptions []cmdOption `yaml:"inherited_options,omitempty"`
-	Example          string      `yaml:",omitempty"`
-	SeeAlso          []string    `yaml:"see_also,omitempty"`
+	Name             string           `yaml:"name"`
+	Synopsis         string           `yaml:",omitempty"`
+	Description      string           `yaml:",omitempty"`
+	Usage            string           `yaml:",omitempty"`
+	Options          []cmdOption      `yaml:",omitempty"`
+	InheritedOptions []cmdOption      `yaml:"inherited_options,omitempty"`
+	Example          string           `yaml:",omitempty"`
+	SeeAlso          []yamlRelatedCmd `yaml:"see_also,omitempty"`
 }
 
 // GenYamlTree creates yaml structured ref files for this command and all descendants
@@ -48,24 +57,21 @@ type cmdDoc struct {
 // correctly if your command names have `-` in them. If you have `cmd` with two
 // subcmds, `sub` and `sub-third`, and `sub` has a subcommand called `third`
 // it is undefined which help output will be in the file `cmd-sub-third.1`.
-func GenYamlTree(cmd *zulu.Command, dir string) error {
-	identity := func(s string) string { return s }
-	emptyStr := func(_ string) string { return "" }
-	return GenYamlTreeCustom(cmd, dir, emptyStr, identity)
-}
+func GenYamlTree(cmd *zulu.Command, dir string, linkHandler func(string) string) error {
+	if linkHandler == nil {
+		linkHandler = defaultYamlLinkHandler
+	}
 
-// GenYamlTreeCustom creates yaml structured ref files.
-func GenYamlTreeCustom(cmd *zulu.Command, dir string, filePrepender, linkHandler func(string) string) error {
 	for _, c := range cmd.Commands() {
 		if !c.IsAvailableCommand() || c.IsAdditionalHelpTopicCommand() {
 			continue
 		}
-		if err := GenYamlTreeCustom(c, dir, filePrepender, linkHandler); err != nil {
+		if err := GenYamlTree(c, dir, linkHandler); err != nil {
 			return err
 		}
 	}
 
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + ".yaml"
+	basename := linkHandler(cmd.CommandPath())
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {
@@ -73,20 +79,15 @@ func GenYamlTreeCustom(cmd *zulu.Command, dir string, filePrepender, linkHandler
 	}
 	defer f.Close()
 
-	if _, err := io.WriteString(f, filePrepender(filename)); err != nil {
+	if _, err := io.WriteString(f, filename); err != nil {
 		return err
 	}
 
-	return GenYamlCustom(cmd, f, linkHandler)
+	return GenYaml(cmd, f)
 }
 
 // GenYaml creates yaml output.
 func GenYaml(cmd *zulu.Command, w io.Writer) error {
-	return GenYamlCustom(cmd, w, func(s string) string { return s })
-}
-
-// GenYamlCustom creates custom yaml output.
-func GenYamlCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) string) error {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
 	cmd.InitDefaultCompletionCmd()
@@ -105,20 +106,21 @@ func GenYamlCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) stri
 		yamlDoc.Example = cmd.Example
 	}
 
-	flags := cmd.NonInheritedFlags()
-	if flags.HasFlags() {
+	if flags := cmd.NonInheritedFlags(); flags.HasFlags() {
 		yamlDoc.Options = genFlagResult(flags)
 	}
-	flags = cmd.InheritedFlags()
-	if flags.HasFlags() {
+	if flags := cmd.InheritedFlags(); flags.HasFlags() {
 		yamlDoc.InheritedOptions = genFlagResult(flags)
 	}
 
 	if hasSeeAlso(cmd) {
-		var result []string
+		var result []yamlRelatedCmd
 		if cmd.HasParent() {
 			parent := cmd.Parent()
-			result = append(result, parent.CommandPath()+" - "+parent.Short)
+			result = append(result, yamlRelatedCmd{
+				Name:  parent.CommandPath(),
+				Short: parent.Short,
+			})
 		}
 		children := cmd.Commands()
 		sort.Sort(byName(children))
@@ -126,7 +128,10 @@ func GenYamlCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) stri
 			if !child.IsAvailableCommand() || child.IsAdditionalHelpTopicCommand() {
 				continue
 			}
-			result = append(result, child.CommandPath()+" - "+child.Short)
+			result = append(result, yamlRelatedCmd{
+				Name:  child.CommandPath(),
+				Short: child.Short,
+			})
 		}
 		yamlDoc.SeeAlso = result
 	}

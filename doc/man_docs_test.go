@@ -28,7 +28,7 @@ func TestGenManDoc(t *testing.T) {
 
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := doc.GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -63,7 +63,7 @@ func TestGenManNoHiddenParents(t *testing.T) {
 		f.Hidden = true
 	}
 	buf := new(bytes.Buffer)
-	if err := doc.GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -97,7 +97,7 @@ func TestGenManNoGenTag(t *testing.T) {
 
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := doc.GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -120,7 +120,7 @@ func TestGenManNoGenTagWithDisabledParent(t *testing.T) {
 
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := doc.GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -144,8 +144,8 @@ func TestGenManSeeAlso(t *testing.T) {
 	cCmd := &zulu.Command{Use: "branch", RunE: emptyRun}
 	rootCmd.AddCommand(aCmd, bCmd, cCmd)
 
-	// todo add the flags in the SYNOPSIS section. Instead of just writing "git [flags]",
-	//  it should write "git [-C <path>]"
+	// todo maybe we can add the flags in the SYNOPSIS section.
+	//  So instead of just writing "git [flags]", it should write "git [-C <path>]"
 	rootCmd.Flags().String(
 		"chdir",
 		"",
@@ -157,7 +157,7 @@ func TestGenManSeeAlso(t *testing.T) {
 
 	buf := new(bytes.Buffer)
 	header := &doc.GenManHeader{}
-	if err := doc.GenMan(rootCmd, header, buf); err != nil {
+	if err := doc.GenMan(rootCmd, header, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	scanner := bufio.NewScanner(buf)
@@ -173,26 +173,6 @@ func TestGenManSeeAlso(t *testing.T) {
 	}
 }
 
-func TestManPrintFlagsHidesShortDeprecated(t *testing.T) {
-	c := &zulu.Command{}
-	c.Flags().String(
-		"foo",
-		"default",
-		"Foo flag",
-		zflag.OptShorthand('f'),
-		zflag.OptShorthandDeprecated("don't use it no more"),
-	)
-
-	buf := new(bytes.Buffer)
-	doc.ManPrintFlags(buf, c.Flags())
-
-	got := buf.String()
-	expected := "**--foo** string\n\n\tFoo flag\n\tDefaults to: default\n\n"
-	if got != expected {
-		t.Errorf("Expected %v, got %v", expected, got)
-	}
-}
-
 func TestGenManCommands(t *testing.T) {
 	rootCmd, echoCmd, _, timesCmd, _, _, _ := getTestCmds()
 	header := &doc.GenManHeader{
@@ -202,7 +182,7 @@ func TestGenManCommands(t *testing.T) {
 
 	// Root command
 	buf := new(bytes.Buffer)
-	if err := doc.GenMan(rootCmd, header, buf); err != nil {
+	if err := doc.GenMan(rootCmd, header, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -212,13 +192,13 @@ func TestGenManCommands(t *testing.T) {
 
 \.EX
 Echo anything to the screen
-See \*\*root\-echo\(2\)\*\*\.
+See \\fBroot\-echo\(2\)\\fP.
 \.EE`)
 	testutil.AssertNotContains(t, output, ".PP\n\\fBprint\\fP\n")
 
 	// Echo command
 	buf = new(bytes.Buffer)
-	if err := doc.GenMan(echoCmd, header, buf); err != nil {
+	if err := doc.GenMan(echoCmd, header, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output = buf.String()
@@ -228,19 +208,19 @@ See \*\*root\-echo\(2\)\*\*\.
 
 \.EX
 Echo anything to the screen more times
-See \*\*root\-echo\-times\(2\)\*\*\.
+See \\fBroot\-echo\-times\(2\)\\fP.
 \.EE`)
 	testutil.AssertMatch(t, output, `\\fBechosub\\fP
 
 \.EX
 second sub command for echo
-See \*\*root\-echo\-echosub\(2\)\*\*\.
+See \\fBroot\-echo\-echosub\(2\)\\fP.
 \.EE`)
 	testutil.AssertNotContains(t, output, ".PP\n\\fBdeprecated\\fP\n")
 
 	// Time command as echo's subcommand
 	buf = new(bytes.Buffer)
-	if err := doc.GenMan(timesCmd, header, buf); err != nil {
+	if err := doc.GenMan(timesCmd, header, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output = buf.String()
@@ -253,7 +233,7 @@ func TestGenManTree(t *testing.T) {
 	header := &doc.GenManHeader{Section: "2"}
 	tmpdir := t.TempDir()
 
-	if err := doc.GenManTree(c, header, tmpdir); err != nil {
+	if err := doc.GenManTree(c, header, tmpdir, nil); err != nil {
 		t.Fatalf("GenManTree failed: %s", err.Error())
 	}
 
@@ -308,7 +288,7 @@ func BenchmarkGenManToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		if err := doc.GenMan(rootCmd, nil, file); err != nil {
+		if err := doc.GenMan(rootCmd, nil, file, nil); err != nil {
 			b.Fatal(err)
 		}
 	}

@@ -5,22 +5,18 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"path/filepath"
 	"text/template"
 )
 
 func ParseFromFile(fsys fs.FS, templateFile string, data any, funcs template.FuncMap) (string, error) {
-	f, err := fsys.Open(templateFile)
+	t, err := template.New("root").Funcs(funcs).ParseFS(fsys, templateFile)
 	if err != nil {
-		return "", fmt.Errorf("template: failed to open template file %q: %w", templateFile, err)
-	}
-
-	templateData, err := io.ReadAll(f)
-	if err != nil {
-		return "", fmt.Errorf("template: failed to read template file %q: %w", templateFile, err)
+		return "", fmt.Errorf("template: failed to parse template file %q: %w", templateFile, err)
 	}
 
 	buf := new(bytes.Buffer)
-	err = Parse(buf, string(templateData), data, funcs)
+	err = t.ExecuteTemplate(buf, filepath.Base(templateFile), data)
 	if err != nil {
 		return "", fmt.Errorf("template: failed to parse template: %w", err)
 	}

@@ -16,7 +16,7 @@ func TestGenAsciidoc(t *testing.T) {
 
 	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
-	if err := doc.GenAsciidoc(echoCmd, buf); err != nil {
+	if err := doc.GenASCIIDoc(echoCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -35,7 +35,7 @@ func TestGenAsciidocWithNoLongOrSynopsis(t *testing.T) {
 	_, _, _, _, _, _, dummyCmd := getTestCmds()
 	// We generate on subcommand so we have both subcommands and parents.
 	buf := new(bytes.Buffer)
-	if err := doc.GenAsciidoc(dummyCmd, buf); err != nil {
+	if err := doc.GenASCIIDoc(dummyCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -54,7 +54,7 @@ func TestGenAsciidocNoHiddenParents(t *testing.T) {
 		f.Hidden = true
 	}
 	buf := new(bytes.Buffer)
-	if err := doc.GenAsciidoc(echoCmd, buf); err != nil {
+	if err := doc.GenASCIIDoc(echoCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -75,7 +75,7 @@ func TestGenAsciidocNoTag(t *testing.T) {
 	rootCmd.DisableAutoGenTag = true
 
 	buf := new(bytes.Buffer)
-	if err := doc.GenAsciidoc(rootCmd, buf); err != nil {
+	if err := doc.GenASCIIDoc(rootCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -88,8 +88,8 @@ func TestGenAsciidocTree(t *testing.T) {
 
 	tmpdir := t.TempDir()
 
-	if err := doc.GenAsciidocTree(c, tmpdir); err != nil {
-		t.Fatalf("GenAsciidocTree failed: %v", err)
+	if err := doc.GenASCIIDocTree(c, tmpdir, nil); err != nil {
+		t.Fatalf("GenASCIIDocTree failed: %v", err)
 	}
 
 	if _, err := os.Stat(filepath.Join(tmpdir, "do.adoc")); err != nil {
@@ -107,7 +107,7 @@ func BenchmarkGenAsciidocToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		if err := doc.GenAsciidoc(rootCmd, file); err != nil {
+		if err := doc.GenASCIIDoc(rootCmd, file, nil); err != nil {
 			b.Fatal(err)
 		}
 	}

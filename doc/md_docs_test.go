@@ -14,7 +14,7 @@ import (
 func TestGenMdDoc(t *testing.T) {
 	rootCmd, echoCmd, echoSubCmd, _, deprecatedCmd, _, _ := getTestCmds()
 	buf := new(bytes.Buffer)
-	if err := doc.GenMarkdown(echoCmd, buf); err != nil {
+	if err := doc.GenMarkdown(echoCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -33,7 +33,7 @@ func TestGenMdDocWithNoLongOrSynopsis(t *testing.T) {
 	_, _, _, _, _, _, dummyCmd := getTestCmds()
 
 	buf := new(bytes.Buffer)
-	if err := doc.GenMarkdown(dummyCmd, buf); err != nil {
+	if err := doc.GenMarkdown(dummyCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -51,7 +51,7 @@ func TestGenMdNoHiddenParents(t *testing.T) {
 		f.Hidden = true
 	}
 	buf := new(bytes.Buffer)
-	if err := doc.GenMarkdown(echoCmd, buf); err != nil {
+	if err := doc.GenMarkdown(echoCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -71,7 +71,7 @@ func TestGenMdNoTag(t *testing.T) {
 	rootCmd.DisableAutoGenTag = true
 
 	buf := new(bytes.Buffer)
-	if err := doc.GenMarkdown(rootCmd, buf); err != nil {
+	if err := doc.GenMarkdown(rootCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -83,7 +83,7 @@ func TestGenMdTree(t *testing.T) {
 	c := &zulu.Command{Use: "do [OPTIONS] arg1 arg2"}
 	tmpdir := t.TempDir()
 
-	if err := doc.GenMarkdownTree(c, tmpdir); err != nil {
+	if err := doc.GenMarkdownTree(c, tmpdir, nil); err != nil {
 		t.Fatalf("GenMarkdownTree failed: %v", err)
 	}
 
@@ -103,7 +103,7 @@ func BenchmarkGenMarkdownToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		if err := doc.GenMarkdown(rootCmd, file); err != nil {
+		if err := doc.GenMarkdown(rootCmd, file, nil); err != nil {
 			b.Fatal(err)
 		}
 	}

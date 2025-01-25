@@ -65,7 +65,12 @@ func getTestCmds() (
 		Short: "Performs a dummy action",
 	}
 
-	rootCmd.PersistentFlags().String("rootflag", "two", "", zflag.OptShorthand('r'))
+	rootCmd.PersistentFlags().String(
+		"rootflag",
+		"two",
+		"",
+		zflag.OptShorthand('r'),
+	)
 	rootCmd.PersistentFlags().String(
 		"strtwo",
 		"two",

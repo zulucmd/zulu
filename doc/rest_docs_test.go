@@ -15,7 +15,7 @@ func TestGenRSTDoc(t *testing.T) {
 	rootCmd, echoCmd, echoSubCmd, _, deprecatedCmd, _, _ := getTestCmds()
 	// We generate on a subcommand so we have both subcommands and parents
 	buf := new(bytes.Buffer)
-	if err := doc.GenReST(echoCmd, buf); err != nil {
+	if err := doc.GenReST(echoCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -37,7 +37,7 @@ func TestGenRSTNoHiddenParents(t *testing.T) {
 		f.Hidden = true
 	}
 	buf := new(bytes.Buffer)
-	if err := doc.GenReST(echoCmd, buf); err != nil {
+	if err := doc.GenReST(echoCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -57,7 +57,7 @@ func TestGenRSTNoTag(t *testing.T) {
 	rootCmd.DisableAutoGenTag = true
 
 	buf := new(bytes.Buffer)
-	if err := doc.GenReST(rootCmd, buf); err != nil {
+	if err := doc.GenReST(rootCmd, buf, nil); err != nil {
 		t.Fatal(err)
 	}
 	output := buf.String()
@@ -71,7 +71,7 @@ func TestGenRSTTree(t *testing.T) {
 
 	tmpdir := t.TempDir()
 
-	if err := doc.GenReSTTree(c, tmpdir); err != nil {
+	if err := doc.GenReSTTree(c, tmpdir, nil); err != nil {
 		t.Fatalf("GenReSTTree failed: %s", err.Error())
 	}
 
@@ -91,7 +91,7 @@ func BenchmarkGenReSTToFile(b *testing.B) {
 
 	b.ResetTimer()
 	for range b.N {
-		if err := doc.GenReST(rootCmd, file); err != nil {
+		if err := doc.GenReST(rootCmd, file, nil); err != nil {
 			b.Fatal(err)
 		}
 	}
