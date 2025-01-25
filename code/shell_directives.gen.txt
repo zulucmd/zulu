@@ -1,0 +1,41 @@
+// ShellCompDirectiveError indicates an error occurred and completions should be ignored.
+ShellCompDirectiveError
+
+// ShellCompDirectiveNoSpace indicates that the shell should not add a space
+// after the completion even if there is a single completion provided.
+ShellCompDirectiveNoSpace
+
+// ShellCompDirectiveNoFileComp indicates that the shell should not provide
+// file completion even when no completion is provided.
+ShellCompDirectiveNoFileComp
+
+// ShellCompDirectiveFilterFileExt indicates that the provided completions
+// should be used as file extension filters.
+// For example, to complete only files of the form *.json or *.yaml:
+//    return []string{"yaml", "json"}, ShellCompDirectiveFilterFileExt
+// The BashCompFilenameExt annotation can also be used to obtain
+// the same behavior for flags. For flags, using FlagOptFilename() is a shortcut
+// to using this directive explicitly.
+ShellCompDirectiveFilterFileExt
+
+// ShellCompDirectiveFilterDirs indicates that only directory names should
+// be provided in file completion.
+// For example:
+//    return nil, ShellCompDirectiveFilterDirs
+// To request directory names within another directory, the returned completions
+// should specify a single directory name within which to search. For example,
+// to complete directories within "themes/":
+//    return []string{"themes"}, ShellCompDirectiveFilterDirs
+// The BashCompSubdirsInDir annotation can be used to
+// obtain the same behavior but only for flags. The function FlagOptDirname
+// zflag option has been provided as a convenience.
+ShellCompDirectiveFilterDirs
+
+// ShellCompDirectiveKeepOrder indicates that the shell should preserve the order
+// in which the completions are provided.
+ShellCompDirectiveKeepOrder
+
+// ShellCompDirectiveDefault indicates to let the shell perform its default
+// behavior after completions have been provided.
+// This one must be last to avoid messing up the iota count.
+ShellCompDirectiveDefault
