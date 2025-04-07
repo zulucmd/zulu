@@ -66,7 +66,7 @@ jobs:
           key: go-${{ hashFiles('**/go.sum') }}
           restore-keys: go-mod
       - name: Run linters
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           version: ${{ steps.versions.outputs.golangci }}
 
