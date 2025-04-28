@@ -5,7 +5,7 @@ go 1.22.0
 toolchain go1.23.4
 
 require (
-	github.com/cpuguy83/go-md2man/v2 v2.0.6
+	github.com/cpuguy83/go-md2man/v2 v2.0.7
 	github.com/inconshreveable/mousetrap v1.1.0
 	github.com/zulucmd/zflag/v2 v2.0.0
 	golang.org/x/tools v0.30.0
