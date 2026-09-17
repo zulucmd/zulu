@@ -14,8 +14,10 @@ func TestValidateFlagGroups(t *testing.T) {
 	testcases := []struct {
 		desc                 string
 		requiredTogether     []string
+		oneRequired          []string
 		mutuallyExclusive    []string
 		subRequiredTogether  []string
+		subOneRequired       []string
 		subMutuallyExclusive []string
 		args                 []string
 		expectErr            string
@@ -49,6 +51,40 @@ func TestValidateFlagGroups(t *testing.T) {
 			desc:              "Mutually exclusive flag group validation passes",
 			mutuallyExclusive: []string{"a b c"},
 			args:              []string{"--b=foo"},
+		},
+		{
+			desc:        "One required flag group validation fails",
+			oneRequired: []string{"a b c"},
+			expectErr:   `at least one of the flags [a b c] must be set`,
+		},
+		{
+			desc:        "One required flag group validation passes when one flag is set",
+			oneRequired: []string{"a b c"},
+			args:        []string{"--b=foo"},
+		},
+		{
+			desc:        "One required flag group validation passes when multiple flags are set",
+			oneRequired: []string{"a b c"},
+			args:        []string{"--a=foo", "--b=bar"},
+		},
+		{
+			desc:              "Exactly one flag required combined with mutually exclusive flag group validation fails when none is set",
+			oneRequired:       []string{"a b"},
+			mutuallyExclusive: []string{"a b"},
+			expectErr:         `at least one of the flags [a b] must be set`,
+		},
+		{
+			desc:              "Exactly one flag required combined with mutually exclusive flag group validation fails when both are set",
+			oneRequired:       []string{"a b"},
+			mutuallyExclusive: []string{"a b"},
+			args:              []string{"--a=foo", "--b=foo"},
+			expectErr:         `exactly one of the flags [a b] can be set, but [a b] were set`,
+		},
+		{
+			desc:              "Exactly one flag required combined with mutually exclusive flag group validation passes when one flag is set",
+			oneRequired:       []string{"a b"},
+			mutuallyExclusive: []string{"a b"},
+			args:              []string{"--a=foo"},
 		},
 		{
 			desc:             "Multiple required together flag groups failed validation returns first error",
@@ -105,9 +141,24 @@ func TestValidateFlagGroups(t *testing.T) {
 			args:                 []string{"subcmd", "--p-a=foo"},
 		},
 		{
+			desc:           "One required flag group validation fails on subcommand with inherited flag",
+			subOneRequired: []string{"p-a sub-a"},
+			args:           []string{"subcmd"},
+			expectErr:      `at least one of the flags [p-a sub-a] must be set`,
+		},
+		{
+			desc:           "One required flag group validation passes on subcommand with inherited flag",
+			subOneRequired: []string{"p-a sub-a"},
+			args:           []string{"subcmd", "--p-a=foo"},
+		},
+		{
 			desc:                "Required together flag group validation is not applied on other command",
 			subRequiredTogether: []string{"p-a sub-a"},
 			args:                []string{"--p-a=foo"},
+		},
+		{
+			desc:           "One required flag group validation is not applied on other command",
+			subOneRequired: []string{"p-a sub-a"},
 		},
 	}
 
@@ -139,11 +190,17 @@ func TestValidateFlagGroups(t *testing.T) {
 			for _, group := range tc.requiredTogether {
 				cmd.MarkFlagsRequiredTogether(strings.Split(group, " ")...)
 			}
+			for _, group := range tc.oneRequired {
+				cmd.MarkFlagsOneRequired(strings.Split(group, " ")...)
+			}
 			for _, group := range tc.mutuallyExclusive {
 				cmd.MarkFlagsMutuallyExclusive(strings.Split(group, " ")...)
 			}
 			for _, group := range tc.subRequiredTogether {
 				subCmd.MarkFlagsRequiredTogether(strings.Split(group, " ")...)
+			}
+			for _, group := range tc.subOneRequired {
+				subCmd.MarkFlagsOneRequired(strings.Split(group, " ")...)
 			}
 			for _, group := range tc.subMutuallyExclusive {
 				subCmd.MarkFlagsMutuallyExclusive(strings.Split(group, " ")...)

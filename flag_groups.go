@@ -14,6 +14,14 @@ func (c *Command) MarkFlagsRequiredTogether(flagNames ...string) {
 	})
 }
 
+// MarkFlagsOneRequired creates a relationship between flags, which ensures
+// that at least one of the flags with names from flagNames is set.
+func (c *Command) MarkFlagsOneRequired(flagNames ...string) {
+	c.addFlagGroup(&oneRequiredFlagGroup{
+		flagNames: flagNames,
+	})
+}
+
 // MarkFlagsMutuallyExclusive creates a relationship between flags, which ensures
 // that if any of flags with names from flagNames is set, other flags must not be set.
 func (c *Command) MarkFlagsMutuallyExclusive(flagNames ...string) {
@@ -94,6 +102,31 @@ func (g *requiredTogetherFlagGroup) ValidateSetFlags(setFlags setFlagsSet) error
 func (g *requiredTogetherFlagGroup) AdjustCommandForCompletions(c *Command) {
 	setFlags := makeSetFlagsSet(c.Flags())
 	if setFlags.hasAnyFrom(g.flagNames) {
+		for _, requiredFlagName := range g.flagNames {
+			f := c.Flags().Lookup(requiredFlagName)
+			_ = zflag.OptRequired()(f)
+		}
+	}
+}
+
+// oneRequiredFlagGroup groups flags, from which at least one must be set.
+type oneRequiredFlagGroup struct {
+	flagNames []string
+}
+
+func (g *oneRequiredFlagGroup) AssignedFlagNames() []string {
+	return g.flagNames
+}
+func (g *oneRequiredFlagGroup) ValidateSetFlags(setFlags setFlagsSet) error {
+	if !setFlags.hasAnyFrom(g.flagNames) {
+		return fmt.Errorf("at least one of the flags %v must be set", g.flagNames)
+	}
+
+	return nil
+}
+func (g *oneRequiredFlagGroup) AdjustCommandForCompletions(c *Command) {
+	setFlags := makeSetFlagsSet(c.Flags())
+	if !setFlags.hasAnyFrom(g.flagNames) {
 		for _, requiredFlagName := range g.flagNames {
 			f := c.Flags().Lookup(requiredFlagName)
 			_ = zflag.OptRequired()(f)
