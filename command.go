@@ -31,7 +31,10 @@ import (
 	"github.com/zulucmd/zulu/v2/internal/util"
 )
 
-const FlagSetByZuluAnnotation = "zulu_annotation_flag_set_by_zulu"
+const (
+	FlagSetByZuluAnnotation      = "zulu_annotation_flag_set_by_zulu"
+	CommandDisplayNameAnnotation = "zulu_annotation_command_display_name"
+)
 
 //go:embed templates/*
 var tmplFS embed.FS
@@ -109,7 +112,7 @@ type Command struct {
 	Deprecated string
 
 	// Annotations are key/value pairs that can be used by applications to identify or
-	// group commands.
+	// group commands or set special options.
 	Annotations map[string]string
 
 	// Version defines the version for this command. If this value is non-empty and the command does not
@@ -615,7 +618,7 @@ func (c *Command) VersionTemplate() string {
 	if c.HasParent() {
 		return c.parent.VersionTemplate()
 	}
-	return `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "version %s" .Version}}
+	return `{{with .DisplayName}}{{printf "%s " .}}{{end}}{{printf "version %s" .Version}}
 `
 }
 
@@ -1263,10 +1266,11 @@ func (c *Command) InitDefaultHelpFlag() {
 	c.mergePersistentFlags()
 	if c.Flags().Lookup("help") == nil {
 		usage := "help for "
-		if c.Name() == "" {
+		name := c.DisplayName()
+		if name == "" {
 			usage += "this command"
 		} else {
-			usage += c.Name()
+			usage += name
 		}
 		c.Flags().Bool(
 			"help",
@@ -1293,7 +1297,7 @@ func (c *Command) InitDefaultVersionFlag() {
 		if c.Name() == "" {
 			usage += "this command"
 		} else {
-			usage += c.Name()
+			usage += c.DisplayName()
 		}
 
 		opts := []zflag.Opt{
@@ -1322,7 +1326,7 @@ func (c *Command) InitDefaultHelpCmd() {
 			Use:   "help [command]",
 			Short: "Help about any command",
 			Long: `Help provides help for any command in the application.
-Simply type ` + c.Name() + ` help [path to command] for full details.`,
+Simply type ` + c.DisplayName() + ` help [path to command] for full details.`,
 			ValidArgsFunction: func(c *Command, args []string, toComplete string) ([]string, ShellCompDirective) {
 				var completions []string
 				cmd, _, e := c.Root().Find(args)
@@ -1478,16 +1482,29 @@ func (c *Command) CommandPath() string {
 	if c.HasParent() {
 		return c.Parent().CommandPath() + " " + c.Name()
 	}
+	return c.DisplayName()
+}
+
+// DisplayName returns the name to display in help text. Returns command Name()
+// if CommandDisplayNameAnnotation is not set.
+func (c *Command) DisplayName() string {
+	if displayName, ok := c.Annotations[CommandDisplayNameAnnotation]; ok {
+		return displayName
+	}
 	return c.Name()
 }
 
 // UseLine puts out the full usage for a given command (including parents).
 func (c *Command) UseLine() string {
 	var useline string
+	use := c.Use
+	if after, found := strings.CutPrefix(use, c.Name()); found && !strings.HasPrefix(use, c.DisplayName()) {
+		use = c.DisplayName() + after
+	}
 	if c.HasParent() {
-		useline = c.parent.CommandPath() + " " + c.Use
+		useline = c.parent.CommandPath() + " " + use
 	} else {
-		useline = c.Use
+		useline = use
 	}
 	if c.DisableFlagsInUseLine {
 		return useline
@@ -1690,7 +1707,7 @@ func (c *Command) GlobalNormalizationFunc() func(f *zflag.FlagSet, name string) 
 // to this command (local and persistent declared here and by all parents).
 func (c *Command) Flags() *zflag.FlagSet {
 	if c.flags == nil {
-		c.flags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
+		c.flags = zflag.NewFlagSet(c.DisplayName(), zflag.ContinueOnError)
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1704,7 +1721,7 @@ func (c *Command) Flags() *zflag.FlagSet {
 func (c *Command) LocalNonPersistentFlags() *zflag.FlagSet {
 	persistentFlags := c.PersistentFlags()
 
-	out := zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
+	out := zflag.NewFlagSet(c.DisplayName(), zflag.ContinueOnError)
 	c.LocalFlags().VisitAll(func(f *zflag.Flag) {
 		if persistentFlags.Lookup(f.Name) == nil {
 			out.AddFlag(f)
@@ -1718,7 +1735,7 @@ func (c *Command) LocalFlags() *zflag.FlagSet {
 	c.mergePersistentFlags()
 
 	if c.lflags == nil {
-		c.lflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
+		c.lflags = zflag.NewFlagSet(c.DisplayName(), zflag.ContinueOnError)
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1746,7 +1763,7 @@ func (c *Command) InheritedFlags() *zflag.FlagSet {
 	c.mergePersistentFlags()
 
 	if c.iflags == nil {
-		c.iflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
+		c.iflags = zflag.NewFlagSet(c.DisplayName(), zflag.ContinueOnError)
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1774,7 +1791,7 @@ func (c *Command) NonInheritedFlags() *zflag.FlagSet {
 // PersistentFlags returns the persistent FlagSet specifically set in the current command.
 func (c *Command) PersistentFlags() *zflag.FlagSet {
 	if c.pflags == nil {
-		c.pflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
+		c.pflags = zflag.NewFlagSet(c.DisplayName(), zflag.ContinueOnError)
 		if c.flagErrorBuf == nil {
 			c.flagErrorBuf = new(bytes.Buffer)
 		}
@@ -1787,9 +1804,9 @@ func (c *Command) PersistentFlags() *zflag.FlagSet {
 func (c *Command) ResetFlags() {
 	c.flagErrorBuf = new(bytes.Buffer)
 	c.flagErrorBuf.Reset()
-	c.flags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
+	c.flags = zflag.NewFlagSet(c.DisplayName(), zflag.ContinueOnError)
 	c.flags.SetOutput(c.flagErrorBuf)
-	c.pflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
+	c.pflags = zflag.NewFlagSet(c.DisplayName(), zflag.ContinueOnError)
 	c.pflags.SetOutput(c.flagErrorBuf)
 
 	c.lflags = nil
@@ -1906,7 +1923,7 @@ func (c *Command) mergePersistentFlags() {
 // If c.parentsPflags == nil, it makes new.
 func (c *Command) updateParentsPflags() {
 	if c.parentsPflags == nil {
-		c.parentsPflags = zflag.NewFlagSet(c.Name(), zflag.ContinueOnError)
+		c.parentsPflags = zflag.NewFlagSet(c.DisplayName(), zflag.ContinueOnError)
 		c.parentsPflags.SetOutput(c.flagErrorBuf)
 		c.parentsPflags.SortFlags = false
 	}

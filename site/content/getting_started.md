@@ -495,3 +495,57 @@ Did you mean this?
 
 Run 'kubectl help' for usage.
 ```
+
+## Creating a plugin
+
+When creating a plugin for tools like *kubectl*, the executable is named
+`kubectl-myplugin`, but it is used as `kubectl myplugin`. To fix help
+messages and completions, annotate the root command with the
+`zulu.CommandDisplayNameAnnotation` annotation.
+
+### Example kubectl plugin
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/zulucmd/zulu/v2"
+)
+
+func main() {
+	rootCmd := &zulu.Command{
+		Use: "kubectl-myplugin",
+		Annotations: map[string]string{
+			zulu.CommandDisplayNameAnnotation: "kubectl myplugin",
+		},
+	}
+	subCmd := &zulu.Command{
+		Use: "subcmd",
+		Run: func(cmd *zulu.Command, args []string) {
+			fmt.Println("kubectl myplugin subcmd")
+		},
+	}
+	rootCmd.AddCommand(subCmd)
+	rootCmd.Execute()
+}
+```
+
+Example run as a kubectl plugin:
+
+```
+$ kubectl myplugin
+Usage:
+  kubectl myplugin [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  subcmd
+
+Flags:
+  -h, --help   help for kubectl myplugin
+
+Use "kubectl myplugin [command] --help" for more information about a command.
+```

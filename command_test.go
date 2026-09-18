@@ -279,6 +279,76 @@ func TestAliasPrefixMatching(t *testing.T) {
 	zulu.EnablePrefixMatching = false
 }
 
+func TestPlugin(t *testing.T) {
+	cmd := &zulu.Command{
+		Use:     "kubectl-plugin",
+		Version: "1.0.0",
+		Args:    zulu.NoArgs,
+		Annotations: map[string]string{
+			zulu.CommandDisplayNameAnnotation: "kubectl plugin",
+		},
+		RunE: noopRun,
+	}
+
+	cmdHelp, err := executeCommand(cmd, "-h")
+	testutil.AssertNilf(t, err, "Unexpected error")
+
+	testutil.AssertContains(t, cmdHelp, "kubectl plugin [flags]")
+	testutil.AssertContains(t, cmdHelp, "help for kubectl plugin")
+	testutil.AssertContains(t, cmdHelp, "version for kubectl plugin")
+}
+
+func TestPluginWithSubCommands(t *testing.T) {
+	rootCmd := &zulu.Command{
+		Use:     "kubectl-plugin",
+		Version: "1.0.0",
+		Args:    zulu.NoArgs,
+		Annotations: map[string]string{
+			zulu.CommandDisplayNameAnnotation: "kubectl plugin",
+		},
+	}
+
+	subCmd := &zulu.Command{Use: "sub [flags]", Args: zulu.NoArgs, RunE: noopRun}
+	rootCmd.AddCommand(subCmd)
+
+	rootHelp, err := executeCommand(rootCmd, "-h")
+	testutil.AssertNilf(t, err, "Unexpected error")
+
+	testutil.AssertContains(t, rootHelp, "kubectl plugin [command]")
+	testutil.AssertContains(t, rootHelp, "help for kubectl plugin")
+	testutil.AssertContains(t, rootHelp, "version for kubectl plugin")
+	testutil.AssertContains(t, rootHelp, "kubectl plugin [command] --help")
+
+	childHelp, err := executeCommand(rootCmd, "sub", "-h")
+	testutil.AssertNilf(t, err, "Unexpected error")
+
+	testutil.AssertContains(t, childHelp, "kubectl plugin sub [flags]")
+	testutil.AssertContains(t, childHelp, "help for sub")
+
+	helpHelp, err := executeCommand(rootCmd, "help", "-h")
+	testutil.AssertNilf(t, err, "Unexpected error")
+
+	testutil.AssertContains(t, helpHelp, "kubectl plugin help [path to command]")
+	testutil.AssertContains(t, helpHelp, "kubectl plugin help [command]")
+}
+
+func TestPluginWithDisplayNameInUse(t *testing.T) {
+	cmd := &zulu.Command{
+		Use:  "kubectl plugin [flags]",
+		Args: zulu.NoArgs,
+		Annotations: map[string]string{
+			zulu.CommandDisplayNameAnnotation: "kubectl plugin",
+		},
+		RunE: noopRun,
+	}
+
+	cmdHelp, err := executeCommand(cmd, "-h")
+	testutil.AssertNilf(t, err, "Unexpected error")
+
+	testutil.AssertContains(t, cmdHelp, "kubectl plugin [flags]")
+	testutil.AssertNotContains(t, cmdHelp, "kubectl plugin plugin")
+}
+
 // TestChildSameName checks the correct behaviour of zulu in cases,
 // when an application with name "foo" and with subcommand "foo"
 // is executed with args "foo foo".
