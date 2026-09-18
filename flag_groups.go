@@ -44,9 +44,9 @@ func (c *Command) addFlagGroup(g flagGroup) {
 	c.flagGroups = append(c.flagGroups, g)
 }
 
-// validateFlagGroups runs validation for each group from command's flagGroups list,
+// ValidateFlagGroups runs validation for each group from command's flagGroups list,
 // and returns the first error encountered, or nil, if there were no validation errors.
-func (c *Command) validateFlagGroups() error {
+func (c *Command) ValidateFlagGroups() error {
 	setFlags := makeSetFlagsSet(c.Flags())
 	for _, group := range c.flagGroups {
 		if err := group.ValidateSetFlags(setFlags); err != nil {

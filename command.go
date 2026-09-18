@@ -1025,10 +1025,10 @@ func (c *Command) execute(a []string) (err error) {
 
 	prependHooks(&hooks, c.preRunHooks, c.PreRunE)
 
-	// Include the validateFlagGroups() logic as a hook
+	// Include the ValidateFlagGroups() logic as a hook
 	// to be executed before running the main Run hooks.
 	hooks = append(hooks, func(cmd *Command, args []string) error {
-		if err := c.validateFlagGroups(); err != nil {
+		if err := c.ValidateFlagGroups(); err != nil {
 			return c.FlagErrorFunc()(c, err)
 		}
 
