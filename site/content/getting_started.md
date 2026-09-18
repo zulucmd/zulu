@@ -454,6 +454,8 @@ An example of two commands which use all of these features is below.
 
 {{% code file="/content/code/example_hooks_test.go" language="go" %}}
 
+By default, all persistent hooks found in the command chain are executed, starting from the command being run and ending with the root command. Set the `PersistentRunHookOrder` global variable to `RunHookOrderNearest` to execute only the nearest persistent hook, or to `RunHookOrderRootFirst` to execute all of them starting from the root command.
+
 ## Suggestions when "unknown command" happens
 
 Zulu will print automatic suggestions when "unknown command" errors happen. This allows Zulu to behave similarly to the `git` command when a typo happens. For example:

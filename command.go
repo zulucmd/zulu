@@ -1000,8 +1000,27 @@ func (c *Command) execute(a []string) (err error) {
 		return c.ValidateArgs(argWoFlags)
 	})
 
+	parents := make([]*Command, 0, 5)
 	for p := c; p != nil; p = p.Parent() {
-		prependHooks(&hooks, p.persistentPreRunHooks, p.PersistentPreRunE)
+		parents = append(parents, p)
+	}
+
+	switch PersistentRunHookOrder {
+	case RunHookOrderRootFirst:
+		for i := len(parents) - 1; i >= 0; i-- {
+			prependHooks(&hooks, parents[i].persistentPreRunHooks, parents[i].PersistentPreRunE)
+		}
+	case RunHookOrderNearest:
+		for _, p := range parents {
+			if p.hasPersistentPreRunHooks() {
+				prependHooks(&hooks, p.persistentPreRunHooks, p.PersistentPreRunE)
+				break
+			}
+		}
+	default:
+		for _, p := range parents {
+			prependHooks(&hooks, p.persistentPreRunHooks, p.PersistentPreRunE)
+		}
 	}
 
 	prependHooks(&hooks, c.preRunHooks, c.PreRunE)
@@ -1021,6 +1040,9 @@ func (c *Command) execute(a []string) (err error) {
 
 	for p := c; p != nil; p = p.Parent() {
 		appendHooks(&hooks, p.PersistentPostRunE, p.persistentPostRunHooks)
+		if PersistentRunHookOrder == RunHookOrderNearest && p.hasPersistentPostRunHooks() {
+			break
+		}
 	}
 
 	// Execute the hooks execution chain:
@@ -1045,6 +1067,14 @@ func appendHooks(hooks *[]HookFuncE, runE HookFuncE, newHooks []HookFuncE) {
 		*hooks = append(*hooks, runE)
 	}
 	*hooks = append(*hooks, newHooks...)
+}
+
+func (c *Command) hasPersistentPreRunHooks() bool {
+	return len(c.persistentPreRunHooks) > 0 || c.PersistentPreRunE != nil
+}
+
+func (c *Command) hasPersistentPostRunHooks() bool {
+	return len(c.persistentPostRunHooks) > 0 || c.PersistentPostRunE != nil
 }
 
 // OnPersistentInitialize registers one or more hooks on the command to be executed

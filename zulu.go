@@ -49,6 +49,28 @@ var EnableCommandSorting = defaultCommandSorting
 // EnableCaseInsensitive allows case-insensitive commands names. (case sensitive by default)
 var EnableCaseInsensitive = defaultCaseInsensitive
 
+// RunHookOrder controls the execution of persistent pre-run and post-run hooks
+// across the command chain.
+type RunHookOrder uint8
+
+const (
+	// RunHookOrderNearest executes only the nearest persistent hook found,
+	// starting at the command being executed.
+	RunHookOrderNearest RunHookOrder = iota
+
+	// RunHookOrderChildFirst executes all persistent hooks, from the command
+	// being executed up to the root command. This is the default.
+	RunHookOrderChildFirst
+
+	// RunHookOrderRootFirst executes all persistent hooks, from the root
+	// command down to the command being executed.
+	RunHookOrderRootFirst
+)
+
+// PersistentRunHookOrder controls the execution of persistent pre-run and
+// post-run hooks across the command chain. It defaults to RunHookOrderChildFirst.
+var PersistentRunHookOrder = RunHookOrderChildFirst
+
 // MousetrapHelpText enables an information splash screen on Windows
 // if the CLI is started from explorer.exe.
 // To disable the mousetrap, just set this variable to blank string ("").

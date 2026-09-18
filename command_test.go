@@ -1440,6 +1440,78 @@ func TestPersistentHooks(t *testing.T) {
 	}
 }
 
+func TestPersistentRunHookOrder(t *testing.T) {
+	tests := []struct {
+		name          string
+		order         zulu.RunHookOrder
+		expectedHooks []string
+	}{
+		{
+			name:  "nearest",
+			order: zulu.RunHookOrderNearest,
+			expectedHooks: []string{
+				"child PersistentPreRun",
+				"child PersistentPostRun",
+			},
+		},
+		{
+			name:  "child first",
+			order: zulu.RunHookOrderChildFirst,
+			expectedHooks: []string{
+				"child PersistentPreRun",
+				"parent PersistentPreRun",
+				"child PersistentPostRun",
+				"parent PersistentPostRun",
+			},
+		},
+		{
+			name:  "root first",
+			order: zulu.RunHookOrderRootFirst,
+			expectedHooks: []string{
+				"parent PersistentPreRun",
+				"child PersistentPreRun",
+				"child PersistentPostRun",
+				"parent PersistentPostRun",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			zulu.PersistentRunHookOrder = tc.order
+
+			var hookRunOrder []string
+			record := func(name string) zulu.HookFuncE {
+				return func(*zulu.Command, []string) error {
+					hookRunOrder = append(hookRunOrder, name)
+					return nil
+				}
+			}
+
+			parentCmd := &zulu.Command{
+				Use:                "parent",
+				PersistentPreRunE:  record("parent PersistentPreRun"),
+				PersistentPostRunE: record("parent PersistentPostRun"),
+			}
+			childCmd := &zulu.Command{
+				Use:                "child",
+				PersistentPreRunE:  record("child PersistentPreRun"),
+				PersistentPostRunE: record("child PersistentPostRun"),
+			}
+			grandchildCmd := &zulu.Command{Use: "grandchild", RunE: noopRun}
+
+			parentCmd.AddCommand(childCmd)
+			childCmd.AddCommand(grandchildCmd)
+
+			_, err := executeCommand(parentCmd, "child", "grandchild")
+			testutil.AssertNilf(t, err, "Unexpected error")
+			testutil.AssertEqualf(t, strings.Join(tc.expectedHooks, " "), strings.Join(hookRunOrder, " "), "Unexpected hook order")
+		})
+	}
+
+	zulu.PersistentRunHookOrder = zulu.RunHookOrderChildFirst
+}
+
 // Related to https://github.com/spf13/cobra/issues/521.
 func TestGlobalNormFuncPropagation(t *testing.T) {
 	normFunc := func(f *zflag.FlagSet, name string) zflag.NormalizedName {
