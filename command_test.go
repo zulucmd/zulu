@@ -847,6 +847,59 @@ func TestShorthandVersionTemplate(t *testing.T) {
 	testutil.AssertContains(t, output, "customized version: 1.0.0")
 }
 
+func TestRootErrPrefixExecutedOnSubcommand(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	rootCmd.SetErrPrefix("root error prefix:")
+	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: noopRun})
+
+	output, err := executeCommand(rootCmd, "sub", "--unknown-flag")
+	testutil.AssertNotNilf(t, err, "Expected error")
+
+	testutil.AssertContains(t, output, "root error prefix: unknown flag: --unknown-flag")
+}
+
+func TestRootAndSubErrPrefix(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	subCmd := &zulu.Command{Use: "sub", RunE: noopRun}
+	rootCmd.AddCommand(subCmd)
+	rootCmd.SetErrPrefix("root error prefix:")
+	subCmd.SetErrPrefix("sub error prefix:")
+
+	output, err := executeCommand(rootCmd, "--unknown-root-flag")
+	testutil.AssertNotNilf(t, err, "Expected error")
+	testutil.AssertContains(t, output, "root error prefix: unknown flag: --unknown-root-flag")
+
+	output, err = executeCommand(rootCmd, "sub", "--unknown-sub-flag")
+	testutil.AssertNotNilf(t, err, "Expected error")
+	testutil.AssertContains(t, output, "sub error prefix: unknown flag: --unknown-sub-flag")
+}
+
+func TestErrPrefixOnUsageTemplateError(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	rootCmd.SetErrPrefix("custom error prefix:")
+
+	var buf bytes.Buffer
+	rootCmd.SetErr(&buf)
+	rootCmd.SetUsageTemplate("{{.Invalid}}")
+
+	err := rootCmd.Usage()
+	testutil.AssertNotNilf(t, err, "Invalid usage template should generate error")
+	testutil.AssertContains(t, buf.String(), "custom error prefix:")
+}
+
+func TestErrPrefixOnHelpTemplateError(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	rootCmd.SetErrPrefix("custom error prefix:")
+
+	var buf bytes.Buffer
+	rootCmd.SetErr(&buf)
+	rootCmd.SetHelpTemplate("{{.Invalid}}")
+
+	_ = rootCmd.Help()
+
+	testutil.AssertContains(t, buf.String(), "custom error prefix:")
+}
+
 func TestVersionFlagExecutedOnSubcommand(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Version: "1.0.0"}
 	rootCmd.AddCommand(&zulu.Command{Use: "sub", RunE: noopRun})

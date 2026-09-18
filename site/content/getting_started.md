@@ -430,6 +430,10 @@ cmd.SetUsageTemplate(s string)
 
 Zulu adds a top-level `--version` flag if the Version field is set on the root command. Running an application with the `--version` flag will print the version to stdout using the version template. The template can be customized using the `cmd.SetVersionTemplate(s string)` function.
 
+## Error Message Prefix
+
+Zulu prints an error message when a command fails or when rendering help or usage text fails. The default prefix is `Error:`. You can change it using the `cmd.SetErrPrefix(s string)` function. Subcommands inherit the prefix from their parent command unless they set their own.
+
 ## PreRun and PostRun Hooks
 
 It is possible to run functions before or after the main `RunE` function of your command. The `PersistentPreRunE` and `PreRunE` functions will be executed before `RunE`. `PersistentPostRunE` and `PostRunE` will be executed after `RunE`. An `InitializeE` will run prior to attempting to parse any flags. A `FinalizeE` runs at the end very regardless at all times, even any of the `*RunE` produce an error. The `Persistent*RunE` functions will be inherited by children.

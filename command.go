@@ -221,6 +221,9 @@ type Command struct {
 	// versionTemplate is the version template defined by user.
 	versionTemplate string
 
+	// errPrefix is the error message prefix defined by user.
+	errPrefix string
+
 	// inReader is a reader defined by the user that replaces stdin
 	inReader io.Reader
 	// outWriter is a writer defined by the user that replaces stdout
@@ -365,6 +368,11 @@ func (c *Command) SetVersionTemplate(s string) {
 	c.versionTemplate = s
 }
 
+// SetErrPrefix sets error message prefix to be used. Application can use it to set custom prefix.
+func (c *Command) SetErrPrefix(s string) {
+	c.errPrefix = s
+}
+
 // SetGlobalNormalizationFunc sets a normalization function to all flag sets and also to child commands.
 // The user should not have a cyclic dependency on commands.
 func (c *Command) SetGlobalNormalizationFunc(n func(f *zflag.FlagSet, name string) zflag.NormalizedName) {
@@ -440,7 +448,7 @@ func (c *Command) UsageFunc() func(*Command) error {
 		c.mergePersistentFlags()
 		err := template.Parse(c.OutOrStderr(), c.UsageTemplate(), c, templateFuncs)
 		if err != nil {
-			c.PrintErrln(err)
+			c.PrintErrln(c.ErrPrefix(), err)
 		}
 		return err
 	}
@@ -468,7 +476,7 @@ func (c *Command) HelpFunc() func(*Command, []string) {
 		// See https://github.com/spf13/cobra/issues/1002
 		err := template.Parse(c.OutOrStdout(), c.HelpTemplate(), c, templateFuncs)
 		if err != nil {
-			c.PrintErrln(err)
+			c.PrintErrln(c.ErrPrefix(), err)
 		}
 	}
 }
@@ -609,6 +617,18 @@ func (c *Command) VersionTemplate() string {
 	}
 	return `{{with .Name}}{{printf "%s " .}}{{end}}{{printf "version %s" .Version}}
 `
+}
+
+// ErrPrefix return error message prefix for the command.
+func (c *Command) ErrPrefix() string {
+	if c.errPrefix != "" {
+		return c.errPrefix
+	}
+
+	if c.HasParent() {
+		return c.parent.ErrPrefix()
+	}
+	return "Error:"
 }
 
 func isBoolFlag(name string, fs *zflag.FlagSet) bool {
@@ -1145,7 +1165,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c = cmd
 		}
 		if !c.SilenceErrors {
-			c.PrintErrln("Error:", err.Error())
+			c.PrintErrln(c.ErrPrefix(), err.Error())
 			c.PrintErrf("%s", cmd.UsageHintString())
 		}
 		return c, err
@@ -1176,7 +1196,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		// If root command has SilenceErrors flagged,
 		// all subcommands should respect it
 		if !cmd.SilenceErrors && !c.SilenceErrors {
-			c.PrintErrln("Error:", err.Error())
+			c.PrintErrln(cmd.ErrPrefix(), err.Error())
 		}
 
 		// If root command has SilenceUsage flagged,
