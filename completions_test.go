@@ -3,7 +3,9 @@ package zulu_test
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/zulucmd/zflag/v2"
@@ -2884,5 +2886,154 @@ func TestShellCompDirective_ListDirectives(t *testing.T) {
 			got := tt.d.ListDirectives()
 			testutil.AssertEqual(t, tt.want, got)
 		})
+	}
+}
+
+func TestGetFlagCompletionFn(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+
+	rootCmd.Flags().String(
+		"rootflag",
+		"",
+		"root flag",
+		zulu.FlagOptCompletionFunc(func(*zulu.Command, []string, string) ([]string, zulu.ShellCompDirective) {
+			return []string{"rootvalue"}, zulu.ShellCompDirectiveKeepOrder
+		}),
+	)
+
+	rootCmd.PersistentFlags().String(
+		"persistentflag",
+		"",
+		"persistent flag",
+		zulu.FlagOptCompletionFunc(func(*zulu.Command, []string, string) ([]string, zulu.ShellCompDirective) {
+			return []string{"persistentvalue"}, zulu.ShellCompDirectiveDefault
+		}),
+	)
+
+	childCmd := &zulu.Command{Use: "child", RunE: noopRun}
+	childCmd.Flags().String(
+		"childflag",
+		"",
+		"child flag",
+		zulu.FlagOptCompletionFunc(func(*zulu.Command, []string, string) ([]string, zulu.ShellCompDirective) {
+			return []string{"childvalue"}, zulu.ShellCompDirectiveNoFileComp | zulu.ShellCompDirectiveNoSpace
+		}),
+	)
+	rootCmd.AddCommand(childCmd)
+
+	tests := []struct {
+		name      string
+		cmd       *zulu.Command
+		flagName  string
+		exists    bool
+		comps     []string
+		directive zulu.ShellCompDirective
+	}{
+		{
+			name:      "get flag completion function for command",
+			cmd:       rootCmd,
+			flagName:  "rootflag",
+			exists:    true,
+			comps:     []string{"rootvalue"},
+			directive: zulu.ShellCompDirectiveKeepOrder,
+		},
+		{
+			name:      "get persistent flag completion function for command",
+			cmd:       rootCmd,
+			flagName:  "persistentflag",
+			exists:    true,
+			comps:     []string{"persistentvalue"},
+			directive: zulu.ShellCompDirectiveDefault,
+		},
+		{
+			name:      "get flag completion function for child command",
+			cmd:       childCmd,
+			flagName:  "childflag",
+			exists:    true,
+			comps:     []string{"childvalue"},
+			directive: zulu.ShellCompDirectiveNoFileComp | zulu.ShellCompDirectiveNoSpace,
+		},
+		{
+			name:      "get persistent flag completion function for child command",
+			cmd:       childCmd,
+			flagName:  "persistentflag",
+			exists:    true,
+			comps:     []string{"persistentvalue"},
+			directive: zulu.ShellCompDirectiveDefault,
+		},
+		{
+			name:     "cannot get flag completion function for local parent flag",
+			cmd:      childCmd,
+			flagName: "rootflag",
+			exists:   false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			completionFn, exists := tc.cmd.GetFlagCompletionFn(tc.flagName)
+			testutil.AssertEqualf(t, tc.exists, exists, "Unexpected result looking for flag completion function")
+
+			if exists {
+				comps, directive := completionFn(tc.cmd, []string{}, "")
+				testutil.AssertEqualf(t, strings.Join(tc.comps, " "), strings.Join(comps, " "), "Unexpected completions %q", comps)
+				testutil.AssertEqualf(t, tc.directive, directive, "Unexpected directive %q", directive)
+			}
+		})
+	}
+}
+
+func TestConcurrentFlagCompletionFnRegistration(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	const maxFlags = 50
+	for i := 1; i < maxFlags; i += 2 {
+		flagName := fmt.Sprintf("flag%d", i)
+		rootCmd.Flags().String(flagName, "", fmt.Sprintf("test %s flag on root", flagName))
+	}
+
+	childCmd := &zulu.Command{Use: "child", RunE: noopRun}
+	for i := 2; i <= maxFlags; i += 2 {
+		flagName := fmt.Sprintf("flag%d", i)
+		childCmd.Flags().String(flagName, "", fmt.Sprintf("test %s flag on child", flagName))
+	}
+	rootCmd.AddCommand(childCmd)
+
+	var wg sync.WaitGroup
+	for i := 1; i <= maxFlags; i++ {
+		index := i
+		flagName := fmt.Sprintf("flag%d", i)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			cmd := rootCmd
+			if index%2 == 0 {
+				cmd = childCmd
+			}
+
+			opt := zulu.FlagOptCompletionFunc(func(*zulu.Command, []string, string) ([]string, zulu.ShellCompDirective) {
+				return []string{fmt.Sprintf("flag%d", index)}, zulu.ShellCompDirectiveDefault
+			})
+			_ = opt(cmd.Flags().Lookup(flagName))
+		}()
+	}
+	wg.Wait()
+
+	for i := 1; i <= 6; i++ {
+		flagName := fmt.Sprintf("flag%d", i)
+		var output string
+		var err error
+		if i%2 == 1 {
+			output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "--"+flagName, "")
+		} else {
+			output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "--"+flagName, "")
+		}
+		testutil.AssertNilf(t, err, "Unexpected error: %v", err)
+
+		expected := strings.Join([]string{
+			flagName,
+			":0",
+			"Completion ended with directive: ShellCompDirectiveDefault", ""}, "\n")
+		testutil.AssertEqual(t, expected, output)
 	}
 }

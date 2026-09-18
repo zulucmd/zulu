@@ -136,6 +136,20 @@ func FixedCompletions(choices []string, directive ShellCompDirective) FlagComple
 	}
 }
 
+// GetFlagCompletionFn returns the completion function for the given flag of the command, if available.
+func (c *Command) GetFlagCompletionFn(flagName string) (FlagCompletionFn, bool) {
+	flag := c.Flag(flagName)
+	if flag == nil {
+		return nil, false
+	}
+
+	flagCompletionMutex.RLock()
+	defer flagCompletionMutex.RUnlock()
+
+	completionFn, exists := flagCompletionFunctions[flag]
+	return completionFn, exists
+}
+
 // ListDirectives returns a string listing the different directive enabled in the specified parameter.
 func (d ShellCompDirective) ListDirectives() string {
 	var directives []string
