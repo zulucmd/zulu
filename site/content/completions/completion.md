@@ -187,21 +187,51 @@ $ kubectl exec [tab][tab]
 
 #### Specify dynamic flag completion
 
-As for nouns, Zulu provides a way of defining dynamic completion of flags.  To provide a Go function that Zulu will execute when it needs the list of completion choices for a flag, you must register the function using the `command.RegisterFlagCompletionFunc()` function.
+As for nouns, Zulu provides a way of defining dynamic completion of flags.  To provide a Go function that Zulu will execute when it needs the list of completion choices for a flag, you must register the function when defining the flag, using `FlagOptCompletionFunc()`.
 
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+cmd.Flags().String(flagName, "", "output format", zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
 	return []string{"json", "table", "yaml"}, zulu.ShellCompDirectiveDefault
-})
+}))
 ```
 
-Notice that calling `RegisterFlagCompletionFunc()` is done through the `command` with which the flag is associated.  In our example this dynamic completion will give results like so:
+Notice that the completion function is registered on the command with which the flag is associated.  In our example this dynamic completion will give results like so:
 
 ```bash
 $ helm status --output [tab][tab]
 json table yaml
 ```
+
+#### Change the default ShellCompDirective
+
+When no completion function is registered for a leaf command or for a flag, Zulu will
+automatically use `ShellCompDirectiveDefault`, which will invoke the shell's filename completion.
+This implies that when file completion does not apply to a leaf command or to a flag (the command
+or flag does not operate on a filename), turning off file completion requires you to register a
+completion function for that command/flag.
+For example:
+
+```go
+cmd.Flags().String("flag-name", "", "flag usage", zulu.FlagOptCompletionFunc(zulu.NoFileCompletions()))
+```
+
+If you find that there are more situations where file completion should be turned off than
+when it is applicable, you can recursively change the default `ShellCompDirective` for a command
+and its subcommands to `ShellCompDirectiveNoFileComp`:
+
+```go
+cmd.CompletionOptions.SetDefaultShellCompDirective(zulu.ShellCompDirectiveNoFileComp)
+```
+
+If doing so, keep in mind that you should instead register a completion function for leaf commands or
+flags where file completion is applicable. For example:
+
+```go
+cmd.Flags().String("flag-name", "", "flag usage", zulu.FlagOptCompletionFunc(zulu.FixedCompletions(nil, zulu.ShellCompDirectiveDefault)))
+```
+
+To change the default directive for the entire program, set the DefaultShellCompDirective on the root command.
 
 #### Debugging
 
@@ -280,7 +310,7 @@ $ helm s[tab]
 search  (search for a keyword in charts)  show  (show information of a chart)  status  (displays the status of the named release)
 ```
 
-Zulu allows you to add descriptions to your own completions.  Simply add the description text after each completion, following a `\t` separator.  This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and `RegisterFlagCompletionFunc()`.  For example:
+Zulu allows you to add descriptions to your own completions.  Simply add the description text after each completion, following a `\t` separator.  This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and flag completion functions registered with `FlagOptCompletionFunc()`.  For example:
 
 ```go
 ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {

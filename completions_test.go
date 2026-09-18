@@ -3037,3 +3037,51 @@ func TestConcurrentFlagCompletionFnRegistration(t *testing.T) {
 		testutil.AssertEqual(t, expected, output)
 	}
 }
+
+func TestCustomDefaultShellCompDirective(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	rootCmd.PersistentFlags().String("string", "", "test string flag")
+	rootCmd.CompletionOptions.SetDefaultShellCompDirective(zulu.ShellCompDirectiveNoFileComp)
+
+	childCmd1 := &zulu.Command{Use: "child1", RunE: noopRun}
+	childCmd2 := &zulu.Command{Use: "child2", RunE: noopRun}
+	childCmd2.CompletionOptions.SetDefaultShellCompDirective(zulu.ShellCompDirectiveDefault)
+
+	rootCmd.AddCommand(childCmd1, childCmd2)
+
+	tests := []struct {
+		name              string
+		args              []string
+		expectedDirective string
+	}{
+		{
+			name:              "flag completion on root command with custom DefaultShellCompDirective",
+			args:              []string{"--string", ""},
+			expectedDirective: "ShellCompDirectiveNoFileComp",
+		},
+		{
+			name:              "flag completion on subcommand with inherited custom DefaultShellCompDirective",
+			args:              []string{"child1", "--string", ""},
+			expectedDirective: "ShellCompDirectiveNoFileComp",
+		},
+		{
+			name:              "flag completion on subcommand with reset DefaultShellCompDirective",
+			args:              []string{"child2", "--string", ""},
+			expectedDirective: "ShellCompDirectiveDefault",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			args := []string{zulu.ShellCompNoDescRequestCmd}
+			args = append(args, tc.args...)
+
+			output, err := executeCommand(rootCmd, args...)
+			testutil.AssertNilf(t, err, "Unexpected error")
+
+			outputWords := strings.Split(strings.TrimSpace(output), " ")
+			directive := outputWords[len(outputWords)-1]
+			testutil.AssertEqualf(t, tc.expectedDirective, directive, "Unexpected directive")
+		})
+	}
+}
