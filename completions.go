@@ -432,7 +432,7 @@ func (c *Command) getCompletions(args []string) (*Command, []string, ShellCompDi
 				// - there are no local, non-persistent flags on the command-line or TraverseChildren is true
 				for _, subCmd := range finalCmd.Commands() {
 					if subCmd.IsAvailableCommand() || subCmd == finalCmd.helpCommand {
-						if strings.HasPrefix(subCmd.Name(), toComplete) {
+						if commandNameHasPrefix(subCmd.Name(), toComplete) {
 							completions = append(completions, fmt.Sprintf("%s\t%s", subCmd.Name(), subCmd.Short))
 						}
 						directive = ShellCompDirectiveNoFileComp
@@ -663,7 +663,7 @@ func (c *Command) InitDefaultCompletionCmd() {
 	}
 
 	for _, cmd := range c.commands {
-		if cmd.Name() == compCmdName || cmd.HasAlias(compCmdName) {
+		if commandNameMatches(cmd.Name(), compCmdName) || cmd.HasAlias(compCmdName) {
 			// A completion command is already available
 			return
 		}

@@ -1054,6 +1054,163 @@ Run 'root --help' for usage.
 	}
 }
 
+func TestCaseInsensitive(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	childCmd := &zulu.Command{Use: "child", RunE: noopRun, Aliases: []string{"alternative"}}
+	grandchildCmd := &zulu.Command{Use: "GRANDCHILD", RunE: noopRun, Aliases: []string{"ALIAS"}}
+
+	childCmd.AddCommand(grandchildCmd)
+	rootCmd.AddCommand(childCmd)
+
+	tests := []struct {
+		args                []string
+		failWithoutEnabling bool
+	}{
+		{
+			args: []string{"child"},
+		},
+		{
+			args:                []string{"CHILD"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"chILD"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHIld"},
+			failWithoutEnabling: true,
+		},
+		{
+			args: []string{"alternative"},
+		},
+		{
+			args:                []string{"ALTERNATIVE"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"ALTernatIVE"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"alternatiVE"},
+			failWithoutEnabling: true,
+		},
+		{
+			args: []string{"child", "GRANDCHILD"},
+		},
+		{
+			args:                []string{"child", "grandchild"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHIld", "GRANdchild"},
+			failWithoutEnabling: true,
+		},
+		{
+			args: []string{"alternative", "ALIAS"},
+		},
+		{
+			args:                []string{"alternative", "alias"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHILD", "alias"},
+			failWithoutEnabling: true,
+		},
+		{
+			args:                []string{"CHIld", "aliAS"},
+			failWithoutEnabling: true,
+		},
+	}
+
+	for _, test := range tests {
+		for _, enableCaseInsensitivity := range []bool{true, false} {
+			zulu.EnableCaseInsensitive = enableCaseInsensitivity
+
+			output, err := executeCommand(rootCmd, test.args...)
+			expectedFailure := test.failWithoutEnabling && !enableCaseInsensitivity
+
+			if !expectedFailure && output != "" {
+				t.Errorf("Unexpected output: %v", output)
+			}
+			if !expectedFailure && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+		}
+	}
+
+	zulu.EnableCaseInsensitive = false
+}
+
+func TestCaseSensitivityBackwardCompatibility(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	childCmd := &zulu.Command{Use: "child", RunE: noopRun}
+
+	rootCmd.AddCommand(childCmd)
+	_, err := executeCommand(rootCmd, strings.ToUpper(childCmd.Use))
+	if err == nil {
+		t.Error("Expected error on calling a command in upper case while command names are case sensitive. Got nil.")
+	}
+}
+
+func TestCaseInsensitivePrefixMatching(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	rootCmd.AddCommand(&zulu.Command{Use: "child", RunE: noopRun})
+
+	zulu.EnablePrefixMatching = true
+
+	_, err := executeCommand(rootCmd, "CHI")
+	testutil.AssertNotNilf(t, err, "Case-sensitive prefix matching should not match CHI")
+
+	zulu.EnableCaseInsensitive = true
+
+	output, err := executeCommand(rootCmd, "CHI")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertEqualf(t, "", output, "Unexpected output")
+
+	zulu.EnablePrefixMatching = false
+	zulu.EnableCaseInsensitive = false
+}
+
+func TestCaseInsensitiveCompletion(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	rootCmd.AddCommand(&zulu.Command{Use: "child", Short: "child command", RunE: noopRun})
+
+	output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "CHI")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertNotContains(t, output, "child")
+
+	zulu.EnableCaseInsensitive = true
+
+	output, err = executeCommand(rootCmd, zulu.ShellCompRequestCmd, "CHI")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "child\tchild command")
+
+	zulu.EnableCaseInsensitive = false
+}
+
+func TestCaseInsensitiveDefaultCompletionCommand(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	rootCmd.AddCommand(&zulu.Command{Use: "child", RunE: noopRun})
+	rootCmd.AddCommand(&zulu.Command{Use: "Completion", RunE: noopRun})
+
+	zulu.EnableCaseInsensitive = true
+
+	_, err := executeCommand(rootCmd, "completion")
+	testutil.AssertNilf(t, err, "Unexpected error")
+
+	completionCmdCount := 0
+	for _, cmd := range rootCmd.Commands() {
+		if strings.EqualFold(cmd.Name(), "completion") {
+			completionCmdCount++
+		}
+	}
+	testutil.AssertEqualf(t, 1, completionCmdCount, "Expected only the user-defined completion command")
+
+	zulu.EnableCaseInsensitive = false
+}
+
 func TestRemoveCommand(t *testing.T) {
 	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
 	childCmd := &zulu.Command{Use: "child", RunE: noopRun}

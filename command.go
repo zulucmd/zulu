@@ -782,7 +782,7 @@ func (c *Command) findSuggestions(arg string) string {
 func (c *Command) findNext(next string) *Command {
 	matches := make([]*Command, 0)
 	for _, cmd := range c.commands {
-		if cmd.Name() == next || cmd.HasAlias(next) {
+		if commandNameMatches(cmd.Name(), next) || cmd.HasAlias(next) {
 			cmd.commandCalledAs.name = next
 			return cmd
 		}
@@ -1524,7 +1524,7 @@ func (c *Command) Name() string {
 // HasAlias determines if a given string is an alias of the command.
 func (c *Command) HasAlias(s string) bool {
 	for _, a := range c.Aliases {
-		if a == s {
+		if commandNameMatches(a, s) {
 			return true
 		}
 	}
@@ -1542,12 +1542,12 @@ func (c *Command) CalledAs() string {
 
 // with prefix.
 func (c *Command) hasNameOrAliasPrefix(prefix string) bool {
-	if strings.HasPrefix(c.Name(), prefix) {
+	if commandNameHasPrefix(c.Name(), prefix) {
 		c.commandCalledAs.name = c.Name()
 		return true
 	}
 	for _, alias := range c.Aliases {
-		if strings.HasPrefix(alias, prefix) {
+		if commandNameHasPrefix(alias, prefix) {
 			c.commandCalledAs.name = alias
 			return true
 		}
@@ -1890,4 +1890,26 @@ func (c *Command) updateParentsPflags() {
 	c.VisitParents(func(parent *Command) {
 		c.parentsPflags.AddFlagSet(parent.PersistentFlags())
 	})
+}
+
+// commandNameMatches checks if two command names are equal
+// taking into account case sensitivity according to
+// EnableCaseInsensitive global configuration.
+func commandNameMatches(s string, t string) bool {
+	if EnableCaseInsensitive {
+		return strings.EqualFold(s, t)
+	}
+
+	return s == t
+}
+
+// commandNameHasPrefix checks if a command name starts with prefix
+// taking into account case sensitivity according to
+// EnableCaseInsensitive global configuration.
+func commandNameHasPrefix(s string, prefix string) bool {
+	if EnableCaseInsensitive {
+		return strings.HasPrefix(strings.ToLower(s), strings.ToLower(prefix))
+	}
+
+	return strings.HasPrefix(s, prefix)
 }
