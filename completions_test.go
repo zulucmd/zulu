@@ -3085,3 +3085,64 @@ func TestCustomDefaultShellCompDirective(t *testing.T) {
 		})
 	}
 }
+
+func TestFixedCompletionsWithCompletionHelpers(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
+	choices := []string{"apple", zulu.Completion("banana"), zulu.CompletionWithDesc("orange", "orange are orange")}
+	childCmd := &zulu.Command{
+		Use:               "child",
+		ValidArgsFunction: zulu.FixedCompletions(choices, zulu.ShellCompDirectiveNoFileComp),
+		RunE:              noopRun,
+	}
+	rootCmd.AddCommand(childCmd)
+
+	t.Run("completion with description", func(t *testing.T) {
+		output, err := executeCommand(rootCmd, zulu.ShellCompRequestCmd, "child", "a")
+		testutil.AssertNilf(t, err, "Unexpected error")
+
+		expected := strings.Join([]string{
+			"apple",
+			"banana",
+			"orange\torange are orange",
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+		}, "\n")
+		testutil.AssertEqual(t, expected, output)
+	})
+
+	t.Run("completion with no description", func(t *testing.T) {
+		output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child", "a")
+		testutil.AssertNilf(t, err, "Unexpected error")
+
+		expected := strings.Join([]string{
+			"apple",
+			"banana",
+			"orange",
+			":4",
+			"Completion ended with directive: ShellCompDirectiveNoFileComp", "",
+		}, "\n")
+		testutil.AssertEqual(t, expected, output)
+	})
+}
+
+func TestFlagCompletionFnCompatibility(t *testing.T) {
+	t.Run("format with []string", func(t *testing.T) {
+		var userComp func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective)
+
+		var _ zulu.FlagCompletionFn = userComp
+
+		_ = zulu.Command{ValidArgsFunction: userComp}
+
+		_ = zulu.FlagOptCompletionFunc(userComp)
+	})
+
+	t.Run("format with []Completion", func(t *testing.T) {
+		var userComp func(cmd *zulu.Command, args []string, toComplete string) ([]zulu.Completion, zulu.ShellCompDirective)
+
+		var _ zulu.FlagCompletionFn = userComp
+
+		_ = zulu.Command{ValidArgsFunction: userComp}
+
+		_ = zulu.FlagOptCompletionFunc(userComp)
+	})
+}

@@ -106,7 +106,7 @@ cmd := &zulu.Command{
 		RunStatus(args[0])
 		return nil
 	},
-	ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+	ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]zulu.Completion, zulu.ShellCompDirective) {
 		if len(args) != 0 {
 			return nil, zulu.ShellCompDirectiveNoFileComp
 		}
@@ -191,8 +191,8 @@ As for nouns, Zulu provides a way of defining dynamic completion of flags.  To p
 
 ```go
 flagName := "output"
-cmd.Flags().String(flagName, "", "output format", zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
-	return []string{"json", "table", "yaml"}, zulu.ShellCompDirectiveDefault
+cmd.Flags().String(flagName, "", "output format", zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]zulu.Completion, zulu.ShellCompDirective) {
+	return []zulu.Completion{"json", "table", "yaml"}, zulu.ShellCompDirectiveDefault
 }))
 ```
 
@@ -250,7 +250,7 @@ Completion ended with directive: ShellCompDirectiveNoFileComp # This is on stder
 
 #### Specify valid filename extensions for flags that take a filename
 
-To limit completions of flag values to file names with certain extensions you can either use the `zulu.FlagOptFilename()` function or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterFileExt`, like so:
+To limit completions of flag values to file names with certain extensions you can either use the `zulu.FlagOptFilename()` function or a combination of `FlagOptCompletionFunc()` and `ShellCompDirectiveFilterFileExt`, like so:
 
 ```go
 flagSet.String("output", "", "output usage", zulu.FlagOptFilename("yaml", "json"))
@@ -260,13 +260,14 @@ or
 
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
-	return []string{"yaml", "json"}, ShellCompDirectiveFilterFileExt})
+flagSet.String(flagName, "", "output usage", zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]zulu.Completion, zulu.ShellCompDirective) {
+	return []zulu.Completion{"yaml", "json"}, zulu.ShellCompDirectiveFilterFileExt
+}))
 ```
 
 #### Limit flag completions to directory names
 
-To limit completions of flag values to directory names you can either use the `zulu.FlagOptDirname()` functions or a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterDirs`, like so:
+To limit completions of flag values to directory names you can either use the `zulu.FlagOptDirname()` functions or a combination of `FlagOptCompletionFunc()` and `ShellCompDirectiveFilterDirs`, like so:
 
 ```go
 flagSet.String("output", "", "output usage", zulu.FlagOptDirname())
@@ -276,18 +277,18 @@ or
 
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+flagSet.String(flagName, "", "output usage", zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]zulu.Completion, zulu.ShellCompDirective) {
 	return nil, zulu.ShellCompDirectiveFilterDirs
-})
+}))
 ```
 
-To limit completions of flag values to directory names *within another directory* you can use a combination of `RegisterFlagCompletionFunc()` and `ShellCompDirectiveFilterDirs` like so:
+To limit completions of flag values to directory names *within another directory* you can use a combination of `FlagOptCompletionFunc()` and `ShellCompDirectiveFilterDirs` like so:
 
 ```go
 flagName := "output"
-cmd.RegisterFlagCompletionFunc(flagName, func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
-	return []string{"themes"}, zulu.ShellCompDirectiveFilterDirs
-})
+flagSet.String(flagName, "", "output usage", zulu.FlagOptCompletionFunc(func(cmd *zulu.Command, args []string, toComplete string) ([]zulu.Completion, zulu.ShellCompDirective) {
+	return []zulu.Completion{"themes"}, zulu.ShellCompDirectiveFilterDirs
+}))
 ```
 
 #### Descriptions for completions
@@ -310,16 +311,22 @@ $ helm s[tab]
 search  (search for a keyword in charts)  show  (show information of a chart)  status  (displays the status of the named release)
 ```
 
-Zulu allows you to add descriptions to your own completions.  Simply add the description text after each completion, following a `\t` separator.  This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and flag completion functions registered with `FlagOptCompletionFunc()`.  For example:
+Zulu allows you to add descriptions to your own completions.  Simply add the description text after each completion, following a `\t` separator. Zulu provides the helper function `CompletionWithDesc(string, string)` to create a completion with a description. This technique applies to completions returned by `ValidArgs`, `ValidArgsFunction` and flag completion functions registered with `FlagOptCompletionFunc()`.  For example:
 
 ```go
-ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
-	return []string{"harbor\tAn image registry", "thanos\tLong-term metrics"}, zulu.ShellCompDirectiveNoFileComp
+ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]zulu.Completion, zulu.ShellCompDirective) {
+	return []zulu.Completion{
+		zulu.CompletionWithDesc("harbor", "An image registry"),
+		zulu.CompletionWithDesc("thanos", "Long-term metrics"),
+	}, zulu.ShellCompDirectiveNoFileComp
 }}
 ```
 
 or
 
 ```go
-ValidArgs: []string{"bash\tCompletions for bash", "zsh\tCompletions for zsh"}
+ValidArgs: []zulu.Completion{
+	zulu.CompletionWithDesc("bash", "Completions for bash"),
+	zulu.CompletionWithDesc("zsh", "Completions for zsh"),
+}
 ```
