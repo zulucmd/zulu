@@ -19,6 +19,10 @@ func TestArgs(t *testing.T) {
 		"No/      | Arb":   {"unknown", zulu.NoArgs, false, []string{"one"}},
 		"No/Valid | Valid": {"unknown", zulu.NoArgs, true, []string{"one"}},
 
+		"NoDup/      | Arb":  {"", zulu.NoDuplicateArgs, false, []string{"one", "two"}},
+		"NoDup/      | Dups": {"dup", zulu.NoDuplicateArgs, false, []string{"one", "one"}},
+		"NoDup/Valid | Dups": {"dup", zulu.NoDuplicateArgs, true, []string{"one", "one"}},
+
 		"Nil/      | Arb":     {"", nil, false, []string{"a", "b"}},
 		"Nil/Valid | Valid":   {"", nil, true, []string{"one", "two"}},
 		"Nil/Valid | Invalid": {"invalid", nil, true, []string{"a"}},
@@ -59,6 +63,7 @@ func TestArgs(t *testing.T) {
 	var errStrings = map[string]string{
 		"invalid":    `invalid argument "a" for "c"`,
 		"unknown":    `unknown command "one" for "c"`,
+		"dup":        `duplicate argument "one" for "c"`,
 		"less":       "requires at least 2 arg(s), only received 1",
 		"more":       "accepts at most 2 arg(s), received 3",
 		"notexact":   "accepts 2 arg(s), received 3",

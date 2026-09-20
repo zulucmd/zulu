@@ -233,6 +233,7 @@ In these cases:
 Validation of positional arguments can be specified using the `Args` field of `Command`. The following validators are built in:
 
 - `NoArgs` - report an error if there are any positional args.
+- `NoDuplicateArgs` - report an error if any positional argument value is provided more than once.
 - `ArbitraryArgs` - accept any number of args.
 - `MinimumNArgs(int)` - report an error if less than N positional args are provided.
 - `MaximumNArgs(int)` - report an error if more than N positional args are provided.
