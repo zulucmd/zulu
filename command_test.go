@@ -1770,6 +1770,9 @@ func TestUsageWithGroup(t *testing.T) {
 		RunE:              noopRun,
 	}
 
+	rootCmd.AddGroup(zulu.Group{Group: "group1", Title: "group1"})
+	rootCmd.AddGroup(zulu.Group{Group: "group2", Title: "group2"})
+
 	rootCmd.AddCommand(&zulu.Command{Use: "cmd1", Group: "group1", RunE: noopRun})
 	rootCmd.AddCommand(&zulu.Command{Use: "cmd2", Group: "group2", RunE: noopRun})
 
@@ -1791,6 +1794,8 @@ func TestUsageHelpGroup(t *testing.T) {
 		RunE:              noopRun,
 	}
 
+	rootCmd.AddGroup(zulu.Group{Group: "group", Title: "group"})
+
 	rootCmd.AddCommand(&zulu.Command{Use: "xxx", Group: "group", RunE: noopRun})
 	rootCmd.SetHelpCommandGroup("group")
 
@@ -1801,6 +1806,46 @@ func TestUsageHelpGroup(t *testing.T) {
 	// now help should be grouped under "group"
 	testutil.AssertNotContains(t, output, "\nAvailable Commands:\n  help")
 	testutil.AssertContains(t, output, "\nAvailable Commands:\n\ngroup\n  help")
+}
+
+func TestUsageCompletionGroup(t *testing.T) {
+	var rootCmd = &zulu.Command{Use: "root", Short: "test", RunE: noopRun}
+
+	rootCmd.AddGroup(zulu.Group{Group: "group", Title: "group"})
+	rootCmd.AddGroup(zulu.Group{Group: "help", Title: "help"})
+
+	rootCmd.AddCommand(&zulu.Command{Use: "xxx", Group: "group", RunE: noopRun})
+	rootCmd.SetHelpCommandGroup("help")
+	rootCmd.SetCompletionCommandGroup("group")
+
+	output, err := executeCommand(rootCmd, "--help")
+	testutil.AssertNilf(t, err, "Unexpected error")
+
+	output = rmCarriageRet(output)
+	// now completion should be grouped under "group"
+	testutil.AssertNotContains(t, output, "\nAvailable Commands:\n  completion")
+	testutil.AssertContains(t, output, "\ngroup\n  completion")
+}
+
+func TestUngroupedCommand(t *testing.T) {
+	var rootCmd = &zulu.Command{Use: "root", Short: "test", RunE: noopRun}
+
+	rootCmd.AddGroup(zulu.Group{Group: "group", Title: "group"})
+	rootCmd.AddGroup(zulu.Group{Group: "help", Title: "help"})
+
+	rootCmd.AddCommand(&zulu.Command{Use: "xxx", Group: "group", RunE: noopRun})
+	rootCmd.SetHelpCommandGroup("help")
+	rootCmd.SetCompletionCommandGroup("group")
+
+	// Add a command without a group
+	rootCmd.AddCommand(&zulu.Command{Use: "yyy", RunE: noopRun})
+
+	output, err := executeCommand(rootCmd, "--help")
+	testutil.AssertNilf(t, err, "Unexpected error")
+
+	output = rmCarriageRet(output)
+	// the ungrouped command should appear in the plain available commands list
+	testutil.AssertContains(t, output, "\nAvailable Commands:\n  yyy")
 }
 
 func TestAddGroup(t *testing.T) {
@@ -1814,6 +1859,76 @@ func TestAddGroup(t *testing.T) {
 
 	output = rmCarriageRet(output)
 	testutil.AssertContains(t, output, "\nTest group\n  cmd")
+}
+
+func TestWrongGroupFirstLevel(t *testing.T) {
+	var rootCmd = &zulu.Command{Use: "root", Short: "test", RunE: noopRun}
+
+	rootCmd.AddGroup(zulu.Group{Group: "group", Title: "Test group"})
+	// Use the wrong group
+	rootCmd.AddCommand(&zulu.Command{Use: "cmd", Group: "wrong", RunE: noopRun})
+
+	defer func() {
+		if recover() == nil {
+			t.Errorf("The code should have panicked due to a missing group")
+		}
+	}()
+	_, err := executeCommand(rootCmd, "--help")
+	testutil.AssertNilf(t, err, "Unexpected error")
+}
+
+func TestWrongGroupNestedLevel(t *testing.T) {
+	var rootCmd = &zulu.Command{Use: "root", Short: "test", RunE: noopRun}
+	var childCmd = &zulu.Command{Use: "child", RunE: noopRun}
+	rootCmd.AddCommand(childCmd)
+
+	childCmd.AddGroup(zulu.Group{Group: "group", Title: "Test group"})
+	// Use the wrong group
+	childCmd.AddCommand(&zulu.Command{Use: "cmd", Group: "wrong", RunE: noopRun})
+
+	defer func() {
+		if recover() == nil {
+			t.Errorf("The code should have panicked due to a missing group")
+		}
+	}()
+	_, err := executeCommand(rootCmd, "child", "--help")
+	testutil.AssertNilf(t, err, "Unexpected error")
+}
+
+func TestWrongGroupForHelp(t *testing.T) {
+	var rootCmd = &zulu.Command{Use: "root", Short: "test", RunE: noopRun}
+	var childCmd = &zulu.Command{Use: "child", RunE: noopRun}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.AddGroup(zulu.Group{Group: "group", Title: "Test group"})
+	// Use the wrong group
+	rootCmd.SetHelpCommandGroup("wrong")
+
+	defer func() {
+		if recover() == nil {
+			t.Errorf("The code should have panicked due to a missing group")
+		}
+	}()
+	_, err := executeCommand(rootCmd, "--help")
+	testutil.AssertNilf(t, err, "Unexpected error")
+}
+
+func TestWrongGroupForCompletion(t *testing.T) {
+	var rootCmd = &zulu.Command{Use: "root", Short: "test", RunE: noopRun}
+	var childCmd = &zulu.Command{Use: "child", RunE: noopRun}
+	rootCmd.AddCommand(childCmd)
+
+	rootCmd.AddGroup(zulu.Group{Group: "group", Title: "Test group"})
+	// Use the wrong group
+	rootCmd.SetCompletionCommandGroup("wrong")
+
+	defer func() {
+		if recover() == nil {
+			t.Errorf("The code should have panicked due to a missing group")
+		}
+	}()
+	_, err := executeCommand(rootCmd, "--help")
+	testutil.AssertNilf(t, err, "Unexpected error")
 }
 
 func TestInOutErr(t *testing.T) {
@@ -2488,6 +2603,10 @@ Use "root child [command] --help" for more information about a command.
 					Short: "short",
 				}
 
+				child.AddGroup(
+					zulu.Group{Group: "group1", Title: "group1"},
+					zulu.Group{Group: "group2", Title: "group2"},
+				)
 				child.AddCommand(sub1)
 				child.AddCommand(sub2)
 				child.AddCommand(sub3)

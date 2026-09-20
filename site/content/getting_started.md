@@ -373,7 +373,7 @@ Help is just a command like any other. There is no special logic or behavior aro
 
 ### Grouping commands in help
 
-Zulu supports grouping of available commands. Groups can either be explicitly defined by `AddGroup` and set by the `Group` element of a subcommand. If Groups are not explicitly defined they are implicitly defined.
+Zulu supports grouping of available commands in the help output. To group commands, each group must be explicitly defined using `AddGroup()` on the parent command. Then a subcommand can be added to a group using the `Group` element of that subcommand. The groups will appear in the help output in the same order as they are defined using different calls to `AddGroup()`. If you use the generated `help` or `completion` commands, you can set their group ids using `SetHelpCommandGroup()` and `SetCompletionCommandGroup()` on the root command, respectively.
 
 ### Defining your own help
 

@@ -220,6 +220,8 @@ type Command struct {
 	helpCommand *Command
 	// helpCommandGroup is the default group the helpCommand is in
 	helpCommandGroup string
+	// completionCommandGroup is the default group the completion command is in
+	completionCommandGroup string
 
 	// versionTemplate is the version template defined by user.
 	versionTemplate string
@@ -359,6 +361,12 @@ func (c *Command) SetHelpCommandGroup(group string) {
 	}
 	// helpCommandGroup is used if no helpCommand is defined by the user
 	c.helpCommandGroup = group
+}
+
+// SetCompletionCommandGroup sets the group of the completion command.
+func (c *Command) SetCompletionCommandGroup(group string) {
+	// completionCommandGroup is used if no completion command is defined by the user
+	c.Root().completionCommandGroup = group
 }
 
 // SetHelpTemplate sets help template to be used. Application can use it to set custom template.
@@ -1176,6 +1184,10 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 	// initialize completion at the last point to allow for user overriding
 	c.InitDefaultCompletionCmd()
 
+	// Now that all commands have been created, let's make sure all groups
+	// are properly created also
+	c.checkCommandGroups()
+
 	args := c.args
 
 	// Workaround FAIL with "go test -v" or "zulu_v2.test -test.v", see #155
@@ -1397,10 +1409,6 @@ func (c *Command) AddCommand(cmds ...*Command) {
 			panic("Command can't be a child of itself")
 		}
 		cmds[i].parent = c
-		// if Group is not defined generate a new one with same title
-		if x.Group != "" && !c.ContainsGroup(x.Group) {
-			c.AddGroup(Group{Group: x.Group, Title: x.Group})
-		}
 		// update max lengths
 		// If global normalization function exists, update all children
 		if c.globNormFunc != nil {
@@ -1429,6 +1437,19 @@ func (c *Command) ContainsGroup(group string) bool {
 // AddGroup adds one or more command groups to this parent command.
 func (c *Command) AddGroup(groups ...Group) {
 	c.commandGroups = append(c.commandGroups, groups...)
+}
+
+// checkCommandGroups checks if a command has been added to a group that does not exist.
+// If so, we panic because it indicates a coding error that should be corrected.
+func (c *Command) checkCommandGroups() {
+	for _, sub := range c.commands {
+		// if Group is not defined let the developer know right away
+		if sub.Group != "" && !c.ContainsGroup(sub.Group) {
+			panic(fmt.Sprintf("group id '%s' is not defined for subcommand '%s'", sub.Group, sub.CommandPath()))
+		}
+
+		sub.checkCommandGroups()
+	}
 }
 
 // RemoveCommand removes one or more commands from a parent command.

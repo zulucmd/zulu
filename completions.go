@@ -717,6 +717,7 @@ func (c *Command) InitDefaultCompletionCmd() {
 		Args:              NoArgs,
 		ValidArgsFunction: NoFileCompletions(),
 		Hidden:            c.CompletionOptions.HiddenDefaultCmd,
+		Group:             c.completionCommandGroup,
 	}
 	c.AddCommand(completionCmd)
 
