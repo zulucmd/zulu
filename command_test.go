@@ -906,6 +906,12 @@ func TestVersionTemplate(t *testing.T) {
 	output, err := executeCommand(rootCmd, "--version", "arg1")
 	testutil.AssertNilf(t, err, "Unexpected error")
 	testutil.AssertContains(t, output, "customized version: 1.0.0")
+
+	// Reset the version template and make sure it falls back to the default
+	rootCmd.SetVersionTemplate("")
+	output, err = executeCommand(rootCmd, "--version", "arg1")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "root version 1.0.0")
 }
 
 func TestShorthandVersionTemplate(t *testing.T) {
@@ -915,6 +921,38 @@ func TestShorthandVersionTemplate(t *testing.T) {
 	output, err := executeCommand(rootCmd, "-v", "arg1")
 	testutil.AssertNilf(t, err, "Unexpected error")
 	testutil.AssertContains(t, output, "customized version: 1.0.0")
+}
+
+func TestUsageTemplateReset(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	rootCmd.SetUsageTemplate("customized usage template")
+
+	output, err := executeCommand(rootCmd, "--invalid")
+	testutil.AssertNotNilf(t, err, "Expected error")
+	testutil.AssertContains(t, output, "customized usage template")
+	testutil.AssertNotContains(t, output, "Usage:")
+
+	// Reset the usage template and make sure it falls back to the default
+	rootCmd.SetUsageTemplate("")
+	output, err = executeCommand(rootCmd, "--invalid")
+	testutil.AssertNotNilf(t, err, "Expected error")
+	testutil.AssertContains(t, output, "Usage:")
+}
+
+func TestHelpTemplateReset(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", RunE: noopRun}
+	rootCmd.SetHelpTemplate("customized help template")
+
+	output, err := executeCommand(rootCmd, "--help")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "customized help template")
+	testutil.AssertNotContains(t, output, "Usage:")
+
+	// Reset the help template and make sure it falls back to the default
+	rootCmd.SetHelpTemplate("")
+	output, err = executeCommand(rootCmd, "--help")
+	testutil.AssertNilf(t, err, "Unexpected error")
+	testutil.AssertContains(t, output, "Usage:")
 }
 
 func TestRootErrPrefixExecutedOnSubcommand(t *testing.T) {

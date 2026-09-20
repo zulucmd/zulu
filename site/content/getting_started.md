@@ -388,6 +388,8 @@ cmd.SetHelpTemplate(s string)
 
 The latter two will also apply to any children commands.
 
+Passing an empty string to `SetHelpTemplate` resets it to the default; the same applies to `SetUsageTemplate` and `SetVersionTemplate`.
+
 ## Usage Message
 
 When the user provides an invalid flag or invalid command, Zulu responds by
