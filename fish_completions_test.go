@@ -110,3 +110,15 @@ func TestFailGenFishCompletionFile(t *testing.T) {
 	testutil.AssertNotNilf(t, got, "should raise permission denied error")
 	testutil.AssertEqual(t, true, errors.Is(got, os.ErrPermission))
 }
+
+func TestFishCompletionScriptArgEscaping(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
+
+	buf := new(bytes.Buffer)
+	testutil.AssertNil(t, rootCmd.GenFishCompletion(buf, false))
+	output := buf.String()
+
+	// Args are escaped and joined so wildcards and leading dashes are not expanded by fish.
+	testutil.AssertContains(t, output, "(string escape -- $args[2..-1])")
+	testutil.AssertNotContains(t, output, "$args[2..-1] $lastArg")
+}

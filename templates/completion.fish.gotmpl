@@ -13,13 +13,13 @@ function __{{ .CMDVarName }}_perform_completion
 
     # Extract all args except the last one
     set -l args (commandline -opc)
-    # Extract the last arg and escape it in case it is a space
+    # Extract the last arg and escape it in case it is a space or wildcard
     set -l lastArg (string escape -- (commandline -ct))
 
     __{{ .CMDVarName }}_debug "args: $args"
     __{{ .CMDVarName }}_debug "last arg: $lastArg"
 
-    set -l requestComp "$args[1] {{ .CompletionCommand }} $args[2..-1] $lastArg"
+    set -l requestComp "$args[1] {{ .CompletionCommand }} $(string join ' ' -- (string escape -- $args[2..-1])) $lastArg"
 
     __{{ .CMDVarName }}_debug "Calling $requestComp"
     set -l results (eval $requestComp 2> /dev/null)
