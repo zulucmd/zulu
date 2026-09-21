@@ -2304,8 +2304,6 @@ func TestCompleteWithDisableFlagParsing(t *testing.T) {
 		[]string{
 			"--persistent",
 			"-p",
-			"--help",
-			"-h",
 			"--nonPersistent",
 			"-n",
 			"--flag",
@@ -3386,4 +3384,53 @@ Completion ended with directive: ShellCompDirectiveNoFileComp
 			}
 		})
 	}
+}
+
+func TestCompleteCobraFlagsWithDisableFlagParsing(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", Args: zulu.NoArgs, RunE: noopRun}
+
+	// child4 has no flags of its own; Zulu must not add --help/-h/--version/-v.
+	childCmd4 := &zulu.Command{
+		Use:     "child4",
+		Version: "1.1.1",
+		RunE:    noopRun,
+		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{"extra4"}, zulu.ShellCompDirectiveNoFileComp
+		},
+		DisableFlagParsing: true,
+	}
+
+	// child5 declares its own help and version flags.
+	childCmd5 := &zulu.Command{
+		Use:     "child5",
+		Version: "1.1.1",
+		RunE:    noopRun,
+		ValidArgsFunction: func(cmd *zulu.Command, args []string, toComplete string) ([]string, zulu.ShellCompDirective) {
+			return []string{"extra5"}, zulu.ShellCompDirectiveNoFileComp
+		},
+		DisableFlagParsing: true,
+	}
+	rootCmd.AddCommand(childCmd4, childCmd5)
+	_ = childCmd5.Flags().Bool("help", false, "My own help", zflag.OptShorthand('h'))
+	_ = childCmd5.Flags().Bool("version", false, "My own version", zflag.OptShorthand('v'))
+
+	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child4", "-")
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
+	expected := strings.Join([]string{
+		"extra4",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	testutil.AssertEqual(t, expected, output)
+
+	output, err = executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "child5", "-")
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
+	expected = strings.Join([]string{
+		"--help",
+		"-h",
+		"--version",
+		"-v",
+		"extra5",
+		":4",
+		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
+	testutil.AssertEqual(t, expected, output)
 }

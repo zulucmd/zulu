@@ -305,9 +305,13 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 
 	// These flags are normally added when `execute()` is called on `finalCmd`,
 	// however, when doing completion, we don't call `finalCmd.execute()`.
-	// Let's add the --help and --version flag ourselves.
-	finalCmd.InitDefaultHelpFlag()
-	finalCmd.InitDefaultVersionFlag()
+	// Let's add the --help and --version flag ourselves but only if the finalCmd
+	// has not disabled flag parsing; if flag parsing is disabled, it is up to the
+	// finalCmd itself to handle the completion of *all* flags.
+	if !finalCmd.DisableFlagParsing {
+		finalCmd.InitDefaultHelpFlag()
+		finalCmd.InitDefaultVersionFlag()
+	}
 	finalCmd.FParseErrAllowList.RequiredFlags = true
 
 	// Check if we are doing flag value completion before parsing the flags.
@@ -416,6 +420,11 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 			finalCmd.InheritedFlags().VisitAll(func(flag *zflag.Flag) {
 				doCompleteFlags(flag)
 			})
+			// Try to complete non-inherited flags even if DisableFlagParsing==true.
+			// This allows programs to tell Zulu about flags for completion even
+			// if the actual parsing of flags is not done by Zulu.
+			// For instance, Helm uses this to provide flag name completion for
+			// some of its plugins.
 			finalCmd.NonInheritedFlags().VisitAll(func(flag *zflag.Flag) {
 				doCompleteFlags(flag)
 			})
