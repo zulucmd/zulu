@@ -8,6 +8,7 @@ import (
 	"github.com/zulucmd/zulu/v2/internal/testutil"
 )
 
+//nolint:gocognit // table-driven test covering combined flag-group scenarios
 func TestValidateFlagGroups(t *testing.T) {
 	t.Parallel()
 
@@ -68,20 +69,23 @@ func TestValidateFlagGroups(t *testing.T) {
 			args:        []string{"--a=foo", "--b=bar"},
 		},
 		{
-			desc:              "Exactly one flag required combined with mutually exclusive flag group validation fails when none is set",
+			desc: "Exactly one flag required combined with mutually exclusive " +
+				"flag group validation fails when none is set",
 			oneRequired:       []string{"a b"},
 			mutuallyExclusive: []string{"a b"},
 			expectErr:         `at least one of the flags [a b] must be set`,
 		},
 		{
-			desc:              "Exactly one flag required combined with mutually exclusive flag group validation fails when both are set",
+			desc: "Exactly one flag required combined with mutually exclusive " +
+				"flag group validation fails when both are set",
 			oneRequired:       []string{"a b"},
 			mutuallyExclusive: []string{"a b"},
 			args:              []string{"--a=foo", "--b=foo"},
 			expectErr:         `exactly one of the flags [a b] can be set, but [a b] were set`,
 		},
 		{
-			desc:              "Exactly one flag required combined with mutually exclusive flag group validation passes when one flag is set",
+			desc: "Exactly one flag required combined with mutually exclusive " +
+				"flag group validation passes when one flag is set",
 			oneRequired:       []string{"a b"},
 			mutuallyExclusive: []string{"a b"},
 			args:              []string{"--a=foo"},

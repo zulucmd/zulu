@@ -299,7 +299,8 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 	}
 	if err != nil {
 		// Unable to find the real command. E.g., <program> someInvalidCmd <TAB>
-		return c, []Completion{}, ShellCompDirectiveDefault, fmt.Errorf("unable to find a command for arguments: %v", trimmedArgs)
+		return c, []Completion{}, ShellCompDirectiveDefault,
+			fmt.Errorf("unable to find a command for arguments: %v", trimmedArgs)
 	}
 	finalCmd.ctx = c.ctx
 

@@ -1613,7 +1613,8 @@ func TestPersistentRunHookOrder(t *testing.T) {
 
 			_, err := executeCommand(parentCmd, "child", "grandchild")
 			testutil.AssertNilf(t, err, "Unexpected error")
-			testutil.AssertEqualf(t, strings.Join(tc.expectedHooks, " "), strings.Join(hookRunOrder, " "), "Unexpected hook order")
+			testutil.AssertEqualf(t,
+				strings.Join(tc.expectedHooks, " "), strings.Join(hookRunOrder, " "), "Unexpected hook order")
 		})
 	}
 

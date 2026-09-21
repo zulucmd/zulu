@@ -1028,7 +1028,7 @@ func (c *Command) execute(a []string) (err error) {
 				break
 			}
 		}
-	default:
+	case RunHookOrderChildFirst:
 		for _, p := range parents {
 			prependHooks(&hooks, p.persistentPreRunHooks, p.PersistentPreRunE)
 		}

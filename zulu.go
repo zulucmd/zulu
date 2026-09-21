@@ -46,7 +46,7 @@ var EnablePrefixMatching = defaultPrefixMatching
 // To disable sorting, set it to false.
 var EnableCommandSorting = defaultCommandSorting
 
-// EnableCaseInsensitive allows case-insensitive commands names. (case sensitive by default)
+// EnableCaseInsensitive allows case-insensitive commands names (case sensitive by default).
 var EnableCaseInsensitive = defaultCaseInsensitive
 
 // RunHookOrder controls the execution of persistent pre-run and post-run hooks
