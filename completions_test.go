@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -3276,4 +3277,49 @@ func TestInitDefaultCompletionCmd(t *testing.T) {
 			)
 		})
 	}
+}
+
+func TestCompletionDoesNotMutateOsArgs(t *testing.T) {
+	// Test for https://github.com/spf13/cobra/issues/2257
+	// Verify that os.Args is not corrupted when shell completion runs
+	// with TraverseChildren enabled.
+	//
+	// The bug: getCompletions() calls append(finalArgs, "--") where
+	// finalArgs is a sub-slice of the original args (from os.Args[1:]).
+	// If there's spare capacity, append writes "--" into the shared
+	// backing array, mutating os.Args in place.
+
+	// Save and restore os.Args since we need to override it.
+	origArgs := os.Args
+	defer func() { os.Args = origArgs }()
+
+	// Set os.Args to simulate: root __completeNoDesc x
+	// We do NOT use SetArgs so the code falls through to os.Args[1:].
+	// The program name must not end with ".test" to bypass the guard in
+	// ExecuteC() that ignores os.Args when running tests.
+	os.Args = []string{"root", zulu.ShellCompNoDescRequestCmd, "x"}
+
+	rootCmd := &zulu.Command{
+		Use:              "root",
+		TraverseChildren: true,
+		ValidArgsFunction: func(_ *zulu.Command, _ []string, _ string) ([]string, zulu.ShellCompDirective) {
+			return []string{"mycompletion"}, zulu.ShellCompDirectiveDefault
+		},
+		RunE: noopRun,
+	}
+
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetErr(buf)
+
+	_, err := rootCmd.ExecuteC()
+	testutil.AssertNilf(t, err, "Unexpected error")
+
+	// Without the fix, os.Args[2] would be changed from "x" to "--"
+	// because append(finalArgs, "--") in getCompletions wrote into
+	// the shared backing array of os.Args.
+	testutil.AssertEqualf(t, 3, len(os.Args), "os.Args length changed")
+	testutil.AssertEqualf(t, "root", os.Args[0], "os.Args[0] was mutated")
+	testutil.AssertEqualf(t, zulu.ShellCompNoDescRequestCmd, os.Args[1], "os.Args[1] was mutated")
+	testutil.AssertEqualf(t, "x", os.Args[2], "os.Args[2] was mutated")
 }
