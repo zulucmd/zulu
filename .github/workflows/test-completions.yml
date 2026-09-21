@@ -10,7 +10,6 @@ env:
 
 jobs:
   Test-Docker:
-    needs: DetermineVersion
     runs-on: ubuntu-latest
     name: Docker Tests
     steps:

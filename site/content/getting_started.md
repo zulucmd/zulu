@@ -537,7 +537,7 @@ func main() {
 
 Example run as a kubectl plugin:
 
-```
+```shell
 $ kubectl myplugin
 Usage:
   kubectl myplugin [command]

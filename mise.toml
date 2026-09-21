@@ -1,0 +1,21 @@
+[tools]
+go = "1.23"
+"github:j178/prek" = "latest"
+"github:golangci/golangci-lint" = "1.63.3"
+"github:kyoh86/richgo" = "latest"
+
+[tasks.setup]
+description = "Install the prek git hooks"
+run = "prek install"
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run"
+
+[tasks.test]
+description = "Run the Go test suite"
+run = "go test ./..."
+
+[tasks.check]
+description = "Run every prek hook against all files"
+run = "prek run --all-files"

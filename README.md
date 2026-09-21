@@ -9,6 +9,17 @@ Zulu is a library for creating powerful modern CLI applications. It is forked fr
 
 See the [documentation](https://zulucmd.github.io/zulu) site for more info.
 
+# Development
+
+Tooling is managed with [mise](https://mise.jdx.dev). Run `mise install`, then:
+
+- `mise run setup` — install the git hooks (prek)
+- `mise run lint` — run golangci-lint
+- `mise run test` — run the test suite
+- `mise run check` — run every prek hook against all files
+
+Git hooks are run by [prek](https://github.com/j178/prek).
+
 # License
 
 Zulu is released under the Apache 2.0 license. See [LICENSE.txt](LICENSE.txt)

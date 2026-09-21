@@ -41,21 +41,26 @@ jobs:
           restore-keys: go-mod
       - name: Setup mdtoc
         run: go install sigs.k8s.io/mdtoc@latest
-      - uses: pre-commit/action@v3.0.0
+      - uses: j178/prek-action@v3.0.0
         env:
-          SKIP: golangci-lint,go-build,go-unit-tests
+          PREK_SKIP: golangci-lint,go-build,go-unit-tests
 
   GolangCI-Lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: jdx/mise-action@v3
+        with:
+          install: false
+        env:
+          MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
       - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
       - id: versions
         run: |
-          golangci="$(yq '.repos[] | select(.repo | contains("golangci-lint")) | .rev' .pre-commit-config.yaml)"
-          echo "golangci=$golangci" >> "$GITHUB_OUTPUT"
+          golangci="$(mise ls 'github:golangci/golangci-lint' --current --json | jq -r '.[0].version')"
+          echo "golangci=v${golangci}" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v6
         with:
           path: |
