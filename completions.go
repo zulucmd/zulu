@@ -686,10 +686,11 @@ func checkIfFlagCompletion(finalCmd *Command, args []string, lastArg string) (*z
 // InitDefaultCompletionCmd adds a default 'completion' command to c.
 // This function will do nothing if any of the following is true:
 // 1- the feature has been explicitly disabled by the program,
-// 2- c has no subcommands (to avoid creating one),
-// 3- c already has a 'completion' command provided by the program.
-func (c *Command) InitDefaultCompletionCmd() {
-	if c.CompletionOptions.DisableDefaultCmd || !c.HasSubCommands() {
+// 2- c already has a 'completion' command provided by the program.
+// If c has no other subcommands, the default command is only added when it is
+// itself being invoked or completed.
+func (c *Command) InitDefaultCompletionCmd(args ...string) {
+	if c.CompletionOptions.DisableDefaultCmd {
 		return
 	}
 
@@ -710,6 +711,16 @@ func (c *Command) InitDefaultCompletionCmd() {
 		panic(err)
 	}
 
+	// Special case to know if there are sub-commands or not
+	hasSubCommands := false
+	for _, cmd := range c.commands {
+		if cmd.Name() != ShellCompRequestCmd && cmd.Name() != "help" {
+			// We found a real sub-command (not 'help' or '__complete')
+			hasSubCommands = true
+			break
+		}
+	}
+
 	completionCmd := &Command{
 		Use:               compCmdName,
 		Short:             "Generate the autocompletion script for the specified shell",
@@ -720,6 +731,22 @@ func (c *Command) InitDefaultCompletionCmd() {
 		Group:             c.completionCommandGroup,
 	}
 	c.AddCommand(completionCmd)
+
+	if !hasSubCommands {
+		// If the 'completion' command will be the only sub-command,
+		// we only create it if it is actually being called.
+		// This avoids breaking programs that would suddenly find themselves with
+		// a subcommand, which would prevent them from accepting arguments.
+		// We also create the 'completion' command if the user is triggering
+		// shell completion for it (prog __complete completion '')
+		subCmd, cmdArgs, err := c.Find(args)
+		if err != nil || !commandNameMatches(subCmd.Name(), compCmdName) &&
+			!(subCmd.Name() == ShellCompRequestCmd && len(cmdArgs) > 1 && cmdArgs[0] == compCmdName) {
+			// The completion command is not being called or being completed so we remove it.
+			c.RemoveCommand(completionCmd)
+			return
+		}
+	}
 
 	out := c.OutOrStdout()
 	includeDescriptions := !c.CompletionOptions.DisableDescriptions

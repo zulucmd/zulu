@@ -13,7 +13,8 @@ The currently supported shells are:
 - PowerShell
 
 Zulu will automatically provide your program with a fully functional `completion` sub-command,
-similarly to how it provides the `help` command.
+similarly to how it provides the `help` command. If there are no other sub-commands, the
+default `completion` sub-command will be hidden, but still functional.
 
 Zulu's completion scripts provide the following features:
 
