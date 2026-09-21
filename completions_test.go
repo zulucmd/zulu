@@ -579,6 +579,8 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	sliceFlag := rootCmd.Flags().Lookup("slice")
 	rootCmd.Flags().BoolSlice("bslice", nil, "bool slice flag", zflag.OptShorthand('b'))
 	bsliceFlag := rootCmd.Flags().Lookup("bslice")
+	rootCmd.Flags().StringToString("map", nil, "map flag")
+	mapFlag := rootCmd.Flags().Lookup("map")
 
 	// Test that flag names are not repeated unless they are an array or slice
 	output, err := executeCommand(rootCmd, zulu.ShellCompNoDescRequestCmd, "--first", "1", "--")
@@ -589,6 +591,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	expected := strings.Join([]string{
 		"--bslice",
 		"--help",
+		"--map",
 		"--second",
 		"--slice",
 		":4",
@@ -606,6 +609,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	expected = strings.Join([]string{
 		"--bslice",
 		"--help",
+		"--map",
 		"--slice",
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
@@ -621,18 +625,22 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		"--slice=2",
 		"--bslice",
 		"true",
+		"--map",
+		"k=v",
 		"--",
 	)
 	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	sliceFlag.Changed = false
 	bsliceFlag.Changed = false
+	mapFlag.Changed = false
 
 	expected = strings.Join(
 		[]string{
 			"--bslice",
 			"--first",
 			"--help",
+			"--map",
 			"--second",
 			"--slice",
 			":4",
@@ -649,6 +657,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
 	// Reset the flag for the next command
 	sliceFlag.Changed = false
+	mapFlag.Changed = false
 
 	expected = strings.Join([]string{
 		"--bslice",
@@ -657,6 +666,7 @@ func TestFlagNameCompletionRepeat(t *testing.T) {
 		"-f",
 		"--help",
 		"-h",
+		"--map",
 		"--second",
 		"-s",
 		"--slice",

@@ -407,8 +407,13 @@ func (c *Command) getCompletions(args []string) (*Command, []Completion, ShellCo
 		// If we have not found any required flags, only then can we show regular flags
 		if len(completions) == 0 {
 			doCompleteFlags := func(flag *zflag.Flag) {
-				if _, isSlice := flag.Value.(zflag.SliceValue); !flag.Changed || isSlice {
-					// If the flag is not already present, or if it can be specified multiple times (Array or Slice)
+				_, acceptsMultiple := flag.Value.(zflag.SliceValue)
+				if !acceptsMultiple {
+					_, acceptsMultiple = flag.Value.(zflag.MapValue)
+				}
+
+				if !flag.Changed || acceptsMultiple {
+					// If the flag is not already present, or if it can be specified multiple times (slice or map)
 					// we suggest it as a completion
 					completions = append(completions, getFlagNameCompletions(flag, toComplete)...)
 				}
