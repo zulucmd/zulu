@@ -7,7 +7,7 @@ echo "autoload -U compinit; compinit" >> ~/.zshrc
 
 To load completions in your current shell session:
 
-source <({{ .CMDName }} completion zsh); compdef _{{ .CMDName }} {{ .CMDName }}
+source <({{ .CMDName }} completion zsh)
 
 To load completions for every new session, execute once:
 
