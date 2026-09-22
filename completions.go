@@ -80,7 +80,7 @@ const (
 	//    return []string{"themes"}, ShellCompDirectiveFilterDirs
 	// The BashCompSubdirsInDir annotation can be used to
 	// obtain the same behavior but only for flags. The function FlagOptDirname
-	// zflag option has been provided as a convenience.
+	// has been provided as a convenience.
 	ShellCompDirectiveFilterDirs
 
 	// ShellCompDirectiveKeepOrder indicates that the shell should preserve the order
