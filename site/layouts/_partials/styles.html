@@ -1,0 +1,25 @@
+{{/*
+  Overrides the docuapi theme's styles.html to drop the css.PostCSS step.
+  That step only runs autoprefixer for browsers the site does not target
+  (IE8, Android 2.3), and it needs a Node toolchain that mise does not
+  provide. Everything else matches the theme's partial.
+*/}}
+{{ $isDev := ne hugo.Environment "production" }}
+{{ $cssOpts := (dict "targetPath" "styles/screen.css" "enableSourceMap" $isDev ) }}
+{{ $screenCSS := resources.Get "scss/slate/screen.css.scss" | css.Sass $cssOpts }}
+{{ $cssOpts = (dict "targetPath" "styles/print.css" "enableSourceMap" $isDev ) }}
+{{ $printCSS := resources.Get "scss/slate/print.css.scss" | css.Sass $cssOpts }}
+{{ if not $isDev }}
+  {{ $printCSS = $printCSS | minify | fingerprint }}
+  {{ $screenCSS = $screenCSS | minify | fingerprint }}
+{{ end }}
+<link
+  href="{{ $screenCSS.RelPermalink }}"
+  rel="stylesheet"
+  media="screen"
+  {{ if not $isDev }}integrity="{{ $screenCSS.Data.Integrity }}"{{ end }} />
+<link
+  href="{{ $printCSS.RelPermalink }}"
+  rel="stylesheet"
+  media="print"
+  {{ if not $isDev }}integrity="{{ $printCSS.Data.Integrity }}"{{ end }} />

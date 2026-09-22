@@ -2,11 +2,47 @@
 package doc_test
 
 import (
+	"io/fs"
+	"path/filepath"
+	"strings"
+	"testing"
+
 	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu/v2"
 )
 
 func emptyRun(*zulu.Command, []string) error { return nil }
+
+// assertGeneratedUnder fails if generation wrote no file, or wrote any file
+// outside dir. root must be an ancestor of dir.
+func assertGeneratedUnder(t *testing.T, root, dir string) {
+	t.Helper()
+	var inside int
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		rel, err := filepath.Rel(dir, path)
+		if err != nil {
+			return err
+		}
+		if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			t.Errorf("generated file %s escaped target directory %s", path, dir)
+			return nil
+		}
+		inside++
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if inside == 0 {
+		t.Fatalf("expected at least one generated file inside %s", dir)
+	}
+}
 
 func getTestCmds() (
 	*zulu.Command,
