@@ -16,3 +16,9 @@ var ShellCompDirectiveMaxValue = shellCompDirectiveMaxValue
 func (c *Command) InitCompleteCmd(args []string) {
 	c.initCompleteCmd(args)
 }
+
+// ResetCompLogger clears the package-level completion logger so tests can
+// exercise CompLogger with a fresh BASH_COMP_DEBUG_FILE.
+func ResetCompLogger() {
+	logger = nil
+}
