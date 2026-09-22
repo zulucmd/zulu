@@ -1,6 +1,5 @@
 FROM quay.io/rockylinux/rockylinux:9
 
-# fish is not in the base Rocky repositories; EPEL 9 provides fish 3.7.1.
 RUN dnf install -y epel-release && \
   dnf install -y fish which
 
