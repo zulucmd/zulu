@@ -1,4 +1,3 @@
-theme = "docuapi"
 languageCode = "en-gb"
 baseurl = "https://zulucmd.github.io/zulu/"
 title = "Zulu"
