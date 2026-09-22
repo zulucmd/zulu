@@ -870,7 +870,6 @@ func findFlag(cmd *Command, name string) *zflag.Flag {
 // to true. The logs can be optionally output to a file by setting `BASH_COMP_DEBUG_FILE` to
 // a file location.
 func CompLogger() *log.Logger {
-	//nolint:nestif // todo refactor later
 	if logger == nil {
 		var f io.Writer
 		debugFile := os.Getenv("BASH_COMP_DEBUG_FILE")
@@ -883,9 +882,8 @@ func CompLogger() *log.Logger {
 				log.Println(err)
 			}
 
-			if fc, ok := f.(io.WriteCloser); ok {
-				defer fc.Close()
-			}
+			// The file is intentionally left open: the logger is a process-lifetime
+			// singleton, so the handle must outlive this function.
 		}
 		logger = log.New(f, "completion: ", log.Flags())
 	}
