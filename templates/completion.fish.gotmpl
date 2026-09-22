@@ -214,21 +214,21 @@ end
 # so we can properly delete any completions provided by another script.
 # Only do this if the program can be found, or else fish may print some errors; besides,
 # the existing completions will only be loaded if the program can be found.
-if type -q "{{ .CMDName }}"
+if type -q "{{ fishDoubleQuote .CMDName }}"
     # The space after the program name is essential to trigger completion for the program
     # and not completion of the program name itself.
     # Also, we use '> /dev/null 2>&1' since '&>' is not supported in older versions of fish.
-    complete --do-complete "{{ .CMDName }} " > /dev/null 2>&1
+    complete --do-complete "{{ fishDoubleQuote .CMDName }} " > /dev/null 2>&1
 end
 
 # Remove any pre-existing completions for the program since we will be handling all of them.
-complete -c {{ .CMDName }} -e
+complete -c {{ fishQuote .CMDName }} -e
 
 # this will get called after the two calls below and clear the $__{{ .CMDVarName }}_perform_completion_once_result global
-complete -c {{ .CMDName }} -n '__{{ .CMDVarName }}_clear_perform_completion_once_result'
+complete -c {{ fishQuote .CMDName }} -n '__{{ .CMDVarName }}_clear_perform_completion_once_result'
 # The call to __{{ .CMDVarName }}_prepare_completions will setup __{{ .CMDVarName }}_comp_results
 # which provides the program's completion choices.
 # If this doesn't require order preservation, we don't use the -k flag
-complete -c {{ .CMDName }} -n 'not __{{ .CMDVarName }}_requires_order_preservation && __{{ .CMDVarName }}_prepare_completions' -f -a '$__{{ .CMDVarName }}_comp_results'
+complete -c {{ fishQuote .CMDName }} -n 'not __{{ .CMDVarName }}_requires_order_preservation && __{{ .CMDVarName }}_prepare_completions' -f -a '$__{{ .CMDVarName }}_comp_results'
 # otherwise we use the -k flag
-complete -k -c {{ .CMDName }} -n '__{{ .CMDVarName }}_requires_order_preservation && __{{ .CMDVarName }}_prepare_completions' -f -a '$__{{ .CMDVarName }}_comp_results'
+complete -k -c {{ fishQuote .CMDName }} -n '__{{ .CMDVarName }}_requires_order_preservation && __{{ .CMDVarName }}_prepare_completions' -f -a '$__{{ .CMDVarName }}_comp_results'

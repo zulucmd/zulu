@@ -29,6 +29,10 @@ var templateFuncs = template.FuncMap{
 	"trimRightSpace":          trimRightSpace,
 	"trimTrailingWhitespaces": trimRightSpace,
 	"rpad":                    rpad,
+	"bashQuote":               quoteBash,
+	"zshQuote":                quoteZsh,
+	"fishQuote":               quoteFish,
+	"fishDoubleQuote":         quoteFishDouble,
 }
 
 const (
