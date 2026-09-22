@@ -92,6 +92,21 @@ func TestGenMdTree(t *testing.T) {
 	}
 }
 
+func TestGenMdTreeEscapingName(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "out")
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	c := &zulu.Command{Use: "../escape"}
+	if err := doc.GenMarkdownTree(c, dir); err != nil {
+		t.Fatalf("GenMarkdownTree failed: %v", err)
+	}
+
+	assertGeneratedUnder(t, root, dir)
+}
+
 func BenchmarkGenMarkdownToFile(b *testing.B) {
 	rootCmd, _, _, _, _, _, _ := getTestCmds()
 	file, err := os.CreateTemp(b.TempDir(), "")

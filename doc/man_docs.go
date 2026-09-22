@@ -67,7 +67,7 @@ func GenManTreeFromOpts(cmd *zulu.Command, opts GenManTreeOptions) error {
 	if opts.CommandSeparator != "" {
 		separator = opts.CommandSeparator
 	}
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", separator)
+	basename := safeBasename(strings.ReplaceAll(cmd.CommandPath(), " ", separator))
 	filename := filepath.Join(opts.Path, basename+"."+section)
 	f, err := os.Create(filename)
 	if err != nil {

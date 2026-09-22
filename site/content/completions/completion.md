@@ -44,7 +44,7 @@ For example, if you want `kubectl get [tab][tab]` to show a list of valid "nouns
 Some simplified code from `kubectl get` looks like:
 
 ```go
-validArgs []string = { "pod", "node", "service", "replicationcontroller" }
+validArgs []zulu.Completion = { "pod", "node", "service", "replicationcontroller" }
 
 cmd := &zulu.Command{
 	Use:     "get [(-o|--output=)json|yaml|template|...] (RESOURCE [NAME] | RESOURCE/NAME ...)",
@@ -152,31 +152,28 @@ thanos
 Completion ended with directive: ShellCompDirectiveNoFileComp # This is on stderr
 ```
 
-Calling the `__complete` command directly allows you to run the Go debugger to troubleshoot your code.  You can also add printouts to your code; Zulu provides the following functions to use for printouts in Go completion code:
+Calling the `__complete` command directly allows you to run the Go debugger to troubleshoot your code.  You can also add printouts to your code; Zulu provides the following function to use for printouts in Go completion code:
 
 ```go
-// Prints to the completion script debug file (if BASH_COMP_DEBUG_FILE
-// is set to a file path) and optionally prints to stderr.
-zulu.CompDebug(msg string, printToStdErr bool) {
-zulu.CompDebugln(msg string, printToStdErr bool)
-
-// Prints to the completion script debug file (if BASH_COMP_DEBUG_FILE
-// is set to a file path) and to stderr.
-zulu.CompError(msg string)
-zulu.CompErrorln(msg string)
+// CompLogger gets or creates a logger that prints to stderr or the
+// completion log file. Such logs are only printed when the user has set
+// the environment variable `BASH_COMP_DEBUG` to true. The logs can be
+// optionally output to a file by setting `BASH_COMP_DEBUG_FILE` to a file
+// location.
+zulu.CompLogger() *log.Logger
 ```
 
-***Important:*** You should **not** leave traces that print directly to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the zulu-provided debugging traces functions mentioned above.
+***Important:*** You should **not** leave traces that print directly to stdout in your completion code as they will be interpreted as completion choices by the completion script.  Instead, use the zulu-provided debugging logger mentioned above.
 
 ### Completions for flags
 
 #### Mark flags as required
 
-Most of the time completions will only show sub-commands. But if a flag is required to make a sub-command work, you probably want it to show up when the user types [tab][tab].  You can mark a flag as 'Required' using the `zulu.FlagOptRequired()` option.
+Most of the time completions will only show sub-commands. But if a flag is required to make a sub-command work, you probably want it to show up when the user types [tab][tab].  You can mark a flag as 'Required' using the `zflag.OptRequired()` option.
 
 ```go
-flagSet.String("pod", "", "pod usage", zulu.FlagOptRequired())
-flagSet.String("container", "", "container usage", zulu.FlagOptRequired())
+flagSet.String("pod", "", "pod usage", zflag.OptRequired())
+flagSet.String("container", "", "container usage", zflag.OptRequired())
 ```
 
 and you'll get something like

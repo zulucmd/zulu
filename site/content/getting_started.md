@@ -102,7 +102,7 @@ to quickly create a Zulu application.`,
 	}
 )
 
-func main() error {
+func main() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -161,7 +161,7 @@ There are two different approaches to assign a flag.
 A flag can be 'persistent', meaning that this flag will be available to the command it's assigned to as well as every command under that command. For global flags, assign a flag as a persistent flag on the root.
 
 ```go
-rootCmd.PersistentFlags().BoolVar(&Verbose, "verbose" false, "verbose output", zflag.OptShorthand('v'))
+rootCmd.PersistentFlags().BoolVar(&Verbose, "verbose", false, "verbose output", zflag.OptShorthand('v'))
 ```
 
 ### Local Flags
@@ -188,17 +188,17 @@ command := &zulu.Command{
 Flags are optional by default. If instead you wish your command to report an error when a flag has not been set, mark it as required:
 
 ```go
-rootCmd.Flags().StringVar(&Region, "region", "", "AWS region", zflag.OptShorthand('r'), zulu.FlagOptRequired())
+rootCmd.Flags().StringVar(&Region, "region", "", "AWS region", zflag.OptShorthand('r'), zflag.OptRequired())
 ```
 
 ### Flag Groups
 
 If you have different flags that must be provided together (e.g. if they provide the `--username` flag they MUST provide the `--password` flag as well) then
-Cobra can enforce that requirement:
+Zulu can enforce that requirement:
 
 ```go
-rootCmd.Flags().StringVarP(&u, "username", "u", "", "Username (required if password is set)")
-rootCmd.Flags().StringVarP(&pw, "password", "p", "", "Password (required if username is set)")
+rootCmd.Flags().StringVar(&u, "username", "", "Username (required if password is set)", zflag.OptShorthand('u'))
+rootCmd.Flags().StringVar(&pw, "password", "", "Password (required if username is set)", zflag.OptShorthand('p'))
 rootCmd.MarkFlagsRequiredTogether("username", "password")
 ```
 
@@ -243,7 +243,7 @@ Validation of positional arguments can be specified using the `Args` field of `C
 
 If `Args` is undefined or `nil`, it defaults to `ArbitraryArgs`.
 
-Field `ValidArgs` of type `[]string` can be defined in `Command`, in order to report an error if there are any positional args that are not in the list. This validation is executed implicitly before the validator defined in `Args`.
+Field `ValidArgs` of type `[]Completion` can be defined in `Command`, in order to report an error if there are any positional args that are not in the list. This validation is executed implicitly before the validator defined in `Args`.
 
 It is possible to set any custom validator that satisfies `func(cmd *zulu.Command, args []string) error`.
 
@@ -439,7 +439,7 @@ Zulu prints an error message when a command fails or when rendering help or usag
 
 ## PreRun and PostRun Hooks
 
-It is possible to run functions before or after the main `RunE` function of your command. The `PersistentPreRunE` and `PreRunE` functions will be executed before `RunE`. `PersistentPostRunE` and `PostRunE` will be executed after `RunE`. An `InitializeE` will run prior to attempting to parse any flags. A `FinalizeE` runs at the end very regardless at all times, even any of the `*RunE` produce an error. The `Persistent*RunE` functions will be inherited by children.
+It is possible to run functions before or after the main `RunE` function of your command. The `PersistentPreRunE` and `PreRunE` functions will be executed before `RunE`. `PersistentPostRunE` and `PostRunE` will be executed after `RunE`. An `InitializeE` will run prior to attempting to parse any flags. A `FinalizeE` runs at the very end regardless, even if any of the `*RunE` functions produce an error. The `Persistent*RunE` functions will be inherited by children.
 
 These functions are run in the following order.
 
@@ -526,8 +526,9 @@ func main() {
 	}
 	subCmd := &zulu.Command{
 		Use: "subcmd",
-		Run: func(cmd *zulu.Command, args []string) {
+		RunE: func(cmd *zulu.Command, args []string) error {
 			fmt.Println("kubectl myplugin subcmd")
+			return nil
 		},
 	}
 	rootCmd.AddCommand(subCmd)
