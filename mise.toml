@@ -3,6 +3,8 @@ go = "1.23"
 "github:j178/prek" = "latest"
 "github:golangci/golangci-lint" = "1.63.3"
 "github:kyoh86/richgo" = "latest"
+# The site theme compiles SCSS, which needs the extended Hugo build.
+hugo-extended = "0.165.0"
 
 [tasks.setup]
 description = "Install the prek git hooks"

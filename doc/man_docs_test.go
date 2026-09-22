@@ -266,6 +266,22 @@ func TestGenManTree(t *testing.T) {
 	}
 }
 
+func TestGenManTreeEscapingName(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "out")
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	c := &zulu.Command{Use: "../escape"}
+	header := &doc.GenManHeader{Section: "2"}
+	if err := doc.GenManTree(c, header, dir); err != nil {
+		t.Fatalf("GenManTree failed: %v", err)
+	}
+
+	assertGeneratedUnder(t, root, dir)
+}
+
 func assertLineFound(scanner *bufio.Scanner, expectedLine string) error {
 	for scanner.Scan() {
 		line := scanner.Text()
