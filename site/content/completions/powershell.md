@@ -4,7 +4,7 @@ weight: 140
 
 ## PowerShell
 
-`PowerShell` completion can be used by calling the `command.GenPowerShellCompletion()` or `command.GenPowerShellCompletionFile()` functions.
+`PowerShell` completion can be used by calling the `command.GenPowershellCompletion()` or `command.GenPowerShellCompletionFile()` functions.
 It supports descriptions for completions. When calling the functions you must provide it with a parameter indicating if the completions should be annotated with a description; Zulu
 will provide the description automatically based on usage information.  You can choose to make this option configurable by your users.
 
