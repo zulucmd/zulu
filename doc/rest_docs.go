@@ -166,7 +166,7 @@ func GenReSTTreeCustom(
 		}
 	}
 
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + ".rst"
+	basename := safeBasename(strings.ReplaceAll(cmd.CommandPath(), " ", "_")) + ".rst"
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {

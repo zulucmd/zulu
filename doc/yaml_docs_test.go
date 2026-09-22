@@ -57,6 +57,21 @@ func TestGenYamlTree(t *testing.T) {
 	}
 }
 
+func TestGenYamlTreeEscapingName(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "out")
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	c := &zulu.Command{Use: "../escape"}
+	if err := doc.GenYamlTree(c, dir); err != nil {
+		t.Fatalf("GenYamlTree failed: %v", err)
+	}
+
+	assertGeneratedUnder(t, root, dir)
+}
+
 func TestGenYamlDocRunnable(t *testing.T) {
 	rootCmd, _, _, _, _, _, _ := getTestCmds()
 	// Testing a runnable command: should contain the "usage" field
