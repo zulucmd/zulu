@@ -1212,7 +1212,7 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		}
 		if !c.SilenceErrors {
 			c.PrintErrln(c.ErrPrefix(), err.Error())
-			c.PrintErrf("%s", cmd.UsageHintString())
+			c.PrintErrf("%s", c.UsageHintString())
 		}
 		return c, err
 	}
