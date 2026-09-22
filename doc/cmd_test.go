@@ -2,6 +2,8 @@
 package doc_test
 
 import (
+	"bytes"
+	"io"
 	"io/fs"
 	"path/filepath"
 	"strings"
@@ -9,6 +11,8 @@ import (
 
 	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu/v2"
+	"github.com/zulucmd/zulu/v2/doc"
+	"github.com/zulucmd/zulu/v2/internal/testutil"
 )
 
 func emptyRun(*zulu.Command, []string) error { return nil }
@@ -176,4 +180,32 @@ func getTestCmds() (
 	rootCmd.AddCommand(printCmd, echoCmd, dummyCmd)
 
 	return rootCmd, echoCmd, echoSubCmd, timesCmd, deprecatedCmd, printCmd, dummyCmd
+}
+
+// TestGenNoTagPropagatesFromParent checks that setting DisableAutoGenTag on a
+// parent suppresses the auto-generated footer in a child's output, for every
+// generator that emits one.
+func TestGenNoTagPropagatesFromParent(t *testing.T) {
+	generators := []struct {
+		name string
+		gen  func(*zulu.Command, io.Writer) error
+	}{
+		{"markdown", doc.GenMarkdown},
+		{"rest", doc.GenReST},
+		{"asciidoc", doc.GenAsciidoc},
+	}
+
+	for _, tt := range generators {
+		t.Run(tt.name, func(t *testing.T) {
+			rootCmd, echoCmd, _, _, _, _, _ := getTestCmds()
+			rootCmd.DisableAutoGenTag = true
+
+			buf := new(bytes.Buffer)
+			if err := tt.gen(echoCmd, buf); err != nil {
+				t.Fatal(err)
+			}
+
+			testutil.AssertNotContains(t, buf.String(), "Auto generated")
+		})
+	}
 }

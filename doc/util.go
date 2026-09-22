@@ -35,6 +35,17 @@ func hasSeeAlso(cmd *zulu.Command) bool {
 	return false
 }
 
+// propagateDisableAutoGenTag copies DisableAutoGenTag from any ancestor onto
+// cmd, so a parent that opts out of the auto-generated footer also silences
+// its descendants. Safe to call on a command with no parent.
+func propagateDisableAutoGenTag(cmd *zulu.Command) {
+	cmd.VisitParents(func(c *zulu.Command) {
+		if c.DisableAutoGenTag {
+			cmd.DisableAutoGenTag = c.DisableAutoGenTag
+		}
+	})
+}
+
 // safeBasename makes a command-derived basename safe to join with a target
 // directory. Command names are author-controlled, but a name containing a path
 // separator or a parent-directory reference would let a generated file escape

@@ -106,13 +106,7 @@ func GenMan(cmd *zulu.Command, header *GenManHeader, w io.Writer) error {
 		header = &GenManHeader{}
 	}
 
-	if cmd.HasParent() {
-		cmd.VisitParents(func(c *zulu.Command) {
-			if c.DisableAutoGenTag {
-				cmd.DisableAutoGenTag = c.DisableAutoGenTag
-			}
-		})
-	}
+	propagateDisableAutoGenTag(cmd)
 	if err := fillHeader(header, cmd.CommandPath(), cmd.DisableAutoGenTag); err != nil {
 		return err
 	}
@@ -316,11 +310,7 @@ func genMan(cmd *zulu.Command, header *GenManHeader) []byte {
 			parentPath := cmd.Parent().CommandPath()
 			dashParentPath := strings.ReplaceAll(parentPath, " ", "-")
 			allRelated = append(allRelated, fmt.Sprintf("**%s(%s)**", dashParentPath, header.Section))
-			cmd.VisitParents(func(c *zulu.Command) {
-				if c.DisableAutoGenTag {
-					cmd.DisableAutoGenTag = c.DisableAutoGenTag
-				}
-			})
+			propagateDisableAutoGenTag(cmd)
 		}
 		children := cmd.Commands()
 		sort.Sort(byName(children))

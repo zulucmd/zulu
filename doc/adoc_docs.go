@@ -13,7 +13,7 @@ import (
 	"github.com/zulucmd/zulu/v2"
 )
 
-func printOptionsAdoc(buf *bytes.Buffer, cmd *zulu.Command) error {
+func printOptionsAdoc(buf *bytes.Buffer, cmd *zulu.Command) {
 	flags := cmd.NonInheritedFlags()
 	flags.SetOutput(buf)
 	if flags.HasAvailableFlags() {
@@ -29,7 +29,6 @@ func printOptionsAdoc(buf *bytes.Buffer, cmd *zulu.Command) error {
 		parentFlags.PrintDefaults()
 		buf.WriteString("....\n\n")
 	}
-	return nil
 }
 
 // GenAsciidoc creates Asciidoc output.
@@ -62,9 +61,7 @@ func GenAsciidocCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) 
 		buf.WriteString(fmt.Sprintf("....\n%s\n....\n\n", cmd.Example))
 	}
 
-	if err := printOptionsAdoc(buf, cmd); err != nil {
-		return err
-	}
+	printOptionsAdoc(buf, cmd)
 	if hasSeeAlso(cmd) {
 		buf.WriteString("=== SEE ALSO\n\n")
 		if cmd.HasParent() {
@@ -73,11 +70,7 @@ func GenAsciidocCustom(cmd *zulu.Command, w io.Writer, linkHandler func(string) 
 			link := pname + "{relfilesuffix}"
 			link = strings.ReplaceAll(link, " ", "_")
 			buf.WriteString(fmt.Sprintf("* link:%s[%s]\t - %s\n", linkHandler(link), pname, parent.Short))
-			cmd.VisitParents(func(c *zulu.Command) {
-				if c.DisableAutoGenTag {
-					cmd.DisableAutoGenTag = c.DisableAutoGenTag
-				}
-			})
+			propagateDisableAutoGenTag(cmd)
 		}
 
 		children := cmd.Commands()
