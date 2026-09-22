@@ -65,7 +65,7 @@ func GenYamlTreeCustom(cmd *zulu.Command, dir string, filePrepender, linkHandler
 		}
 	}
 
-	basename := strings.ReplaceAll(cmd.CommandPath(), " ", "_") + ".yaml"
+	basename := safeBasename(strings.ReplaceAll(cmd.CommandPath(), " ", "_")) + ".yaml"
 	filename := filepath.Join(dir, basename)
 	f, err := os.Create(filename)
 	if err != nil {

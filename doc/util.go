@@ -35,6 +35,21 @@ func hasSeeAlso(cmd *zulu.Command) bool {
 	return false
 }
 
+// safeBasename makes a command-derived basename safe to join with a target
+// directory. Command names are author-controlled, but a name containing a path
+// separator or a parent-directory reference would let a generated file escape
+// the directory the caller passed. Separators are replaced and "." / ".." are
+// neutralised so the result is always a single path element. Ordinary names are
+// returned unchanged.
+func safeBasename(name string) string {
+	name = strings.ReplaceAll(name, "\\", "_")
+	name = strings.ReplaceAll(name, "/", "_")
+	if name == "." || name == ".." {
+		return "_"
+	}
+	return name
+}
+
 // A temporary workaround for yaml lib generating incorrect yaml with long strings
 // that do not contain \n.
 func forceMultiLine(s string) string {
