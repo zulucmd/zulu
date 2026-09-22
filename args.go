@@ -14,7 +14,8 @@ func validateArgs(cmd *Command, args []string) error {
 		// A description is following a tab character.
 		var validArgs []string
 		for _, v := range cmd.ValidArgs {
-			validArgs = append(validArgs, strings.Split(v, "\t")[0])
+			validArg, _, _ := strings.Cut(v, "\t")
+			validArgs = append(validArgs, validArg)
 		}
 		for _, v := range args {
 			if !stringInSlice(v, validArgs) {

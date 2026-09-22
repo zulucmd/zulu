@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/zulucmd/zflag/v2"
@@ -569,17 +569,9 @@ func (c *Command) Padding() padding {
 			continue
 		}
 
-		if l := len(x.Use); l > p.Usage {
-			p.Usage = l
-		}
-
-		if l := len(x.CommandPath()); l > p.CommandPath {
-			p.CommandPath = l
-		}
-
-		if l := len(x.Name()); l > p.Name {
-			p.Name = l
-		}
+		p.Usage = max(p.Usage, len(x.Use))
+		p.CommandPath = max(p.CommandPath, len(x.CommandPath()))
+		p.Name = max(p.Name, len(x.Name()))
 	}
 
 	return p
@@ -1386,18 +1378,13 @@ func (c *Command) ResetCommands() {
 	c.parentsPflags = nil
 }
 
-// Sorts commands by their names.
-type commandSorterByName []*Command
-
-func (c commandSorterByName) Len() int           { return len(c) }
-func (c commandSorterByName) Swap(i, j int)      { c[i], c[j] = c[j], c[i] }
-func (c commandSorterByName) Less(i, j int) bool { return c[i].Name() < c[j].Name() }
-
 // Commands returns a sorted slice of child commands.
 func (c *Command) Commands() []*Command {
 	// do not sort commands if it already sorted or sorting was disabled
 	if EnableCommandSorting && !c.commandsAreSorted {
-		sort.Sort(commandSorterByName(c.commands))
+		slices.SortFunc(c.commands, func(a, b *Command) int {
+			return strings.Compare(a.Name(), b.Name())
+		})
 		c.commandsAreSorted = true
 	}
 	return c.commands
@@ -1582,11 +1569,7 @@ func (c *Command) DebugFlags() {
 
 // Name returns the command's name: the first word in the use line.
 func (c *Command) Name() string {
-	name := c.Use
-	i := strings.Index(name, " ")
-	if i >= 0 {
-		name = name[:i]
-	}
+	name, _, _ := strings.Cut(c.Use, " ")
 	return name
 }
 
