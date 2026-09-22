@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	texttemplate "text/template"
 
 	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu/v2/internal/template"
@@ -947,6 +948,17 @@ func quoteFishDouble(name string) string {
 	return name
 }
 
+// completionTemplateFuncs are the template functions used by the generated
+// completion scripts. They are deliberately kept out of the package-global
+// templateFuncs so that AddTemplateFunc cannot override the shell-quoting
+// helpers and silently change the generated scripts.
+var completionTemplateFuncs = texttemplate.FuncMap{
+	"bashQuote":       quoteBash,
+	"zshQuote":        quoteZsh,
+	"fishQuote":       quoteFish,
+	"fishDoubleQuote": quoteFishDouble,
+}
+
 func genTemplateCompletion(buf io.Writer, templateFile string, name string, includeDesc bool) error {
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {
@@ -967,6 +979,17 @@ func genTemplateCompletion(buf io.Writer, templateFile string, name string, incl
 	// leaving ordinary names (including '-' and ':') unchanged.
 	nameForVar := completionVarNameUnsafe.ReplaceAllString(name, "_")
 
+	// Merge the package-global template functions with the completion-local
+	// ones. The completion-local entries are applied last so they always win,
+	// even if a user registered a function under the same name.
+	funcs := make(texttemplate.FuncMap, len(templateFuncs)+len(completionTemplateFuncs))
+	for k, v := range templateFuncs {
+		funcs[k] = v
+	}
+	for k, v := range completionTemplateFuncs {
+		funcs[k] = v
+	}
+
 	res, err := template.ParseFromFile(tmplFS, templateFile, map[string]any{
 		"CMDVarName":                      nameForVar,
 		"CMDName":                         name,
@@ -977,7 +1000,7 @@ func genTemplateCompletion(buf io.Writer, templateFile string, name string, incl
 		"ShellCompDirectiveFilterFileExt": ShellCompDirectiveFilterFileExt,
 		"ShellCompDirectiveFilterDirs":    ShellCompDirectiveFilterDirs,
 		"ShellCompDirectiveKeepOrder":     ShellCompDirectiveKeepOrder,
-	}, templateFuncs)
+	}, funcs)
 	if err != nil {
 		return err
 	}
