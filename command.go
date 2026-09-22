@@ -141,7 +141,7 @@ type Command struct {
 
 	// PersistentPreRunE: children of this command will inherit and execute.
 	PersistentPreRunE HookFuncE
-	// PreRuEn: children of this command will not inherit.
+	// PreRunE: children of this command will not inherit.
 	PreRunE HookFuncE
 	// RunE: Typically the actual work function. Most commands will only implement this.
 	RunE HookFuncE
@@ -157,7 +157,7 @@ type Command struct {
 	// PersistentFinalizeE: FinalizeE but children inherit and execute this too.
 	PersistentFinalizeE HookFuncE
 
-	// persistentPreRunHooks are executed before the flags of a command or one of its children are parsed.
+	// persistentInitializeHooks are executed before the flags of a command or one of its children are parsed.
 	persistentInitializeHooks []HookFuncE
 	// initializeHooks are executed before the flags are parsed.
 	initializeHooks []HookFuncE
@@ -183,7 +183,7 @@ type Command struct {
 
 	// args is actual args parsed from flags.
 	args []string
-	// flagErrorBuf contains all error messages from pflag.
+	// flagErrorBuf contains all error messages from zflag.
 	flagErrorBuf *bytes.Buffer
 	// flags is full set of flags.
 	flags *zflag.FlagSet
@@ -196,7 +196,7 @@ type Command struct {
 	// parentsPflags is all persistent flags of cmd's parents.
 	parentsPflags *zflag.FlagSet
 	// globNormFunc is the global normalization function
-	// that we can use on every pflag set and children commands
+	// that we can use on every zflag set and children commands.
 	globNormFunc func(f *zflag.FlagSet, name string) zflag.NormalizedName
 
 	// flagGroups is the list of groups that contain grouped names of flags.
@@ -1770,7 +1770,7 @@ func (c *Command) LocalFlags() *zflag.FlagSet {
 	}
 
 	addToLocal := func(f *zflag.Flag) {
-		// Add the flag if it is not a parent PFlag, or it shadows a parent PFlag
+		// Add the flag if it is not a parent flag, or it shadows a parent flag.
 		if c.lflags.Lookup(f.Name) == nil && f != c.parentsPflags.Lookup(f.Name) {
 			c.lflags.AddFlag(f)
 		}
@@ -1890,7 +1890,7 @@ func (c *Command) Flag(name string) (flag *zflag.Flag) {
 	return flag
 }
 
-// Recursively find matching persistent zflag.
+// Recursively find matching persistent flag.
 func (c *Command) persistentFlag(name string) (flag *zflag.Flag) {
 	if c.HasPersistentFlags() {
 		flag = c.PersistentFlags().Lookup(name)
