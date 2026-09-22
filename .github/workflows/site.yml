@@ -19,17 +19,12 @@ jobs:
 
       - uses: actions/checkout@v7
 
-      - name: Get Hugo and Theme
-        run: |
-          HUGO_VERSION=0.101.0
-          curl -fsSL https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_Linux-64bit.tar.gz | sudo tar xzf - -C /usr/local/bin hugo
-          sudo chmod +x /usr/local/bin/hugo
-          mkdir -p site/themes
-          cd site/themes
-          git clone https://github.com/bep/docuapi
-          cd docuapi
-          npm install --only=dev
-          mv node_modules ../..
+      - uses: jdx/mise-action@v3
+        with:
+          install_args: "hugo-extended"
+        env:
+          MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
+
       - name: Build site
         run: |
           cd site

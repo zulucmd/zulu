@@ -80,6 +80,21 @@ func TestGenRSTTree(t *testing.T) {
 	}
 }
 
+func TestGenRSTTreeEscapingName(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, "out")
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	c := &zulu.Command{Use: "../escape"}
+	if err := doc.GenReSTTree(c, dir); err != nil {
+		t.Fatalf("GenReSTTree failed: %v", err)
+	}
+
+	assertGeneratedUnder(t, root, dir)
+}
+
 func BenchmarkGenReSTToFile(b *testing.B) {
 	rootCmd, _, _, _, _, _, _ := getTestCmds()
 	file, err := os.CreateTemp(b.TempDir(), "")
