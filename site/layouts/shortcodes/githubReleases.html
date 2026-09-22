@@ -1,6 +1,16 @@
 {{ $owner := .Get "owner" }}
 {{ $repo := .Get "repo" }}
-{{ $data := getJSON "https://api.github.com/repos/" $owner "/" $repo "/releases" }}
+{{ $url := printf "https://api.github.com/repos/%s/%s/releases" $owner $repo }}
+{{ $data := slice }}
+{{ with try (resources.GetRemote $url) }}
+  {{ with .Err }}
+    {{ errorf "githubReleases: %s" . }}
+  {{ else with .Value }}
+    {{ $data = .Content | transform.Unmarshal (dict "format" "json") }}
+  {{ else }}
+    {{ errorf "githubReleases: unable to fetch %q" $url }}
+  {{ end }}
+{{ end }}
 {{ range $data }}
 
 ## {{ .name }}
