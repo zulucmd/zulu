@@ -23,9 +23,15 @@ export TESTS_DIR="${BASE_DIR}/tests"
 export TESTPROG_DIR="${BASE_DIR}/testprog"
 export TESTING_DIR="${BASE_DIR}/testingdir"
 
+# Derive the shell list from the test files so it never goes stale.
+shellTypes=()
+for f in "${BASE_DIR}"/tests/comp-tests.*; do
+  shellTypes+=("${f##*.}")
+done
+
 # Map a test name (e.g. alpine-bash-3.2) to the shell it exercises (bash or fish).
 getTestShellType() {
-  for shell in bash fish; do
+  for shell in "${shellTypes[@]}"; do
     if [[ $1 == *"-$shell-"* ]]; then
       printf "%s" "$shell"
       return
