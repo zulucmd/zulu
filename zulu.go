@@ -18,6 +18,7 @@ package zulu
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"text/template"
 	"time"
@@ -131,14 +132,7 @@ func calculateLevenshteinDistance(s, t string, ignoreCase bool) int {
 			if s[i-1] == t[j-1] {
 				d[i][j] = d[i-1][j-1]
 			} else {
-				lowest := d[i-1][j]
-				if d[i][j-1] < lowest {
-					lowest = d[i][j-1]
-				}
-				if d[i-1][j-1] < lowest {
-					lowest = d[i-1][j-1]
-				}
-				d[i][j] = lowest + 1
+				d[i][j] = min(d[i-1][j], d[i][j-1], d[i-1][j-1]) + 1
 			}
 		}
 	}
@@ -146,10 +140,5 @@ func calculateLevenshteinDistance(s, t string, ignoreCase bool) int {
 }
 
 func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(list, a)
 }
