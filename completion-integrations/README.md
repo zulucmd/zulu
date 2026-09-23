@@ -30,26 +30,27 @@ Containers are used to execute the tests for different versions of the different
 shells.  The tests can be run on Linux or macOS.
 
 It is also possible to run the tests natively on macOS to run regression tests
-for that platform. This is done automatically when running the tests on macOS.
+for that platform. Use `mise run completion:mac` to build the testprog for the
+host and run the bash and fish tests without a container engine.
 
 ## Running the tests
 
 ### Test all
 
 ```shell
-make
+mise run completion:all
 ```
 
 ### Test bash
 
 ```shell
-make bash
+mise run completion:bash
 ```
 
 ### Test fish
 
 ```shell
-make fish
+mise run completion:fish
 ```
 
 ## Implementation

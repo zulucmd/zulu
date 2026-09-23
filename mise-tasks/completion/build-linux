@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Build the linux testprog binary used by the container tests"
+set -euo pipefail
+
+cd completion-integrations/testprog
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o bin/testprog -ldflags '-extldflags "-static"' .

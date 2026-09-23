@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+#MISE description="Run the completion tests natively on macOS"
+set -euo pipefail
+
+cd completion-integrations/testprog
+rm -rf bin
+go build -o bin/testprog .
+cd ..
+exec src/test-completion.sh bash fish
