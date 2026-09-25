@@ -38,16 +38,16 @@ question.
    follow required formatting. The toolchain is managed with
    [mise](https://mise.jdx.dev): run `mise install` first.
 3. Tests: If you are submitting code, please ensure you have adequate tests
-   for the feature. Tests can be run via `go test ./...` or `make test`.
+   for the feature. Tests can be run via `go test ./...` or `mise run test`.
 4. Ensure the new code is properly formatted to ensure code consistency.
-   Run `make all`.
+   Run `mise run all`.
 
 ### Quick steps to contribute
 
 1. Fork the project.
 2. Clone your fork to your PC (`git clone https://github.com/your_username/zulu && cd zulu`)
 3. Create your feature branch (`git checkout -b my-new-feature`)
-4. Make changes and run tests (`make test`)
+4. Make changes and run tests (`mise run test`)
 5. Add them to staging (`git add .`)
 6. Commit your changes (`git commit -m 'Add some feature'`)
 7. Push to the branch (`git push origin my-new-feature`)

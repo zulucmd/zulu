@@ -82,7 +82,7 @@ const (
 	//    return []string{"themes"}, ShellCompDirectiveFilterDirs
 	// The BashCompSubdirsInDir annotation can be used to
 	// obtain the same behavior but only for flags. The function FlagOptDirname
-	// zflag option has been provided as a convenience.
+	// has been provided as a convenience.
 	ShellCompDirectiveFilterDirs
 
 	// ShellCompDirectiveKeepOrder indicates that the shell should preserve the order
@@ -225,14 +225,14 @@ func (c *Command) initCompleteCmd(args []string) {
 			for _, comp := range completions {
 				if noDescriptions {
 					// Remove any description that may be included following a tab character.
-					comp = strings.Split(comp, "\t")[0]
+					comp, _, _ = strings.Cut(comp, "\t")
 				}
 
 				// Make sure we only write the first line to the output.
 				// This is needed if a description contains a linebreak.
 				// Otherwise, the shell scripts will interpret the other lines as new flags
 				// and could therefore provide a wrong completion.
-				comp = strings.Split(comp, "\n")[0]
+				comp, _, _ = strings.Cut(comp, "\n")
 
 				// Finally trim the completion.  This is especially important to get rid
 				// of a trailing tab when there are no description following it.
@@ -872,7 +872,6 @@ func findFlag(cmd *Command, name string) *zflag.Flag {
 // to true. The logs can be optionally output to a file by setting `BASH_COMP_DEBUG_FILE` to
 // a file location.
 func CompLogger() *log.Logger {
-	//nolint:nestif // todo refactor later
 	if logger == nil {
 		var f io.Writer
 		debugFile := os.Getenv("BASH_COMP_DEBUG_FILE")
@@ -885,9 +884,8 @@ func CompLogger() *log.Logger {
 				log.Println(err)
 			}
 
-			if fc, ok := f.(io.WriteCloser); ok {
-				defer fc.Close()
-			}
+			// The file is intentionally left open: the logger is a process-lifetime
+			// singleton, so the handle must outlive this function.
 		}
 		logger = log.New(f, "completion: ", log.Flags())
 	}

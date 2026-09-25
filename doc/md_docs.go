@@ -96,11 +96,7 @@ func printSeeAlsoMarkdown(cmd *zulu.Command, buf *bytes.Buffer, linkHandler func
 		link := pname + ".md"
 		link = strings.ReplaceAll(link, " ", "_")
 		buf.WriteString(fmt.Sprintf("* [%s](%s)\t - %s\n", pname, linkHandler(link), parent.Short))
-		cmd.VisitParents(func(c *zulu.Command) {
-			if c.DisableAutoGenTag {
-				cmd.DisableAutoGenTag = c.DisableAutoGenTag
-			}
-		})
+		propagateDisableAutoGenTag(cmd)
 	}
 
 	children := cmd.Commands()

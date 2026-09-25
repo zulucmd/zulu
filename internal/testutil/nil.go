@@ -12,7 +12,7 @@ func IsNil(i any) bool {
 
 	//nolint:exhaustive // default clause captures the rest
 	switch reflect.TypeOf(i).Kind() {
-	case reflect.Pointer, reflect.Map, reflect.Array, reflect.Chan, reflect.Slice:
+	case reflect.Pointer, reflect.Map, reflect.Chan, reflect.Slice:
 		return reflect.ValueOf(i).IsNil()
 	default:
 		return false

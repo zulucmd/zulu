@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -3443,4 +3444,18 @@ func TestCompleteCobraFlagsWithDisableFlagParsing(t *testing.T) {
 		":4",
 		"Completion ended with directive: ShellCompDirectiveNoFileComp", ""}, "\n")
 	testutil.AssertEqual(t, expected, output)
+}
+
+func TestCompLoggerWritesToDebugFile(t *testing.T) {
+	debugFile := filepath.Join(t.TempDir(), "completion.log")
+	t.Setenv("BASH_COMP_DEBUG_FILE", debugFile)
+
+	zulu.ResetCompLogger()
+	defer zulu.ResetCompLogger()
+
+	zulu.CompLogger().Println("completion debug message")
+
+	content, err := os.ReadFile(debugFile)
+	testutil.AssertNilf(t, err, "Unexpected error: %v", err)
+	testutil.AssertContains(t, string(content), "completion debug message")
 }

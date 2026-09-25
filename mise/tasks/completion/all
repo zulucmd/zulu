@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#MISE description="Run every completion integration test in containers"
+#MISE depends=["completion:build-linux"]
+set -euo pipefail
+
+tests=()
+for dockerfile in completion-integrations/tests/Dockerfile.*; do
+  tests+=("${dockerfile##*/Dockerfile.}")
+done
+
+exec completion-integrations/src/test-all.sh "${tests[@]}"

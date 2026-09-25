@@ -2199,6 +2199,20 @@ func TestTraverseWithTwoSubcommands(t *testing.T) {
 	testutil.AssertEqualf(t, subsubCmd.Name(), c.Name(), "Expected command:")
 }
 
+// TestExecuteC_TraverseChildrenBadFlagValue checks that a bad flag value on a
+// parent command does not panic when TraverseChildren is enabled. Traverse
+// returns a nil command on a parse error, so ExecuteC must not dereference it.
+func TestExecuteC_TraverseChildrenBadFlagValue(t *testing.T) {
+	rootCmd := &zulu.Command{Use: "root", TraverseChildren: true}
+	rootCmd.Flags().Int("num", 0, "")
+
+	childCmd := &zulu.Command{Use: "sub", RunE: noopRun}
+	rootCmd.AddCommand(childCmd)
+
+	_, _, err := executeCommandC(rootCmd, "--num", "notanint", "sub")
+	testutil.AssertNotNilf(t, err, "Expected error for bad flag value")
+}
+
 // TestUpdateName checks if c.Name() updates on changed c.Use.
 // Related to https://github.com/spf13/cobra/pull/422#discussion_r143918343.
 func TestUpdateName(t *testing.T) {
