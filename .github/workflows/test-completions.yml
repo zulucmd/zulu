@@ -14,9 +14,11 @@ jobs:
     name: Docker Tests
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: jdx/mise-action@v3
         with:
-          go-version-file: go.mod
+          install_args: "go"
+        env:
+          MISE_TRUSTED_CONFIG_PATHS: ${{ github.workspace }}
       - uses: actions/cache@v6
         with:
           path: |
@@ -24,8 +26,8 @@ jobs:
             ~/Library/Caches/go-build
             ~/AppData/Local/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
+          key: go-${{ hashFiles('**/go.sum') }}
           restore-keys: go-mod
       - name: Run tests
         shell: bash
-        run: cd completion-integrations && make all
+        run: mise run completion:all

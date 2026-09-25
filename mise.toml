@@ -21,3 +21,23 @@ run = "go test ./..."
 [tasks.check]
 description = "Run every prek hook against all files"
 run = "prek run --all-files"
+
+[tasks.fmt]
+description = "Check Go formatting with gofmt"
+run = '''
+unformatted="$(gofmt -l .)"
+if [ -n "$unformatted" ]; then
+  printf '%s\n' "$unformatted" | while IFS= read -r file; do
+    gofmt -d "$file"
+  done
+  exit 1
+fi
+'''
+
+[tasks.clean]
+description = "Remove build artifacts"
+run = "rm -rf bin completion-integrations/testprog/bin"
+
+[tasks.all]
+description = "Check formatting and run the Go test suite"
+depends = ["fmt", "test"]
