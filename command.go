@@ -940,7 +940,7 @@ func (c *Command) execute(a []string) (err error) {
 	hooks = append(hooks, func(cmd *Command, args []string) error {
 		err = c.ParseFlags(a)
 		if err != nil {
-			return c.FlagErrorFunc()(c, err)
+			return Usage(c.FlagErrorFunc()(c, err))
 		}
 
 		return nil
@@ -1000,7 +1000,7 @@ func (c *Command) execute(a []string) (err error) {
 			return zflag.ErrHelp
 		}
 
-		return c.ValidateArgs(argWoFlags)
+		return Usage(c.ValidateArgs(argWoFlags))
 	})
 
 	parents := make([]*Command, 0, 5)
@@ -1032,7 +1032,7 @@ func (c *Command) execute(a []string) (err error) {
 	// to be executed before running the main Run hooks.
 	hooks = append(hooks, func(cmd *Command, args []string) error {
 		if err := c.ValidateFlagGroups(); err != nil {
-			return c.FlagErrorFunc()(c, err)
+			return Usage(c.FlagErrorFunc()(c, err))
 		}
 
 		return nil
@@ -1206,7 +1206,8 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c.PrintErrln(c.ErrPrefix(), err.Error())
 			c.PrintErrf("%s", c.UsageHintString())
 		}
-		return c, err
+
+		return c, Usage(err)
 	}
 
 	cmd.commandCalledAs.called = true
