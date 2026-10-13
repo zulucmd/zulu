@@ -1000,7 +1000,11 @@ func (c *Command) execute(a []string) (err error) {
 			return zflag.ErrHelp
 		}
 
-		return Usage(c.ValidateArgs(argWoFlags))
+		// The validators classify themselves: zulu's own with Usagef, and a
+		// caller's own if it chooses to. An unclassified error from a custom
+		// validator is reported as a failure of the command, not of the
+		// invocation.
+		return c.ValidateArgs(argWoFlags)
 	})
 
 	parents := make([]*Command, 0, 5)
@@ -1205,6 +1209,12 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 		if !c.SilenceErrors {
 			c.PrintErrln(c.ErrPrefix(), err.Error())
 			c.PrintErrf("%s", c.UsageHintString())
+		}
+
+		// zflag.ErrHelp and ErrVersion are not failures, and are left alone so
+		// that their identity survives for whoever asked.
+		if errors.Is(err, zflag.ErrHelp) || errors.Is(err, ErrVersion) {
+			return c, err
 		}
 
 		return c, Usage(err)

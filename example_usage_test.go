@@ -30,12 +30,16 @@ func ExampleUsage() {
 		fmt.Println(err)
 		fmt.Println("exit code:", zulu.ExitCode(err))
 	}
-	if !zulu.IsUsage(errors.New("unrelated")) {
-		fmt.Println("an unrelated failure is not a usage failure")
-	}
+
+	// A type of the caller's own can be classified as well, and stays reachable
+	// for an errors.As check.
+	err := zulu.Usage(&fieldError{field: "name"})
+
+	var field *fieldError
+	fmt.Println("usage:", zulu.IsUsage(err), "type kept:", errors.As(err, &field))
 
 	// Output:
 	// deploy takes one environment, not 2
 	// exit code: 2
-	// an unrelated failure is not a usage failure
+	// usage: true type kept: true
 }

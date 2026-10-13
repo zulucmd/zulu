@@ -10,7 +10,7 @@ Zulu is a fork of [spf13/cobra](https://github.com/spf13/cobra). Notable differe
 - Zulu has no support for [Viper](https://github.com/spf13/viper). Viper only works with [spf13/pflag](https://github.com/spf13/pflag), which was forked into [zflag](https://github.com/zulucmd/zflag), in use by zulu. Instead, you can use [koanf-zflag](https://github.com/zulucmd/koanf-zflag) package to utilise [knadh/koanf](https://github.com/knadh/koanf).
 - Removed all the `*Run` hooks, in favour of `*RunE` hooks. This just simplifies things and avoids duplicated code.
 - Added hooks for `InitializeE` and `FinalizeE`.
-- Added usage-error classification, so a failure of the invocation is distinguishable from a failure of the command: `Usage`, `Usagef`, `IsUsage` and `ExitCode`. Cobra has no equivalent, which is why applications usually silence usage output and decide themselves when to show it.
+- Added usage-error classification, so a failure of the invocation is distinguishable from a failure of the command: `Usage`, `Usagef`, `IsUsage` and `ExitCode`. Cobra has no way to tell the two apart, and no exit-code helper, which is why applications usually silence usage output and decide themselves when to show it.
 - Added new `On*` hooks.
 - Added a new `CancelRun()` method.
 - Added an AsciiDoc generator.

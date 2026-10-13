@@ -3,6 +3,7 @@ package zulu_test
 import (
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 
@@ -187,6 +188,188 @@ func TestExitCode(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if got := zulu.ExitCode(tt.err); got != tt.want {
 				t.Errorf("ExitCode = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
+
+// A validator of the caller's own decides for itself: an unclassified error is a
+// failure of the command, and Usagef makes it a failure of the invocation.
+func TestCustomValidatorDecides(t *testing.T) {
+	tests := map[string]struct {
+		validator zulu.PositionalArgs
+		wantCode  int
+	}{
+		"a plain error is a failure of the command": {
+			validator: func(_ *zulu.Command, _ []string) error {
+				return errors.New("could not read the config")
+			},
+			wantCode: 1,
+		},
+		"Usagef is a failure of the invocation": {
+			validator: func(_ *zulu.Command, _ []string) error {
+				return zulu.Usagef("%s is not an environment", "staging")
+			},
+			wantCode: 2,
+		},
+		"zulu's own validator classifies itself": {validator: zulu.ExactArgs(1), wantCode: 2},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			var ran bool
+
+			root := &zulu.Command{
+				Use:           "root",
+				SilenceErrors: true,
+				SilenceUsage:  true,
+				Args:          tt.validator,
+				RunE: func(_ *zulu.Command, _ []string) error {
+					ran = true
+
+					return nil
+				},
+			}
+			root.SetArgs([]string{"one", "two"})
+
+			err := root.Execute()
+			if got := zulu.ExitCode(err); got != tt.wantCode {
+				t.Errorf("ExitCode = %d, want %d (err %v)", got, tt.wantCode, err)
+			}
+			if got, want := zulu.IsUsage(err), tt.wantCode == 2; got != want {
+				t.Errorf("IsUsage = %v, want %v", got, want)
+			}
+			if ran {
+				t.Error("RunE ran despite the validator rejecting the args")
+			}
+		})
+	}
+}
+
+// A flag-group failure is classified, and it happens after the pre-run hooks,
+// which is why "the command never ran" would be the wrong way to put it.
+func TestFlagGroupFailureIsUsage(t *testing.T) {
+	var hooks int
+
+	root := &zulu.Command{
+		Use:           "root",
+		SilenceErrors: true,
+		SilenceUsage:  true,
+		PreRunE: func(_ *zulu.Command, _ []string) error {
+			hooks++
+
+			return nil
+		},
+		RunE: func(_ *zulu.Command, _ []string) error { return nil },
+	}
+	root.Flags().Bool("json", false, "output as JSON")
+	root.Flags().Bool("yaml", false, "output as YAML")
+	root.MarkFlagsMutuallyExclusive("json", "yaml")
+	root.SetArgs([]string{"--json", "--yaml"})
+
+	err := root.Execute()
+	if !zulu.IsUsage(err) {
+		t.Errorf("IsUsage = false for a flag-group failure (err %v)", err)
+	}
+	if got := zulu.ExitCode(err); got != 2 {
+		t.Errorf("ExitCode = %d, want 2", got)
+	}
+	if hooks != 1 {
+		t.Errorf("pre-run hooks ran %d times, want 1: the group check runs after them", hooks)
+	}
+}
+
+// A FlagErrorFunc that resolves its error must not have a failure invented for
+// it, which is what Usage(nil) returning nil protects.
+func TestSwallowingFlagErrorFunc(t *testing.T) {
+	var ran bool
+
+	root := &zulu.Command{
+		Use:           "root",
+		SilenceErrors: true,
+		SilenceUsage:  true,
+		RunE: func(_ *zulu.Command, _ []string) error {
+			ran = true
+
+			return nil
+		},
+	}
+	root.Flags().String("known", "", "a known flag")
+	root.SetFlagErrorFunc(func(_ *zulu.Command, _ error) error { return nil })
+	root.SetArgs([]string{"--nope"})
+
+	if err := root.Execute(); err != nil {
+		t.Errorf("Execute = %v, want nil: the hook resolved the parse failure", err)
+	}
+	if !ran {
+		t.Error("RunE did not run after the hook resolved the parse failure")
+	}
+}
+
+// Help and a version request are not failures, so Execute reports them as nil
+// rather than as an error for a caller to classify.
+func TestHelpAndVersionAreNotFailures(t *testing.T) {
+	tests := map[string][]string{
+		"help":    {"--help"},
+		"version": {"--version"},
+	}
+
+	for name, args := range tests {
+		t.Run(name, func(t *testing.T) {
+			root := &zulu.Command{
+				Use:     "root",
+				Version: "1.2.3",
+				RunE: func(_ *zulu.Command, _ []string) error {
+					t.Error("RunE ran for " + name)
+
+					return nil
+				},
+			}
+			root.SetOut(io.Discard)
+			root.SetErr(io.Discard)
+			root.SetArgs(args)
+
+			err := root.Execute()
+			if err != nil {
+				t.Errorf("Execute = %v, want nil", err)
+			}
+			if got := zulu.ExitCode(err); got != 0 {
+				t.Errorf("ExitCode = %d, want 0", got)
+			}
+		})
+	}
+}
+
+// The wrapper must not show up in anything a caller prints, and the text of the
+// error must be exactly what the failing stage said.
+func TestErrorTextIsUnchanged(t *testing.T) {
+	tests := map[string]struct {
+		args     []string
+		wantText string
+	}{
+		"unknown flag":     {args: []string{"--nope", "ok"}, wantText: "unknown flag: --nope"},
+		"missing argument": {args: []string{}, wantText: "accepts 1 arg(s), received 0"},
+		"body failure":     {args: []string{"fail"}, wantText: "the body failed"},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			var ran bool
+
+			root := newRoot(&ran)
+			root.SetArgs(tt.args)
+
+			err := root.Execute()
+			if err == nil {
+				t.Fatal("Execute = nil, want an error")
+			}
+			if got := err.Error(); got != tt.wantText {
+				t.Errorf("Error() = %q, want %q", got, tt.wantText)
+			}
+			for _, format := range []string{"%v", "%s", "%+v"} {
+				if got := fmt.Sprintf(format, err); got != tt.wantText {
+					t.Errorf("Sprintf(%q) = %q, want %q", format, got, tt.wantText)
+				}
 			}
 		})
 	}

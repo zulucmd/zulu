@@ -1,10 +1,18 @@
 package zulu
 
 import (
-	"fmt"
 	"strings"
 )
 
+// PositionalArgs validates the positional arguments of a command, and reports a
+// failure by returning it.
+//
+// The validators in this file classify their own failures with Usagef, because an
+// argument the command does not accept is a failure of the invocation. A
+// validator of your own does the same by returning Usagef, or Usage around an
+// error of your own type. Any other error is reported as a failure of the
+// command instead, which is what a validator that failed for its own reasons (it
+// could not read a file, say) should return.
 type PositionalArgs func(cmd *Command, args []string) error
 
 // the `ValidArgs` field of `Command`.
@@ -19,7 +27,7 @@ func validateArgs(cmd *Command, args []string) error {
 		}
 		for _, v := range args {
 			if !stringInSlice(v, validArgs) {
-				return fmt.Errorf("invalid argument %q for %q%s", v, cmd.CommandPath(), cmd.findSuggestions(args[0]))
+				return Usagef("invalid argument %q for %q%s", v, cmd.CommandPath(), cmd.findSuggestions(args[0]))
 			}
 		}
 	}
@@ -35,7 +43,7 @@ func legacyArgs(cmd *Command, args []string) error {
 
 	// root command with subcommands, do subcommand checking.
 	if len(args) > 0 && !cmd.HasParent() {
-		return fmt.Errorf("unknown command %q for %q%s", args[0], cmd.CommandPath(), cmd.findSuggestions(args[0]))
+		return Usagef("unknown command %q for %q%s", args[0], cmd.CommandPath(), cmd.findSuggestions(args[0]))
 	}
 	return nil
 }
@@ -43,7 +51,7 @@ func legacyArgs(cmd *Command, args []string) error {
 // NoArgs returns an error if any args are included.
 func NoArgs(cmd *Command, args []string) error {
 	if len(args) > 0 {
-		return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+		return Usagef("unknown command %q for %q", args[0], cmd.CommandPath())
 	}
 	return nil
 }
@@ -53,7 +61,7 @@ func NoDuplicateArgs(cmd *Command, args []string) error {
 	seen := make(map[string]struct{}, len(args))
 	for _, arg := range args {
 		if _, ok := seen[arg]; ok {
-			return fmt.Errorf("duplicate argument %q for %q", arg, cmd.CommandPath())
+			return Usagef("duplicate argument %q for %q", arg, cmd.CommandPath())
 		}
 		seen[arg] = struct{}{}
 	}
@@ -70,7 +78,7 @@ func ArbitraryArgs(cmd *Command, args []string) error {
 func MinimumNArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) < n {
-			return fmt.Errorf("requires at least %d arg(s), only received %d", n, len(args))
+			return Usagef("requires at least %d arg(s), only received %d", n, len(args))
 		}
 		return nil
 	}
@@ -80,7 +88,7 @@ func MinimumNArgs(n int) PositionalArgs {
 func MaximumNArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) > n {
-			return fmt.Errorf("accepts at most %d arg(s), received %d", n, len(args))
+			return Usagef("accepts at most %d arg(s), received %d", n, len(args))
 		}
 		return nil
 	}
@@ -90,7 +98,7 @@ func MaximumNArgs(n int) PositionalArgs {
 func ExactArgs(n int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) != n {
-			return fmt.Errorf("accepts %d arg(s), received %d", n, len(args))
+			return Usagef("accepts %d arg(s), received %d", n, len(args))
 		}
 		return nil
 	}
@@ -102,7 +110,7 @@ func ExactArgs(n int) PositionalArgs {
 func RangeArgs(min int, max int) PositionalArgs {
 	return func(cmd *Command, args []string) error {
 		if len(args) < min || len(args) > max {
-			return fmt.Errorf("accepts between %d and %d arg(s), received %d", min, max, len(args))
+			return Usagef("accepts between %d and %d arg(s), received %d", min, max, len(args))
 		}
 		return nil
 	}
