@@ -152,7 +152,8 @@ type Command struct {
 
 	// FinalizeE: execute at the end of the function. This always executes, even if
 	// there are errors. A hook that returns an error panics with it, which stops the
-	// remaining finalize hooks from running and replaces a panic already in flight.
+	// finalize hooks after it from running and replaces a panic already in flight.
+	// A typed nil error counts as a failure too, since the interface is not nil.
 	// Children of this command will not inherit.
 	FinalizeE HookFuncE
 	// PersistentFinalizeE: FinalizeE but children inherit and execute this too.

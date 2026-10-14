@@ -1551,6 +1551,8 @@ func TestPersistentHooks(t *testing.T) {
 // A finalize hook that succeeds must not clear an error the command already
 // produced, or Execute reports success for a command that failed.
 func TestFinalizeHookDoesNotClearAFailure(t *testing.T) {
+	t.Parallel()
+
 	bodyErr := errors.New("the command failed")
 
 	cmd := &zulu.Command{
@@ -1572,6 +1574,8 @@ func TestFinalizeHookDoesNotClearAFailure(t *testing.T) {
 // A usage failure survives a successful hook too, which is the path where the bug
 // turned an exit code of 2 into 0.
 func TestFinalizeHookDoesNotClearAUsageFailure(t *testing.T) {
+	t.Parallel()
+
 	cmd := &zulu.Command{
 		Use:  "root",
 		Args: zulu.ExactArgs(1),
@@ -1590,14 +1594,38 @@ func TestFinalizeHookDoesNotClearAUsageFailure(t *testing.T) {
 	}
 }
 
+// The panic path is not the only one the loop disturbed. Help is reported as a
+// sentinel rather than as an error, so a successful hook used to swallow it and
+// print nothing at all.
+func TestFinalizeHookDoesNotSwallowHelp(t *testing.T) {
+	t.Parallel()
+
+	cmd := &zulu.Command{
+		Use:  "root",
+		RunE: noopRun,
+		FinalizeE: func(_ *zulu.Command, _ []string) error {
+			return nil
+		},
+	}
+
+	output, err := executeCommand(cmd, "--help")
+	testutil.AssertNilf(t, err, "Expected a help request to report success")
+	testutil.AssertContains(t, output, "Usage:")
+}
+
 // A parent's persistent finalize hook is part of the same loop, and a child's
 // error survives it too.
 func TestPersistentFinalizeHookDoesNotClearAChildsFailure(t *testing.T) {
+	t.Parallel()
+
 	bodyErr := errors.New("the child failed")
+	hookRan := false
 
 	root := &zulu.Command{
 		Use: "root",
 		PersistentFinalizeE: func(_ *zulu.Command, _ []string) error {
+			hookRan = true
+
 			return nil
 		},
 	}
@@ -1612,12 +1640,17 @@ func TestPersistentFinalizeHookDoesNotClearAChildsFailure(t *testing.T) {
 	if !errors.Is(err, bodyErr) {
 		t.Errorf("Expected the child's error to survive a persistent finalize hook, got %v", err)
 	}
+	if !hookRan {
+		t.Error("The persistent finalize hook did not run")
+	}
 }
 
 // FinalizeE documents that its error panics, so that is pinned here: it is
 // deliberate, and a returned error instead would be a change in behaviour rather
 // than a fix.
 func TestFinalizeHookErrorPanics(t *testing.T) {
+	t.Parallel()
+
 	hookErr := errors.New("cleanup failed")
 
 	cmd := &zulu.Command{
@@ -1634,12 +1667,16 @@ func TestFinalizeHookErrorPanics(t *testing.T) {
 		testutil.AssertEqual(t, hookErr, recovered)
 	}()
 
-	_, _ = executeCommand(cmd)
+	// The call is not checked: a failing hook panics, so there is no return to
+	// inspect.
+	executeCommand(cmd)
 }
 
 // A failing hook panics, so the finalize hooks after it do not run. That is
 // worth pinning, because cleanup that has to happen in order depends on it.
 func TestFinalizeHookStopsTheRemainingHooks(t *testing.T) {
+	t.Parallel()
+
 	secondRan := false
 
 	cmd := &zulu.Command{
@@ -1669,7 +1706,7 @@ func TestFinalizeHookStopsTheRemainingHooks(t *testing.T) {
 		}
 	}()
 
-	_, _ = executeCommand(cmd)
+	executeCommand(cmd)
 }
 
 func TestPersistentRunHookOrder(t *testing.T) {
