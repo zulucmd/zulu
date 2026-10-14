@@ -940,7 +940,7 @@ func (c *Command) execute(a []string) (err error) {
 	hooks = append(hooks, func(cmd *Command, args []string) error {
 		err = c.ParseFlags(a)
 		if err != nil {
-			return c.FlagErrorFunc()(c, err)
+			return Usage(c.FlagErrorFunc()(c, err))
 		}
 
 		return nil
@@ -1000,6 +1000,10 @@ func (c *Command) execute(a []string) (err error) {
 			return zflag.ErrHelp
 		}
 
+		// The validators classify themselves: zulu's own with Usagef, and a
+		// caller's own if it chooses to. An unclassified error from a custom
+		// validator is reported as a failure of the command, not of the
+		// invocation.
 		return c.ValidateArgs(argWoFlags)
 	})
 
@@ -1032,7 +1036,7 @@ func (c *Command) execute(a []string) (err error) {
 	// to be executed before running the main Run hooks.
 	hooks = append(hooks, func(cmd *Command, args []string) error {
 		if err := c.ValidateFlagGroups(); err != nil {
-			return c.FlagErrorFunc()(c, err)
+			return Usage(c.FlagErrorFunc()(c, err))
 		}
 
 		return nil
@@ -1206,7 +1210,14 @@ func (c *Command) ExecuteC() (cmd *Command, err error) {
 			c.PrintErrln(c.ErrPrefix(), err.Error())
 			c.PrintErrf("%s", c.UsageHintString())
 		}
-		return c, err
+
+		// zflag.ErrHelp and ErrVersion are not failures, and are left alone so
+		// that their identity survives for whoever asked.
+		if errors.Is(err, zflag.ErrHelp) || errors.Is(err, ErrVersion) {
+			return c, err
+		}
+
+		return c, Usage(err)
 	}
 
 	cmd.commandCalledAs.called = true

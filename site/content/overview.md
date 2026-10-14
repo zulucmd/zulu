@@ -20,4 +20,5 @@ Zulu provides:
 * Automatically generated man pages for your application.
 * Command aliases, so you can change things without breaking them.
 * The flexibility to define your own help, usage, etc.
+* Distinguishing a failure of the invocation from a failure of the command, with an exit code to match (`IsUsage`, `ExitCode`).
 * Optional seamless integration with [koanf](https://github.com/zulucmd/koanf-zflag) for 12-factor apps.

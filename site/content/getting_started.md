@@ -22,10 +22,12 @@ In a Zulu app, typically the `main.go` file is very bare. It serves one purpose:
 package main
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
 	}
+
+	os.Exit(zulu.ExitCode(err))
 }
 ```
 
@@ -55,10 +57,12 @@ var rootCmd = &zulu.Command{
 }
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
 	}
+
+	os.Exit(zulu.ExitCode(err))
 }
 ```
 
@@ -103,10 +107,12 @@ to quickly create a Zulu application.`,
 )
 
 func main() {
-	if err := rootCmd.Execute(); err != nil {
+	err := rootCmd.Execute()
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
 	}
+
+	os.Exit(zulu.ExitCode(err))
 }
 ```
 
@@ -392,8 +398,10 @@ Passing an empty string to `SetHelpTemplate` resets it to the default; the same 
 
 ## Usage Message
 
-When the user provides an invalid flag or invalid command, Zulu responds by
-showing the user the 'usage'.
+Zulu shows the 'usage' whenever a command fails, unless `SilenceUsage` is set.
+With the classification described in Errors and exit codes you can restrict that
+to a failure of the invocation, which is when usage actually helps, and report a
+failure of the command without it.
 
 ### Example
 
