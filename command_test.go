@@ -1590,6 +1590,30 @@ func TestFinalizeHookDoesNotClearAUsageFailure(t *testing.T) {
 	}
 }
 
+// A parent's persistent finalize hook is part of the same loop, and a child's
+// error survives it too.
+func TestPersistentFinalizeHookDoesNotClearAChildsFailure(t *testing.T) {
+	bodyErr := errors.New("the child failed")
+
+	root := &zulu.Command{
+		Use: "root",
+		PersistentFinalizeE: func(_ *zulu.Command, _ []string) error {
+			return nil
+		},
+	}
+	root.AddCommand(&zulu.Command{
+		Use: "child",
+		RunE: func(_ *zulu.Command, _ []string) error {
+			return bodyErr
+		},
+	})
+
+	_, err := executeCommand(root, "child")
+	if !errors.Is(err, bodyErr) {
+		t.Errorf("Expected the child's error to survive a persistent finalize hook, got %v", err)
+	}
+}
+
 // FinalizeE documents that its error panics, so that is pinned here: it is
 // deliberate, and a returned error instead would be a change in behaviour rather
 // than a fix.

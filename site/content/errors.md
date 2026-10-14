@@ -115,9 +115,14 @@ was called, so it exits 1.
 
 One hook is different. A `FinalizeE` hook that returns an error panics with it
 rather than returning it, so the process ends with a stack trace and neither
-`ExitCode` nor the exit codes above apply. A panic also stops the remaining
-finalize hooks from running, which is worth knowing for cleanup that has to happen
-in order.
+`ExitCode` nor the exit codes above apply. Go exits with status 2 for an
+unrecovered panic, the same number this page gives a usage failure, so do not read
+that number on its own. The command's own error is dropped on the way, and the
+remaining finalize hooks do not run.
+
+A failure that happens before the command is resolved, such as an unknown
+subcommand, never reaches the finalize hooks at all, though they do run for most
+other failures.
 
 Two wrinkles worth knowing:
 
