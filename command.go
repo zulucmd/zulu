@@ -917,8 +917,11 @@ func (c *Command) execute(a []string) (err error) {
 		}
 
 		for _, x := range finalizeHooks {
-			if err = x(c, argWoFlags); err != nil {
-				panic(err)
+			// Not an assignment to err: it is the named return, so a hook that
+			// succeeds would clear the error the command already produced. A hook
+			// that fails panics, as FinalizeE documents.
+			if hookErr := x(c, argWoFlags); hookErr != nil {
+				panic(hookErr)
 			}
 		}
 	}()

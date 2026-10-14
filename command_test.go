@@ -1548,6 +1548,62 @@ func TestPersistentHooks(t *testing.T) {
 	}
 }
 
+// A finalize hook that succeeds must not clear an error the command already
+// produced, or Execute reports success for a command that failed.
+func TestFinalizeHookDoesNotClearAFailure(t *testing.T) {
+	bodyErr := errors.New("the command failed")
+
+	cmd := &zulu.Command{
+		Use: "root",
+		RunE: func(_ *zulu.Command, _ []string) error {
+			return bodyErr
+		},
+		FinalizeE: func(_ *zulu.Command, _ []string) error {
+			return nil
+		},
+	}
+
+	_, err := executeCommand(cmd)
+	testutil.AssertNotNilf(t, err, "Expected the command's error to survive a successful finalize hook")
+	if err == nil {
+		return
+	}
+
+	testutil.AssertEqualf(t, bodyErr.Error(), err.Error(), "Unexpected error text")
+}
+
+// FinalizeE documents that its error panics, so that is pinned here: it is
+// deliberate, and a returned error instead would be a change in behaviour rather
+// than a fix.
+func TestFinalizeHookErrorPanics(t *testing.T) {
+	hookErr := errors.New("cleanup failed")
+
+	cmd := &zulu.Command{
+		Use:  "root",
+		RunE: noopRun,
+		FinalizeE: func(_ *zulu.Command, _ []string) error {
+			return hookErr
+		},
+	}
+
+	defer func() {
+		recovered := recover()
+		testutil.AssertNotNilf(t, recovered, "Expected a finalize hook error to panic")
+		if recovered == nil {
+			return
+		}
+
+		got, ok := recovered.(error)
+		if !ok {
+			t.Fatalf("Expected the panic value to be an error, got %T", recovered)
+		}
+
+		testutil.AssertEqualf(t, hookErr.Error(), got.Error(), "Unexpected panic value")
+	}()
+
+	_, _ = executeCommand(cmd)
+}
+
 func TestPersistentRunHookOrder(t *testing.T) {
 	tests := []struct {
 		name          string
