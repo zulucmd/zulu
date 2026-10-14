@@ -1631,16 +1631,42 @@ func TestFinalizeHookErrorPanics(t *testing.T) {
 	defer func() {
 		recovered := recover()
 		testutil.AssertNotNilf(t, recovered, "Expected a finalize hook error to panic")
-		if recovered == nil {
-			return
+		testutil.AssertEqual(t, hookErr, recovered)
+	}()
+
+	_, _ = executeCommand(cmd)
+}
+
+// A failing hook panics, so the finalize hooks after it do not run. That is
+// worth pinning, because cleanup that has to happen in order depends on it.
+func TestFinalizeHookStopsTheRemainingHooks(t *testing.T) {
+	secondRan := false
+
+	cmd := &zulu.Command{
+		Use:  "root",
+		RunE: noopRun,
+	}
+	cmd.OnFinalize(
+		func(_ *zulu.Command, _ []string) error {
+			return errors.New("cleanup failed")
+		},
+		func(_ *zulu.Command, _ []string) error {
+			secondRan = true
+
+			return nil
+		},
+	)
+
+	// The assertions live here because the panic unwinds past anything after the
+	// call to Execute.
+	defer func() {
+		if recovered := recover(); recovered == nil {
+			t.Error("Expected the failing finalize hook to panic")
 		}
 
-		got, ok := recovered.(error)
-		if !ok {
-			t.Fatalf("Expected the panic value to be an error, got %T", recovered)
+		if secondRan {
+			t.Error("A finalize hook ran after an earlier one failed")
 		}
-
-		testutil.AssertEqualf(t, hookErr.Error(), got.Error(), "Unexpected panic value")
 	}()
 
 	_, _ = executeCommand(cmd)

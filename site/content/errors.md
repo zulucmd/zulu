@@ -113,8 +113,9 @@ Zulu never marks a failure of a hook or of `RunE` as a usage failure. A pre-run
 hook that cannot reach the database is a failure of the command, not of the way it
 was called, so it exits 1.
 
-One hook is different. A `FinalizeE` hook that returns an error panics with it
-rather than returning it, so the process ends with a stack trace and neither
+One hook is different. A finalize hook (`FinalizeE`, `OnFinalize`,
+`PersistentFinalizeE`, `OnPersistentFinalize`) that returns an error panics with
+it rather than returning it, so the process ends with a stack trace and neither
 `ExitCode` nor the exit codes above apply. Go exits with status 2 for an
 unrecovered panic, the same number this page gives a usage failure, so do not read
 that number on its own. The command's own error is dropped on the way, and the
