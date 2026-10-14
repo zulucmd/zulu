@@ -41,7 +41,7 @@ jobs:
           restore-keys: go-mod
       - name: Setup mdtoc
         run: go install sigs.k8s.io/mdtoc@latest
-      - uses: j178/prek-action@v3.0.0
+      - uses: j178/prek-action@v3.0.1
         env:
           PREK_SKIP: golangci-lint,go-build,go-unit-tests
 
