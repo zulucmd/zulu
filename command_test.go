@@ -1564,12 +1564,30 @@ func TestFinalizeHookDoesNotClearAFailure(t *testing.T) {
 	}
 
 	_, err := executeCommand(cmd)
-	testutil.AssertNotNilf(t, err, "Expected the command's error to survive a successful finalize hook")
-	if err == nil {
-		return
+	if !errors.Is(err, bodyErr) {
+		t.Errorf("Expected the command's own error to survive a successful finalize hook, got %v", err)
+	}
+}
+
+// A usage failure survives a successful hook too, which is the path where the bug
+// turned an exit code of 2 into 0.
+func TestFinalizeHookDoesNotClearAUsageFailure(t *testing.T) {
+	cmd := &zulu.Command{
+		Use:  "root",
+		Args: zulu.ExactArgs(1),
+		RunE: noopRun,
+		FinalizeE: func(_ *zulu.Command, _ []string) error {
+			return nil
+		},
 	}
 
-	testutil.AssertEqualf(t, bodyErr.Error(), err.Error(), "Unexpected error text")
+	_, err := executeCommand(cmd)
+	if !zulu.IsUsage(err) {
+		t.Errorf("Expected a usage failure to survive a successful finalize hook, got %v", err)
+	}
+	if got := zulu.ExitCode(err); got != 2 {
+		t.Errorf("Expected exit code 2 for a usage failure, got %d", got)
+	}
 }
 
 // FinalizeE documents that its error panics, so that is pinned here: it is
