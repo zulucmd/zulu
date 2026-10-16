@@ -151,8 +151,10 @@ type Command struct {
 	PersistentPostRunE HookFuncE
 
 	// FinalizeE: execute at the end of the function. This always executes, even if
-	// there are errors. Will panic if it produces errors. Children of this command will
-	// not inherit.
+	// there are errors. A hook that returns an error panics with it, which stops the
+	// finalize hooks after it from running and replaces a panic already in flight.
+	// A typed nil error counts as a failure too, since the interface is not nil.
+	// Children of this command will not inherit.
 	FinalizeE HookFuncE
 	// PersistentFinalizeE: FinalizeE but children inherit and execute this too.
 	PersistentFinalizeE HookFuncE
@@ -171,9 +173,9 @@ type Command struct {
 	postRunHooks []HookFuncE
 	// persistentPostRunHooks are executed after the command or one of its children have executed.
 	persistentPostRunHooks []HookFuncE
-	// finalizeHooks: executes at the end of the function. This always executes, even if
-	// there are errors. Will panic if it produces errors. Children of this command will
-	// not inherit.
+	// finalizeHooks: executes at the end of the function. This always executes, even
+	// if there are errors. A hook that returns an error panics with it. Children of
+	// this command will not inherit.
 	finalizeHooks []HookFuncE
 	// persistentFinalizeHooks: FinalizeE but children inherit and execute this too.
 	persistentFinalizeHooks []HookFuncE
@@ -917,8 +919,8 @@ func (c *Command) execute(a []string) (err error) {
 		}
 
 		for _, x := range finalizeHooks {
-			if err = x(c, argWoFlags); err != nil {
-				panic(err)
+			if hookErr := x(c, argWoFlags); hookErr != nil {
+				panic(hookErr)
 			}
 		}
 	}()
@@ -1124,13 +1126,15 @@ func (c *Command) OnPersistentPostRun(f ...HookFuncE) {
 }
 
 // OnFinalize registers one or more hooks on the command to be executed after the
-// command has executed even if it errors.
+// command has executed even if it errors. A hook that returns an error panics with
+// it, as FinalizeE documents.
 func (c *Command) OnFinalize(f ...HookFuncE) {
 	c.finalizeHooks = append(c.finalizeHooks, f...)
 }
 
 // OnPersistentFinalize register one or more hooks on the command to be executed
-// after the command or one of its children have executed even if it errors.
+// after the command or one of its children have executed even if it errors. A hook
+// that returns an error panics with it, as FinalizeE documents.
 func (c *Command) OnPersistentFinalize(f ...HookFuncE) {
 	c.persistentFinalizeHooks = append(c.persistentFinalizeHooks, f...)
 }
