@@ -283,9 +283,9 @@ __start_{{ .CMDVarName }}() {
 }
 
 if [[ $(type -t compopt) = "builtin" ]]; then
-  complete -o default -F __start_{{ .CMDVarName }} {{ .CMDName }}
+  complete -o default -F __start_{{ .CMDVarName }} {{ bashQuote .CMDName }}
 else
-  complete -o default -o nospace -F __start_{{ .CMDVarName }} {{ .CMDName }}
+  complete -o default -o nospace -F __start_{{ .CMDVarName }} {{ bashQuote .CMDName }}
 fi
 
 # ex: ts=4 sw=4 et filetype=sh

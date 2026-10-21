@@ -6,8 +6,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
+	texttemplate "text/template"
 
 	"github.com/zulucmd/zflag/v2"
 	"github.com/zulucmd/zulu/v2/internal/template"
@@ -891,15 +893,100 @@ func CompLogger() *log.Logger {
 	return logger
 }
 
+// completionNameSafe matches command names that can be embedded in a generated
+// shell script without quoting. Names made up only of these characters are
+// emitted verbatim, so the generated scripts stay byte-for-byte identical for
+// ordinary command names.
+var completionNameSafe = regexp.MustCompile(`^[A-Za-z0-9._:-]+$`)
+
+// completionVarNameUnsafe matches characters that are not valid in the shell
+// identifiers (function and variable names) built from the command name.
+var completionVarNameUnsafe = regexp.MustCompile(`[^A-Za-z0-9._]`)
+
+// quoteBash quotes name for use as a bash or zsh command word. Names that need
+// no quoting are returned unchanged.
+func quoteBash(name string) string {
+	if completionNameSafe.MatchString(name) {
+		return name
+	}
+
+	return "'" + strings.ReplaceAll(name, "'", `'\''`) + "'"
+}
+
+// quoteZsh quotes name for use as a zsh command word.
+func quoteZsh(name string) string {
+	return quoteBash(name)
+}
+
+// quoteFish quotes name for use as a fish command word. Names that need no
+// quoting are returned unchanged.
+func quoteFish(name string) string {
+	if completionNameSafe.MatchString(name) {
+		return name
+	}
+
+	name = strings.ReplaceAll(name, `\`, `\\`)
+	name = strings.ReplaceAll(name, "'", `\'`)
+
+	return "'" + name + "'"
+}
+
+// quoteFishDouble escapes name for use inside a fish double-quoted string. The
+// surrounding quotes are kept in the template, so only the inner text is
+// escaped. Names that need no escaping are returned unchanged.
+func quoteFishDouble(name string) string {
+	if completionNameSafe.MatchString(name) {
+		return name
+	}
+
+	name = strings.ReplaceAll(name, `\`, `\\`)
+	name = strings.ReplaceAll(name, `"`, `\"`)
+	name = strings.ReplaceAll(name, `$`, `\$`)
+
+	return name
+}
+
+// completionTemplateFuncs are the template functions used by the generated
+// completion scripts. They are deliberately kept out of the package-global
+// templateFuncs so that AddTemplateFunc cannot override the shell-quoting
+// helpers and silently change the generated scripts.
+var completionTemplateFuncs = texttemplate.FuncMap{
+	"bashQuote":       quoteBash,
+	"zshQuote":        quoteZsh,
+	"fishQuote":       quoteFish,
+	"fishDoubleQuote": quoteFishDouble,
+}
+
 func genTemplateCompletion(buf io.Writer, templateFile string, name string, includeDesc bool) error {
 	compCmd := ShellCompRequestCmd
 	if !includeDesc {
 		compCmd = ShellCompNoDescRequestCmd
 	}
 
-	nameForVar := name
-	nameForVar = strings.ReplaceAll(nameForVar, "-", "_")
-	nameForVar = strings.ReplaceAll(nameForVar, ":", "_")
+	// A newline in the command name would end the comment lines in the
+	// generated scripts and let the following text run when the script is
+	// sourced. Command names cannot legitimately contain newlines, so replace
+	// them with spaces before embedding the name.
+	name = strings.NewReplacer("\n", " ", "\r", " ").Replace(name)
+
+	// The command name is embedded both as a shell command word (CMDName) and
+	// as part of shell identifiers such as function and variable names
+	// (CMDVarName). Identifiers cannot be quoted, so any character that is not
+	// valid in an identifier is replaced with '_'. This keeps the generated
+	// scripts safe when the command name contains shell metacharacters while
+	// leaving ordinary names (including '-' and ':') unchanged.
+	nameForVar := completionVarNameUnsafe.ReplaceAllString(name, "_")
+
+	// Merge the package-global template functions with the completion-local
+	// ones. The completion-local entries are applied last so they always win,
+	// even if a user registered a function under the same name.
+	funcs := make(texttemplate.FuncMap, len(templateFuncs)+len(completionTemplateFuncs))
+	for k, v := range templateFuncs {
+		funcs[k] = v
+	}
+	for k, v := range completionTemplateFuncs {
+		funcs[k] = v
+	}
 
 	res, err := template.ParseFromFile(tmplFS, templateFile, map[string]any{
 		"CMDVarName":                      nameForVar,
@@ -911,7 +998,7 @@ func genTemplateCompletion(buf io.Writer, templateFile string, name string, incl
 		"ShellCompDirectiveFilterFileExt": ShellCompDirectiveFilterFileExt,
 		"ShellCompDirectiveFilterDirs":    ShellCompDirectiveFilterDirs,
 		"ShellCompDirectiveKeepOrder":     ShellCompDirectiveKeepOrder,
-	}, templateFuncs)
+	}, funcs)
 	if err != nil {
 		return err
 	}
