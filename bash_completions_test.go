@@ -72,6 +72,54 @@ func TestBashProgWithColon(t *testing.T) {
 	testutil.AssertNotContains(t, output, "colon root_colon")
 }
 
+func TestBashCompletionCommandNameEscaping(t *testing.T) {
+	tests := []struct {
+		name     string
+		use      string
+		contains []string
+		excludes []string
+	}{
+		{
+			name:     "ordinary name is embedded verbatim",
+			use:      "root",
+			contains: []string{"complete -o default -F __start_root root"},
+		},
+		{
+			name:     "command substitution is quoted",
+			use:      "foo$(id>/tmp/pwned)",
+			contains: []string{"complete -o default -F __start_foo__id__tmp_pwned_ 'foo$(id>/tmp/pwned)'"},
+			excludes: []string{"complete -o default -F __start_foo__id__tmp_pwned_ foo$(id>/tmp/pwned)"},
+		},
+		{
+			name:     "single quote is escaped",
+			use:      "foo'bar",
+			contains: []string{`complete -o default -F __start_foo_bar 'foo'\''bar'`},
+		},
+		{
+			name:     "newline cannot break out of a comment",
+			use:      "foo\nid>/tmp/pwned",
+			contains: []string{"# bash completion for foo id>/tmp/pwned"},
+			excludes: []string{"# bash completion for foo\nid>/tmp/pwned"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rootCmd := &zulu.Command{Use: tt.use, Args: zulu.NoArgs, RunE: noopRun}
+			buf := new(bytes.Buffer)
+			testutil.AssertNil(t, rootCmd.GenBashCompletion(buf, false))
+			output := buf.String()
+
+			for _, want := range tt.contains {
+				testutil.AssertContains(t, output, want)
+			}
+			for _, unwanted := range tt.excludes {
+				testutil.AssertNotContains(t, output, unwanted)
+			}
+		})
+	}
+}
+
 func TestGenBashCompletionFile(t *testing.T) {
 	err := os.Mkdir("./tmp", 0755)
 	if err != nil {
